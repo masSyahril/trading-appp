@@ -1,0 +1,4 @@
+node_modules/
+api/config/secrets.local.php
+*.local.php
+/vendor
