@@ -2293,7 +2293,11 @@ class MultiIndicatorSystem {
           labelVisible: true   // Keep horizontal price label
         }
       },
-      autoSize: true,
+      // NOTE: lightweight-charts v3.8.0 (pinned in index.html) has no
+      // autoSize option - sizing is handled entirely by the manual
+      // ResizeObserver + _scheduleQuietRender below. Do not add autoSize
+      // here; it's silently ignored by this version and just misleads
+      // readers into thinking the library manages resize on its own.
       // Enhanced touch and mobile support
       handleScroll: {
         mouseWheel: true,
@@ -2704,6 +2708,7 @@ class MultiIndicatorSystem {
     // Recompute and render ONLY THIS PANEL - use updateSinglePanel to prevent cascade
     if (this.chartData.length > 0) {
       this.updateSinglePanel(panelId);
+      setTimeout(() => this._healDegenerateRenders(), 2000);
     }
 
     // Clear the flag
@@ -3121,6 +3126,7 @@ class MultiIndicatorSystem {
     }
 
     this._scheduleQuietRender();
+    setTimeout(() => this._healDegenerateRenders(), 2000);
   }
 
   // Panel charts go through several overlapping resize passes right after
@@ -3138,6 +3144,31 @@ class MultiIndicatorSystem {
     this._quietRenderTimeout = setTimeout(() => {
       this.panels.forEach((panel, panelId) => this.updatePanel(panelId));
     }, delay);
+  }
+
+  // Verify-and-heal pass: on some loads a panel's very first automatic
+  // render comes out with a fully-null tail even though chartData is
+  // complete and a plain recompute against the same data succeeds every
+  // time it's been checked manually - the exact one-off trigger was never
+  // pinned down despite extensive tracing (data, params, and resize timing
+  // all check out fine by the time this runs). Rather than leave the panel
+  // permanently stuck, re-verify a couple seconds after boot/update and
+  // force one more render for anything that still looks degenerate.
+  _healDegenerateRenders() {
+    this.panels.forEach((panel, panelId) => {
+      const definition = this.indicatorDefinitions[panel.indicatorType];
+      if (!definition || this.chartData.length < definition.minPeriod + 5) return;
+      if (!panel.series || panel.series.size === 0) return;
+      let hasLiveTail = false;
+      panel.series.forEach(series => {
+        const arr = panel.seriesArrays.get(series) || [];
+        if (arr.slice(-3).some(d => d && d.value != null)) hasLiveTail = true;
+      });
+      if (!hasLiveTail) {
+        console.warn(`🩹 Healing degenerate render for panel ${panelId} (${panel.indicatorType})`);
+        this.updatePanel(panelId);
+      }
+    });
   }
 
   // Update only a single panel without affecting others (for parameter changes)
@@ -4867,8 +4898,8 @@ class MultiIndicatorSystem {
       const { EOM_EMV, eEOM_EMV } = window.EOM_EMV(highs, lows, closes, volumes, 9);
       // Wang sets EOM=0 when high==low (division by zero guard); replace with null so the
       // chart renders a gap rather than a false zero spike at those candles.
-      const cleanEOM = EOM_EMV.map((v, i) => (highs[i] === lows[i] ? null : v));
-      const cleaneEOM = eEOM_EMV.map((v, i) => (highs[i] === lows[i] ? null : v));
+      const cleanEOM = EOM_EMV.map((v, i) => (highs[i] === lows[i] || !Number.isFinite(v)) ? null : v);
+      const cleaneEOM = eEOM_EMV.map((v, i) => (highs[i] === lows[i] || !Number.isFinite(v)) ? null : v);
       return { EOM: cleanEOM, eEOM: cleaneEOM };
     }
     return computeEOM(highs, lows, volumes);
@@ -5239,18 +5270,36 @@ computeMAoneMAtwoIndicator(data, day1 = 5, day2 = 10) {
 
   const src1 = out.MA1 || [];
   const src2 = out.MA2 || [];
-  const srcCum = out.cumulativeRRPct || [];
-  const srcRR = out.rrTradePct || [];
 
   for (let i = 0; i < len; i++) {
     const a = src1[i];
     const b = src2[i];
     line1[i] = a != null && Number.isFinite(a) ? a : null;
     line2[i] = b != null && Number.isFinite(b) ? b : null;
-    const c = srcCum[i];
-    line3[i] = c != null && Number.isFinite(c) ? c : null;
-    const r = srcRR[i];
-    rrTradePct[i] = r != null && Number.isFinite(r) ? r : null;
+  }
+
+  // window.MAoneMAtwo only returns scalar totals (Acc_RR/BS_times/Avg_RR), not a
+  // per-bar series - replay the same buy(MA1)/sell(MA2) crossover logic here so
+  // line3 (running cumulative RR%) and rrTradePct (per-trade RR%) have real data.
+  let accRR = 0;
+  let bsFlag = 'N';
+  let buyPrice = 0;
+  if (line1[r1] != null && closes[r1] > line1[r1]) {
+    buyPrice = closes[r1];
+    bsFlag = 'Y';
+  }
+  for (let i = r1 + 1; i < len; i++) {
+    if (line1[i - 1] != null && line1[i] != null && closes[i - 1] < line1[i - 1] && closes[i] > line1[i] && bsFlag === 'N') {
+      buyPrice = closes[i];
+      bsFlag = 'Y';
+    } else if (line2[i - 1] != null && line2[i] != null && closes[i - 1] > line2[i - 1] && closes[i] < line2[i] && bsFlag === 'Y') {
+      const sellPrice = closes[i];
+      const rr = buyPrice ? (sellPrice - buyPrice) / buyPrice * 100 : 0;
+      accRR += rr;
+      rrTradePct[i] = rr;
+      bsFlag = 'N';
+    }
+    line3[i] = accRR;
   }
 
   return {
@@ -5285,10 +5334,14 @@ computePVIpercentRiseFallIndicator(data, day = 10, esp = 10) {
   const srcPVIpercentRiseFall = out && out.PVIpercentRiseFall ? out.PVIpercentRiseFall : [];
   const srcEPVIpercentRiseFall = out && out.ePVIpercentRiseFall ? out.ePVIpercentRiseFall : [];
 
-  // Wang function uses 1-based indexing: first value at [day+1], then [day+2]..[len]
+  // PVIpercentRiseFall indexes straight into the closes/volumes arrays we pass it
+  // (not a shifted 1-based copy), so its output aligns 1:1 with our own 0-based
+  // index - no +1 shift here, or the last bar (index len-1) reads past what the
+  // source function ever set (its loop stops at `i < K_close.length`) and comes
+  // out null.
   for (let i = day; i < len; i++) {
-    const w1 = srcPVIpercentRiseFall[i + 1];
-    const w2 = srcEPVIpercentRiseFall[i + 1];
+    const w1 = srcPVIpercentRiseFall[i];
+    const w2 = srcEPVIpercentRiseFall[i];
     line1[i] = (w1 != null && Number.isFinite(w1)) ? w1 : null;
     line2[i] = (w2 != null && Number.isFinite(w2)) ? w2 : null;
   }

@@ -40,7 +40,7 @@ function computeMA(values, Ma_day) {
     sum=sum-values[i-Ma_day]+values[i];   //subtract the old value and add the new value
     MA[i]=sum/Ma_day;
   }
-  return { MA };
+  return MA;
   // Drawing the MA figure in the K-line area.
   // For example, if Ma_day=10, then MA[]=10,11,...,2000.
 }
@@ -1155,6 +1155,7 @@ function VolRatio(STK_close, STK_vol, day, esp) {   //原名=VR
   // UpVol=STK_vol(1);
   // DnVol=STK_vol(1);
   VolRatio[day]=100;       //初值三個均設為第一天的成交量，此時初值VR=100。VR(20)=100
+  eVolRatio[day]=100;      //eVR初值與VR初值相同，供eVR(day+1)遞迴計算使用
   //第一輪先算第一個VR,假設day=20,則j=2 to 21,算出第一個VR(21)
   for(let j=2; j<=(day+1); j++) {          // j=2 to 21 (first round)
     if (STK_close[j]>=STK_close[j-1]) {   //上漲
@@ -1329,7 +1330,7 @@ window.VariantRateMA2DaysAgo = VariantRateMA2DaysAgo;
 function IntradayMomentum(STK_open, STK_close, day1, day2) {  //原名: IMI
   // Menu Name: Intraday Momentum  , day1=10, day2=20, ...
   const IMI1=[], IMI2=[];
-  let Iup, Idn = 0;
+  let Iup = 0, Idn = 0;
   for (let i=1; i<day1; i++) {     //例: i=1 to 10
     if(STK_close[i]>STK_open[i]) {
       Iup=Iup+(STK_close[i]-STK_open[i]); }
@@ -1771,7 +1772,7 @@ function EOM_EMV(STK_high, STK_low, STK_close, STK_vol, esp) {
     else { 
       EOM_EMV[i]=MID/VPU*100;
     }
-    if(i===1){             //指數平滑移動平均
+    if(i===2){             //指數平滑移動平均
       eEOM_EMV[2]=EOM_EMV[2]; }    //eEOM_EMV初值
     else {
       eEOM_EMV[i]=(esp-1)/(esp+1)*eEOM_EMV[i-1]+2/(esp+1)*EOM_EMV[i];
@@ -4708,7 +4709,7 @@ function ZeroLagHullMA(K_close, day1, day2, esp) {
   }
   let wgt_count;     //權重計數, 1,2,...,5 或 1,2,...,10     
   let sum_close;     //分子=5天加權收盤價加總
-  for(let i=half_day1; i<K_close.length; i++) {  //i=5 to 2000
+  for(let i=half_day1; i<=K_close.length; i++) {  //i=5 to 2000
     sum_close=0;
     wgt_count=1;     //權重計數
     for(let j=i-half_day1+1; j<i; j++) {  //j=1 to 5, j=2 to 6,...
@@ -4726,7 +4727,7 @@ function ZeroLagHullMA(K_close, day1, day2, esp) {
   for(let i=1; i<day1; i++) {   //i=1 to 10 (i=1 to day1)
     sum_wgt2=sum_wgt2+i;  //例如=1+2+...+10=55,加總WMA2的總權重,要放分母
   }  
-  for(let i=day1; i<K_close.length; i++) {  //i=10 to 2000
+  for(let i=day1; i<=K_close.length; i++) {  //i=10 to 2000
     sum_close=0;    //分子=10天加權收盤價加總
     wgt_count=1;    //權重計數
     for(let j=i-day1+1; j<=i; j++) {  //j=1 to 10, j=2 to 11,...
@@ -4738,7 +4739,7 @@ function ZeroLagHullMA(K_close, day1, day2, esp) {
 
   //3-----計算 RawHMA2-------------------------------------------
   //計算RawHMA, day1=10, RawHMA=10 to 2000
-  for(let i=day1; i<K_close.length; i++) {  //i=10 to 2000
+  for(let i=day1; i<=K_close.length; i++) {  //i=10 to 2000
     RawHMA[i]=2*WMA1[i]-WMA2[i];             //RawHMA[]=10 to 2000
   }  // if day1=10 , RawHMA[i]=10 to 2000
 
@@ -4753,7 +4754,7 @@ function ZeroLagHullMA(K_close, day1, day2, esp) {
   // what kind of type is sum_temp ??? 
   let sum_temp = 0;    //暫時加總用
   wgt_count=1;     //權重計數, 1,2,...,5 或 1,2,...,10 或 1,2,...m1=4
-  for(let i=day1+m1-1; i<K_close.length; i++) {  //i=(10+4-1)=13,14,...,2000
+  for(let i=day1+m1-1; i<=K_close.length; i++) {  //i=(10+4-1)=13,14,...,2000
     sum_temp=0;
     wgt_count=1;   //原設計count=1;
     for(let j=i-m1+1; j<=i; j++) { //j=10 to 13  (j=i-m1+1 to i)=(j=13-4+1 to 13)=(j=10 to 13)
@@ -4798,7 +4799,7 @@ function ZeroLagHullMA(K_close, day1, day2, esp) {
   wgt_count=0;     //權重計數, 1,2,...,5 或 1,2,...,10     
   sum_close=0;     //分子=5天加權收盤價加總
   //let first_HMA_is=day1+m1-1;    //第1個HMA[]是13， =10+4-1=13, if day1=10
-  for(let i=first_HMA_is+half_day2-1; i<K_close.length; i++) { //i=17 to 2000,13+5-1=17 
+  for(let i=first_HMA_is+half_day2-1; i<=K_close.length; i++) { //i=17 to 2000,13+5-1=17
     sum_close=0;
     wgt_count=1;  //權重計數
     for(let j=i-half_day2+1; j<=i; j++) {     //j=13 to 17, j=14 to 18,...
@@ -4816,7 +4817,7 @@ function ZeroLagHullMA(K_close, day1, day2, esp) {
   for(let i=1; i<day2; i++) {  //i=1 to 10 (i=1 to day2)
     sum_wgt2=sum_wgt2+i;        //例如=1+2+...+10=55,加總WMA2的總權重,要放分母
   }  
-  for(let i=first_HMA_is+day2-1; i<K_close.length; i++) {  //i=22 to 2000, (13+10-1=22)
+  for(let i=first_HMA_is+day2-1; i<=K_close.length; i++) {  //i=22 to 2000, (13+10-1=22)
     sum_close=0;    //分子=10天加權收盤價加總
     wgt_count=1;    //權重計數
     for(let j=i-day2+1; j<=i; j++) {        //j=13 to 22, j=14 to 23,...
@@ -4828,7 +4829,7 @@ function ZeroLagHullMA(K_close, day1, day2, esp) {
 
   //3-----計算 RawHMA2---if day1=10 and day2=10, then RawHMA2=22 to 2000-----------
   // first_HMA_is+day2-1 = 13+10-1=22
-  for(let i=first_HMA_is+day2-1; i<K_close.length; i++) {  //i=22 to 2000
+  for(let i=first_HMA_is+day2-1; i<=K_close.length; i++) {  //i=22 to 2000
     RawHMA2[i]=2*WMA_HMA1[i]-WMA_HMA2[i];             //RawHMA2[]=22 to 2000
   } // if day2=10 , RawHMA2[i]=22 to 2000
 
@@ -4844,7 +4845,7 @@ function ZeroLagHullMA(K_close, day1, day2, esp) {
   wgt_count=1;     //權重計數, 1,2,...,5 或 1,2,...,10 或 1,2,...m=4
   // let first_HMA_is=day1+m1-1;     //第1個HMA[]是13， =10+4-1=13
   let day_temp=first_HMA_is+day2+m2-2;  //=(day1+m1-1)+(day2+m2-2)=day1+day2+m1+m2-3=25
-  for(let i=day_temp; i<K_close.length; i++) {  //i=(13+10+4-2)=25 to 2000
+  for(let i=day_temp; i<=K_close.length; i++) {  //i=(13+10+4-2)=25 to 2000
     sum_temp=0;
     wgt_count=1;   //權重計數
     for(let j=i-m2+1; j<=i; j++) { //j=22 to 25  (j=i-m2+1 to i)=(j=25-4+1 to 25)=(j=22 to 25)
@@ -6589,7 +6590,7 @@ function KingMA(values, ma_day) {
      sum=sum-values[i-ma_day]+values[i];   //先減前10天的值,再加今天的值
      MA[i]=sum/ma_day;
   }
-  return { MA };
+  return MA;
   //Drawing the MA[] figure in the K_Line area.
   //if ma_day=10, then MA[]=10,11,...,2000
 }
