@@ -33,6 +33,12 @@
   let candleSeries = null;
   let chartData = [];
   let chartStyle = loadLS('stock_chart_style', 'candles'); // 'candles' | 'line' | 'area'
+  // Bumped at the start of every loadCandlesAndDisplay() call. If a slower
+  // call (e.g. a network fetch) resolves after a newer call has already
+  // started, its result is stale and must not overwrite chartData/indicators -
+  // otherwise indicator panels can end up rendered against a superseded
+  // symbol/timeframe's data despite the UI showing the current one.
+  let chartLoadToken = 0;
 
   // Multi-Indicator System
   let indicatorSystem = null;
@@ -894,6 +900,9 @@
   }
 
   async function loadCandlesAndDisplay(symbol, tf) {
+    const token = ++chartLoadToken;
+    const isCurrent = () => token === chartLoadToken;
+
     chartData = [];
     // Remove stale overlay series from chart before loading new data; keep activeOverlays so refreshOverlays() re-applies them after new data is set
     [...activeOverlays].forEach(id => removeOverlayFromChart(id));
@@ -908,6 +917,7 @@
       if (candleSeries) {
         applyChartStyleData(chartData);
         setTimeout(() => {
+          if (!isCurrent()) return;
           if (chartData.length > 0) {
             const dataMax = chartData.length - 1;
             const visibleCandles = Math.min(40, chartData.length);
@@ -929,9 +939,11 @@
 
     try {
       const response = await fetch(`../api/stocks.php?symbol=${encodeURIComponent(symbol)}`);
-      
+      if (!isCurrent()) return; // superseded by a newer symbol/timeframe request while this fetch was in flight
+
       if (response.ok) {
         const data = await response.json();
+        if (!isCurrent()) return;
         if (data && data.candles && data.candles.length) {
           chartData = data.candles.map(c => ({
             time: c.time,
@@ -941,11 +953,12 @@
             close: c.close,
             volume: c.volume ?? 0,
           }));
-          
+
           if (candleSeries) {
             applyChartStyleData(chartData);
 
             setTimeout(() => {
+              if (!isCurrent()) return;
               if (chartData.length > 0) {
                 const dataMax = chartData.length - 1;
                 const visibleCandles = Math.min(40, chartData.length);
@@ -969,6 +982,7 @@
         createMockStockData(symbol);
       }
     } catch (error) {
+      if (!isCurrent()) return;
       console.error(`❌ Error loading ${symbol} data:`, error);
       createMockStockData(symbol);
     }
