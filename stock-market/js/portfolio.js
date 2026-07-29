@@ -33,7 +33,7 @@ window.TradeFlowPortfolio = (function () {
     setupTabs();
     setupCollapse();
     window.TradeFlowChart.onSymbolChange(() => render());
-    setInterval(() => { checkWorkingOrderFills(); render(); }, FILL_CHECK_INTERVAL_MS);
+    setInterval(() => { checkWorkingOrderFills(); checkPositionStops(); render(); }, FILL_CHECK_INTERVAL_MS);
     render();
   }
 
@@ -86,17 +86,42 @@ window.TradeFlowPortfolio = (function () {
   }
 
   function closePosition(id) {
-    const idx = state.positions.findIndex(p => p.id === id);
-    if (idx === -1) return;
-    const pos = state.positions[idx];
+    const pos = state.positions.find(p => p.id === id);
+    if (!pos) return;
     const exitPrice = currentPrice(pos.symbol) ?? pos.entryPrice;
+    closePositionAt(pos, exitPrice, 'Closed');
+  }
+
+  function closePositionAt(pos, exitPrice, reason) {
+    const idx = state.positions.findIndex(p => p.id === pos.id);
+    if (idx === -1) return;
     const pnl = (exitPrice - pos.entryPrice) * pos.size * (pos.side === 'sell' ? -1 : 1);
     state.balance += pnl;
     state.history.unshift({ ...pos, exitPrice, pnl, closedAt: Date.now() });
     state.positions.splice(idx, 1);
     save();
     render();
-    showToast(`Closed ${pos.symbol}: ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}`);
+    showToast(`${reason} ${pos.symbol}: ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}`);
+  }
+
+  // sl/tp are captured on every position at order time but, until now,
+  // nothing ever checked live price against them - a stop-loss just sat
+  // there forever without being able to fire. Same polling cadence/pattern
+  // as checkWorkingOrderFills(). Direction depends on side: a long's stop is
+  // below entry and target is above; a short is the mirror image.
+  function checkPositionStops() {
+    if (!state.positions.length) return;
+    const toClose = [];
+    state.positions.forEach(pos => {
+      if (pos.sl == null && pos.tp == null) return;
+      const price = currentPrice(pos.symbol);
+      if (price == null) return;
+      const isLong = pos.side !== 'sell';
+      const hitSl = pos.sl != null && (isLong ? price <= pos.sl : price >= pos.sl);
+      const hitTp = pos.tp != null && (isLong ? price >= pos.tp : price <= pos.tp);
+      if (hitSl || hitTp) toClose.push({ pos, price, reason: hitSl ? 'Stop-loss hit' : 'Take-profit hit' });
+    });
+    toClose.forEach(({ pos, price, reason }) => closePositionAt(pos, price, reason));
   }
 
   function cancelOrder(id) {
