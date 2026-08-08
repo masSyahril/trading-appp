@@ -1,24 +1,28 @@
 /*
- * TradeFlow dark theme — TradingView-inspired palette as CSS custom properties.
- * Values adapted from tryout-stock/css/tradingview-style.css (up/down colors changed
- * to the TradeFlow spec: #26a69a / #ef5350).
+ * TradeFlow theme — "Comfort" slate palette (soft dark, TradingView-inspired
+ * layout) as CSS custom properties. This is the app's default look; the
+ * denser, higher-contrast original palette lives under [data-theme="compact"]
+ * near the bottom of this file, toggled from the header button.
  */
 :root {
-  --tf-bg: #131722;
-  --tf-bg-panel: #1e222d;
-  --tf-bg-hover: #2a2e39;
-  --tf-border: #2a2e39;
-  --tf-border-bright: #363c4e;
-  --tf-text: #d1d4dc;
-  --tf-text-muted: #787b86;
-  --tf-up: #26a69a;
-  --tf-down: #ef5350;
+  --tf-bg: #0f172a;            /* slate-900 */
+  --tf-bg-panel: #1e293b;      /* slate-800 */
+  --tf-bg-hover: #334155;      /* slate-700 */
+  --tf-border: #334155;        /* slate-700 */
+  --tf-border-bright: #475569; /* slate-600 */
+  --tf-text: #e2e8f0;          /* slate-200 - softer than pure white */
+  --tf-text-muted: #94a3b8;    /* slate-400 */
+  --tf-up: #10b981;            /* emerald-500 */
+  --tf-down: #ef4444;          /* muted crimson */
   --tf-accent: #2962ff;
 }
 
 body {
   background: var(--tf-bg);
   color: var(--tf-text);
+  /* !important: <body> also carries Tailwind's .font-sans utility class,
+     which outranks this plain element selector on specificity alone. */
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif !important;
 }
 
 header {
@@ -38,15 +42,37 @@ header {
 
 #watchlist li {
   border-color: var(--tf-border) !important;
+  transition: background-color 0.15s ease;
 }
 
 #watchlist li:hover {
   background: var(--tf-bg-hover) !important;
 }
 
+#watchlist li:active {
+  background: var(--tf-border-bright) !important;
+}
+
 #watchlist li.bg-slate-800 {
   background: var(--tf-bg-hover) !important;
 }
+
+/* Price-flash: watchlist fully rebuilds its <li> markup on every render (see
+   renderWatchlist() in stock-app.prod.js), so a transition on an existing
+   element never fires - an @keyframes animation applied on render does,
+   since it plays automatically the moment the class is present, new element
+   or not. Direction is decided in JS by comparing against the last rendered
+   price per symbol. */
+@keyframes price-flash-up {
+  0% { background-color: rgba(38, 166, 154, 0.35); border-radius: 3px; }
+  100% { background-color: transparent; }
+}
+@keyframes price-flash-down {
+  0% { background-color: rgba(239, 83, 80, 0.35); border-radius: 3px; }
+  100% { background-color: transparent; }
+}
+.price-flash-up { animation: price-flash-up 700ms ease-out; }
+.price-flash-down { animation: price-flash-down 700ms ease-out; }
 
 main,
 #chart {
@@ -65,12 +91,18 @@ main,
   background: transparent;
   border: none;
   cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
 }
 
 .draw-tool-btn:hover,
 #draw-clear-btn:hover {
   background: var(--tf-bg-hover);
   color: var(--tf-text);
+}
+
+.draw-tool-btn:active,
+#draw-clear-btn:active {
+  transform: scale(0.93);
 }
 
 .draw-tool-btn.active {
@@ -106,30 +138,39 @@ main,
   color: #fca5a5;
 }
 
-#expand-sidebar {
-  background: var(--tf-bg) !important;
-  border-color: var(--tf-border) !important;
-}
-
 #chart {
   border-color: var(--tf-border) !important;
 }
 
-/* Solid always-visible control panel (not a semi-transparent overlay) so its
-   buttons read as a distinct toolbar rather than floating over the chart. */
+/* Docked glassmorphism toolbar: stays a real, always-visible bar above the
+   chart canvas (never an absolutely-positioned overlay sitting on top of the
+   candles/grid - that would also intercept the chart's own mouse handling
+   for crosshair/drawing tools), but reads as a distinct floating dock via a
+   translucent, blurred background instead of a flat panel fill. */
 #chart-toolbar {
-  background: var(--tf-bg-panel) !important;
+  background: rgba(30, 41, 59, 0.72) !important;
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
   border-color: var(--tf-border) !important;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
 }
 
+[data-theme="compact"] #chart-toolbar {
+  background: rgba(30, 34, 45, 0.85) !important;
+}
+
 .toolbar-btn {
   border: 1px solid transparent;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
 }
 
 .toolbar-btn:hover {
   border-color: var(--tf-border-bright) !important;
   background: var(--tf-bg-hover) !important;
+}
+
+.toolbar-btn:active {
+  transform: scale(0.93);
 }
 
 .toolbar-btn.active {
@@ -223,6 +264,10 @@ main,
   color: #60a5fa;
 }
 
+.order-type-tab:active {
+  transform: scale(0.97);
+}
+
 .order-field {
   display: flex;
   flex-direction: column;
@@ -278,10 +323,15 @@ main,
   cursor: pointer;
   background: transparent;
   border: 1px solid transparent;
+  transition: background-color 0.15s ease, transform 0.1s ease;
 }
 
 .drawer-tab:hover {
   background: var(--tf-bg-hover);
+}
+
+.drawer-tab:active {
+  transform: scale(0.97);
 }
 
 .drawer-tab.active {
@@ -320,6 +370,14 @@ main,
   white-space: nowrap;
 }
 
+#bottom-drawer table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+#bottom-drawer table tbody tr:hover {
+  background: var(--tf-bg-hover);
+}
+
 .drawer-empty {
   text-align: center !important;
   color: var(--tf-text-muted);
@@ -338,11 +396,16 @@ main,
   color: var(--tf-text);
   cursor: pointer;
   margin-right: 4px;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
 }
 
 .drawer-action-btn:hover {
   border-color: var(--tf-border-bright);
   background: var(--tf-bg-hover);
+}
+
+.drawer-action-btn:active {
+  transform: scale(0.94);
 }
 
 .drawer-action-danger {
@@ -366,4 +429,271 @@ main,
   font-weight: 700;
   color: var(--tf-text);
   margin-top: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Comfort mode is the app's default (see :root above) - this block maps raw
+   Tailwind utility classes (which don't read CSS variables on their own) to
+   the --tf-* custom properties every rule above already consumes. Left
+   ungated (applies in both default and [data-theme="compact"] scope) so the
+   same class always resolves to whatever --tf-* means in its current scope -
+   same !important pattern this file already uses for .text-emerald-400 etc.
+   ═══════════════════════════════════════════════════════════════════════ */
+body,
+header,
+#sidebar,
+#watchlist li,
+#order-panel,
+#bottom-drawer,
+.indicator-panel,
+#chart-toolbar {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.bg-slate-900,
+.bg-slate-950 {
+  background-color: var(--tf-bg) !important;
+}
+.bg-slate-800 {
+  background-color: var(--tf-bg-panel) !important;
+}
+.bg-slate-700 {
+  background-color: var(--tf-bg-hover) !important;
+}
+.border-slate-700,
+.border-slate-800 {
+  border-color: var(--tf-border) !important;
+}
+.border-slate-600,
+.border-slate-500 {
+  border-color: var(--tf-border-bright) !important;
+}
+.text-slate-400 {
+  color: var(--tf-text-muted) !important;
+}
+.text-slate-300,
+.text-slate-200,
+.text-slate-100 {
+  color: var(--tf-text) !important;
+}
+
+/* Rounded cards with a bit more breathing room. Radius-only on the panels
+   that have calibrated fixed heights elsewhere (.indicator-panel's header is
+   a hard-coded 24px strip with a price-scale-clearing 60px right padding -
+   border-radius doesn't affect box dimensions, so it's safe there even
+   though padding changes would not be); padding increases are confined to
+   plain, non-height-constrained containers (watchlist rows, drawer table
+   cells) to avoid disturbing that layout math. */
+.indicator-panel,
+#order-panel,
+#bottom-drawer,
+#sidebar,
+#chart-toolbar,
+#chart-overlay-legend,
+.drawer-action-btn,
+.order-field input,
+.order-field select {
+  border-radius: 10px;
+}
+
+#watchlist li {
+  padding: 14px !important;
+}
+#bottom-drawer table td,
+#bottom-drawer table th {
+  padding: 8px 12px;
+}
+
+/* Monospace, tabular-width numerals for financial figures (prices, sizes,
+   P&L) so a live update never shifts surrounding layout. */
+.font-mono,
+#bottom-drawer table {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Compact mode - the original denser, higher-contrast TradingView-style
+   palette and spacing, opted into via [data-theme="compact"] on <html>
+   (stock-app.prod.js's setupThemeToggle()); default (no attribute) is
+   Comfort mode above. Only the --tf-* values need to change here - every
+   rule elsewhere in this file already resolves through them.
+   ═══════════════════════════════════════════════════════════════════════ */
+[data-theme="compact"] {
+  --tf-bg: #131722;
+  --tf-bg-panel: #1e222d;
+  --tf-bg-hover: #2a2e39;
+  --tf-border: #2a2e39;
+  --tf-border-bright: #363c4e;
+  --tf-text: #d1d4dc;
+  --tf-text-muted: #787b86;
+  --tf-up: #26a69a;
+  --tf-down: #ef5350;
+}
+
+[data-theme="compact"] .indicator-panel,
+[data-theme="compact"] #order-panel,
+[data-theme="compact"] #bottom-drawer,
+[data-theme="compact"] #sidebar,
+[data-theme="compact"] #chart-toolbar,
+[data-theme="compact"] #chart-overlay-legend,
+[data-theme="compact"] .drawer-action-btn,
+[data-theme="compact"] .order-field input,
+[data-theme="compact"] .order-field select {
+  border-radius: 4px;
+}
+
+[data-theme="compact"] #watchlist li {
+  padding: 12px !important;
+}
+[data-theme="compact"] #bottom-drawer table td,
+[data-theme="compact"] #bottom-drawer table th {
+  padding: 5px 10px;
+}
+[data-theme="compact"] .font-mono,
+[data-theme="compact"] #bottom-drawer table {
+  font-family: ui-monospace, monospace;
+  font-variant-numeric: normal;
+}
+
+/* ─── Theme toggle button (header) ──────────────────────────────────────── */
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--tf-border);
+  background: var(--tf-bg-panel);
+  color: var(--tf-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+}
+
+.theme-toggle-btn:hover {
+  border-color: var(--tf-border-bright);
+  color: var(--tf-text);
+}
+
+.theme-toggle-btn:active {
+  transform: scale(0.95);
+}
+
+.theme-toggle-btn[aria-pressed="true"] {
+  border-color: var(--tf-up);
+  color: var(--tf-up);
+  background: rgba(16, 185, 129, 0.12);
+}
+
+@media (max-width: 768px) {
+  .theme-toggle-label {
+    display: none;
+  }
+}
+
+/* ─── Watchlist ticker badges ────────────────────────────────────────────── */
+.ticker-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: var(--tf-bg-hover);
+  color: var(--tf-text);
+  border: 1px solid var(--tf-border);
+  flex-shrink: 0;
+}
+.ticker-badge.badge-up { border-color: rgba(16, 185, 129, 0.5); color: var(--tf-up); }
+.ticker-badge.badge-down { border-color: rgba(239, 68, 68, 0.5); color: var(--tf-down); }
+
+/* ─── Watchlist collapsed icon bar (shown instead of the sidebar itself when
+   collapsed) - a slim rail of clickable ticker badges plus the expand
+   caret, so collapsing the watchlist doesn't lose one-click symbol access. */
+#watchlist-rail {
+  background: var(--tf-bg) !important;
+  border-color: var(--tf-border) !important;
+  overflow-y: auto;
+}
+.watchlist-rail-expand {
+  width: 100%;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tf-text-muted);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--tf-border);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.watchlist-rail-expand:hover { background: var(--tf-bg-hover); color: var(--tf-text); }
+.watchlist-rail-badge {
+  width: 28px;
+  height: 28px;
+  margin: 4px auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 800;
+  background: var(--tf-bg-panel);
+  color: var(--tf-text-muted);
+  border: 1px solid var(--tf-border);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+.watchlist-rail-badge:hover { border-color: var(--tf-border-bright); color: var(--tf-text); }
+.watchlist-rail-badge:active { transform: scale(0.92); }
+.watchlist-rail-badge.active { border-color: var(--tf-accent); color: #93c5fd; background: rgba(41, 98, 255, 0.15); }
+
+/* ─── Order ticket: quick position-size % buttons ───────────────────────── */
+.size-quick-row {
+  display: flex;
+  gap: 4px;
+}
+.size-quick-btn {
+  flex: 1;
+  padding: 4px 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--tf-text-muted);
+  background: var(--tf-bg-panel);
+  border: 1px solid var(--tf-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+.size-quick-btn:hover { border-color: var(--tf-up); color: var(--tf-up); }
+.size-quick-btn:active { transform: scale(0.94); }
+
+/* ─── Order ticket: Risk/Reward summary made visually distinct from the rest
+   of the form via an accent edge, sitting directly above the BUY/SELL row. */
+.rr-summary-box {
+  border-left: 3px solid var(--tf-accent) !important;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2) inset;
+}
+
+/* ─── Bottom drawer: negative-available-margin warning pill ─────────────── */
+@keyframes margin-warning-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55); }
+  50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+.drawer-stat-value.margin-warning {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--tf-down) !important;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  animation: margin-warning-pulse 1.6s ease-in-out infinite;
 }

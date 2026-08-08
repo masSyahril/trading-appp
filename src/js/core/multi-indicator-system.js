@@ -87,11 +87,10 @@ function computeBollinger4SD(K_close, MA_day, SD_day) {
     percentB[i]=(K_close[i]-lowerBand[i])/(upperBand[i]-lowerBand[i])*100;
     Bandwith[i]=(upperBand[i]-lowerBand[i])/MA[tp]*100;
   }
-  // return upperBand, MA, lowerBand;
-  return {upperBand_lowerBand, percentB, Bandwith};
-  //Normally drawing the upperBand, MA, lowerBand figures in the K_Line area.
+  // upperBand/MA/lowerBand are drawn in the K_Line area (main chart overlay);
+  // upperBand_lowerBand/percentB/Bandwith are drawn in the small window (sub-pane).
+  return {upperBand, MA, lowerBand, upperBand_lowerBand, percentB, Bandwith};
   //MA_day=10, SD_day=20, THREE Indicators[]=29,30,...,2000.
-  //drawing the upperBand_lowerBand, percentB, Bandwith figures in the small window.
 }
 // REX Oscillator: TVB = 2*close - (high + low), REX = EMA(TVB, esp)
 // function computeREXOscillator(K_high, K_low, K_close, esp) {
@@ -1471,7 +1470,7 @@ class MultiIndicatorSystem {
           compute: (data, params) => this.computeVolAccuDistOsc(data, params.esp),
           render: (chart, data, colors, seriesMap) => this.renderVolAccuDistOsc(chart, data, colors, seriesMap)
         },
-        HighLowOsc:{
+        HighLowOsc:{ // not finish
           name: 'High and Low OSCillator',
           type: 'volume',
           defaultParams: { esp: 9 },
@@ -1480,8 +1479,78 @@ class MultiIndicatorSystem {
           compute: (data, params) => this.computeHighLowOsc(data, params.esp),
           render: (chart, data, colors, seriesMap) => this.renderHighLowOsc(chart, data, colors, seriesMap)
         },
-
-
+        ZeroLagEMA:{
+          name: 'Zero Lag EMA',
+          type: 'trend',
+          defaultParams: { day: 10 },
+          paramLabels: { day: 'Period' },
+          minPeriod: 10,
+          compute: (data, params) => this.computeZeroLagEMA(data, params.day),
+          render: (chart, data, colors, seriesMap) => this.renderZeroLagEMA(chart, data, colors, seriesMap)
+        }, 
+        StochasticEMA:{
+          name: 'Stochastic EMA',
+          type: 'oscillator',
+          defaultParams: { day: 10 },
+          paramLabels: { day: 'Period' },
+          minPeriod: 10,
+          compute: (data, params) => this.computeStochasticEMA(data, params.day),
+          render: (chart, data, colors, seriesMap) => this.renderStochasticEMA(chart, data, colors, seriesMap)
+        }, 
+        JurikMovingAverage: {
+          name: 'Jurik Moving Average',
+          type: 'trend',
+          defaultParams: { length: 20 },
+          paramLabels: { length: 'Length' },
+          minPeriod: 10,
+          compute: (data, params) => this.computeJurikMovingAverage(data, params.length),
+          render: (chart, data, colors, seriesMap) => this.renderJurikMovingAverage(chart, data, colors, seriesMap)
+        },
+        AdaptiveMACD: {
+          name: 'Adaptive MACD',
+          type: 'oscillator',
+          defaultParams: { esp:5 },
+          paramLabels: { esp: 'Smooth' },
+          minPeriod: 3,
+          compute: (data, params) => this.computeAdaptiveMACD(data, params.esp),
+          render: (chart, data, colors, seriesMap) => this.renderAdaptiveMACD(chart, data, colors, seriesMap)
+        }, 
+        StochasticEMA_esp:  {
+          name: 'Stocastic EMA)_esp',
+          type: 'oscillator',
+          defaultParams: { esp:9, KD_num: 10 },
+          paramLabels: { esp: 'Smooth', KD_num: 'KD Number' },
+          minPeriod: 3,
+          compute: (data, params) => this.computeStochasticEMA_esp(data, params.esp, params.KD_num),
+          render: (chart, data, colors, seriesMap) => this.renderStochasticEMA_esp(chart, data, colors, seriesMap)
+        }, 
+        ATRPercentage: {
+          name: ' ATR Percentage',
+          type: 'volatility',
+          defaultParams: {ATR_num: 14},
+          paramLabels: {ATR_num: 'ATR Period'},
+          minPeriod: 7,
+          compute: (data, params) => this.computeATRPercentage(data, params.ATR_num),
+          render: (chart, data, colors, seriesMap) => this.renderATRPercentage(chart, data, colors, seriesMap)
+        },
+        HistoricalVolatility_Close: {
+          name: 'Historical Volatility (Close)',
+          type: 'volatility',
+          defaultParams: {HV_num: 10},
+          paramLabels: {HV_num: 'HV Period'},
+          minPeriod: 10,
+          compute: (data, params) => this.computeHistoricalVolatility_Close(data, params.HV_num),
+          render: (chart, data, colors, seriesMap) => this.renderHistoricalVolatility_Close(chart, data, colors, seriesMap)
+        },
+        HistoricalVolatility_TP: {
+          name: 'Historical Volatility (True Range)',
+          type: 'volatility',
+          defaultParams: {HV_num: 10},
+          paramLabels: {HV_num: 'HV Period'},
+          minPeriod: 10,
+          compute: (data, params) => this.computeHistoricalVolatility_TP(data, params.HV_num),
+          render: (chart, data, colors, seriesMap) => this.renderHistoricalVolatility_TP(chart, data, colors, seriesMap)
+        }
 
     // last definition
     };
@@ -6653,6 +6722,7 @@ computeWilliamR(data, day = 10) {
   return { WilliamR };
 }
 
+
 computeVolAccuDistOsc(data, esp = 9) {
   const highs = data.map(d => d.high);
   const lows = data.map(d => d.low);
@@ -6692,7 +6762,267 @@ computeHighLowOsc(data, esp = 9) {
   }
   return{HLO: HLO_data, eHLO: eHLO_data};
 }
+
+computeStochasticEMA(data, KD_day = 10, esp = 9) {
+  const highs = data.map(d => d.high);
+  const lows = data.map(d => d.low);
+  const closes = data.map(d => d.close);
+  const len = closes.length;
+  const K_EMA = new Array(len).fill(null);
+  const D_EMA = new Array(len).fill(null);
+  if (len === 0 || typeof window.StochasticEMA !== 'function') return { K_EMA, D_EMA };
+  const out = window.StochasticEMA(highs, lows, closes, KD_day, esp);
+  const s1 = out.K_EMA || [];
+  const s2 = out.D_EMA || [];
+  for (let i = 0; i < len; i++) {
+    const v1 = s1[i]; K_EMA[i] = (v1 != null && Number.isFinite(v1)) ? v1 : null;
+    const v2 = s2[i]; D_EMA[i] = (v2 != null && Number.isFinite(v2)) ? v2 : null;
+  }
+  return { K_EMA, D_EMA };
+}
+
+
+computeJurikMovingAverage(data, length = 10) {
+  const highs = data.map(d => d.high);
+  const lows = data.map(d => d.low);
+  const closes = data.map(d => d.close);
+  const len = closes.length;  
+  const JurikMA = new Array(len).fill(null);
+  if (len === 0 || typeof window.JurikMovingAverage !== 'function') return { JurikMA };
+  const out = window.JurikMovingAverage(highs, lows, closes, length);
+  const s1 = out.JurikMA || [];
+  for (let i = 0; i < len; i++) {
+    const v1 = s1[i]; JurikMA[i] = (v1 != null && Number.isFinite(v1)) ? v1 : null;
+  }
+  return { JurikMA };
+}
+
+computeAdaptiveMACD(data, esp = 5){
+  const highs = data.map(d => d.high);
+  const lows = data.map(d => d.low);
+  const closes = data.map(d => d.close);
+  const len = closes.length;
+  const Adaptive_MACD = new Array(len).fill(null);
+  const Signal = new Array(len).fill(null);
+  if(len === 0 || typeof window.AdaptiveMACD !== 'function') return {Adaptive_MACD, Signal};
+  const out = window.AdaptiveMACD(highs, lows, closes, esp);
+  const s1 = out.Adaptive_MACD || [];
+  const s2 = out.Signal || [];
+  for(let i = 0; i < len; i++){
+    const v1 = s1[i]; Adaptive_MACD[i] = (v1 !== null && Number.isFinite(v1)) ? v1 : null;
+    const v2 = s2[i]; Signal[i] = (v2 !== null && Number.isFinite(v2)) ? v2 : null;
+  }
+  return {Adaptive_MACD, Signal};
+
+}
+
+computeStochasticEMA_esp(data, esp = 9 , KD_num = 10) {
+  const highs = data.map(d => d.high);
+  const lows = data.map(d => d.low);
+  const closes = data.map(d => d.close);
+  const len = closes.length;
+  const eK_EMA = new Array(len).fill(null);
+  const eD_EMA = new Array(len).fill(null);
+  if (len === 0 || typeof window.StochasticEMA_esp !== 'function') return { eK_EMA, eD_EMA };
+  const out = window.StochasticEMA_esp(highs, lows, closes, esp, KD_num);
+  const s1 = out.eK_EMA || [];
+  const s2 = out.eD_EMA || [];
+  for (let i = 0; i < len; i++) {
+    const v1 = s1[i]; eK_EMA[i] = (v1 != null && Number.isFinite(v1)) ? v1 : null;
+    const v2 = s2[i]; eD_EMA[i] = (v2 != null && Number.isFinite(v2)) ? v2 : null;
+  }
+  return { eK_EMA, eD_EMA };  
+}
+
+computeATRPercentage(data, ATR_num = 14) {
+  const highs = data.map(d => d.high);
+  const lows = data.map(d => d.low);
+  const closes = data.map(d => d.close);
+  const len = closes.length;
+  const ATR_percent = new Array(len).fill(null);
+  if (len === 0 || typeof window.ATRPercentage !== 'function') return { ATR_percent };
+  const out = window.ATRPercentage(highs, lows, closes, ATR_num);
+  const s1 = out.ATR_percent || [];
+  for (let i = 0; i <len; i++) {
+    const v1 = s1[i]; ATR_percent[i] = (v1 != null && Number.isFinite(v1)) ? v1 : null;
+  }
+  return { ATR_percent };
+}
+
+  computeHistoricalVolatility_Close(data, HV_num = 10) { 
+    const highs = data.map(d => d.high);
+    const lows = data.map(d => d.low);
+    const closes = data.map(d => d.close);
+    const len = closes.length;
+    const HV = new Array(len).fill(null);
+    if (len === 0 || typeof window.HistoricalVolatility_Close !== 'function') return { HV };
+    const out = window.HistoricalVolatility_Close(highs, lows, closes, HV_num);
+    const s1 = out.HV || [];
+    for (let i = 0; i <len; i++) {
+      const v1 = s1[i]; HV[i] = (v1 != null && Number.isFinite(v1)) ? v1 : null;
+    }
+    return { HV };
+  }
+
+computeHistoricalVolatility_TP(data, HV_num = 10) { 
+   const highs = data.map(d => d.high);
+  const lows = data.map(d => d.low);
+  const closes = data.map(d => d.close);
+  const len = closes.length;
+  const HV = new Array(len).fill(null);
+  if (len === 0 || typeof window.HistoricalVolatility_TP !== 'function') return { HV };
+  const out = window.HistoricalVolatility_TP(highs, lows, closes, HV_num);
+  const s1 = out.HV || [];
+  for (let i = 0; i <len; i++) {
+    const v1 = s1[i]; HV[i] = (v1 != null && Number.isFinite(v1)) ? v1 : null;
+  }
+  return { HV };
+}
+
 // ===================================LAST COMPUTED INDICATORS:===============================
+
+renderHistoricalVolatility_TP(chart, data, colors, seriesMap){
+  if(!data || !data.HV) return;
+  if(!seriesMap.has('HV')) {
+    seriesMap.set('HV', chart.addLineSeries({
+      color: colors.LINE1,
+      lineWidth: 2,
+      title: 'HV',
+      crosshairMarkerVisible: false,
+      priceLineVisible: false,
+    }));
+  }
+
+  const HV_data = this.seriesWithLeadInPadding(data.HV, (v) => (v == null || isNaN(v)) ? null : v);
+  seriesMap.get('HV').setData(HV_data);
+}
+
+renderHistoricalVolatility_Close(chart, data, colors, seriesMap){
+  if(!data || !data.HV) return;
+  if(!seriesMap.has('HV')) {
+    seriesMap.set('HV', chart.addLineSeries({
+      color: colors.LINE1,
+      lineWidth: 2,
+      title: 'HV',
+      crosshairMarkerVisible: false,
+      priceLineVisible: false,
+    }));
+  }
+
+  const HV_data = this.seriesWithLeadInPadding(data.HV, (v) => (v == null || isNaN(v)) ? null : v);
+  seriesMap.get('HV').setData(HV_data);
+}
+
+renderATRPercentage(chart, data, colors, seriesMap){
+  if(!data || !data.ATR_percent) return;
+  if(!seriesMap.has('ATR_percent')) {
+    seriesMap.set('ATR_percent', chart.addLineSeries({
+      color: colors.LINE1,
+      lineWidth: 2,
+      title: 'ATR_percent',
+      crosshairMarkerVisible: false,
+      priceLineVisible: false,
+    }));
+  }
+
+  const ATR_percent_data = this.seriesWithLeadInPadding(data.ATR_percent, (v) => (v == null || isNaN(v)) ? null : v);
+  seriesMap.get('ATR_percent').setData(ATR_percent_data);
+}
+
+renderStochasticEMA_esp(chart, data, colors, seriesMap){
+  if(!data || !data.eK_EMA) return;
+  if(!seriesMap.has('eK_EMA')) {
+    seriesMap.set('eK_EMA', chart.addLineSeries({
+      color: colors.LINE1,
+      lineWidth: 2,
+      title: 'eK_EMA',
+      crosshairMarkerVisible: false,
+      priceLineVisible: false,
+    }));
+  }
+  if(!seriesMap.has('eD_EMA')) {
+    seriesMap.set('eD_EMA', chart.addLineSeries({
+      color: colors.LINE2,
+      lineWidth: 2,
+      title: 'eD_EMA',
+      crosshairMarkerVisible: false,
+      priceLineVisible: false,  
+  }));
+  }
+  const eK_EMA_data = this.seriesWithLeadInPadding(data.eK_EMA, (v) => (v == null || isNaN(v)) ? null : v);
+  const eD_EMA_data = this.seriesWithLeadInPadding(data.eD_EMA, (v) => (v == null || isNaN(v)) ? null : v);
+  seriesMap.get('eK_EMA').setData(eK_EMA_data);
+  seriesMap.get('eD_EMA').setData(eD_EMA_data);
+}
+
+renderAdaptiveMACD(chart, data, colors, seriesMap){
+  if(!data || !data.Adaptive_MACD) return;
+  if(!seriesMap.has('Adaptive_MACD')) {
+    seriesMap.set('Adaptive_MACD', chart.addLineSeries({
+      color: colors.LINE1,
+      lineWidth: 2,
+      title: 'Adaptive_MACD',
+      crosshairMarkerVisible: false,
+      priceLineVisible: false,
+    }));
+  }
+  if(!seriesMap.has('Signal')) {  
+    seriesMap.set('Signal', chart.addLineSeries({
+      color: colors.LINE2,
+      lineWidth: 2,
+      title: 'Signal',
+      crosshairMarkerVisible: false,
+      priceLineVisible: false,
+    }));
+  }
+
+  const Adaptive_MACD_data = this.seriesWithLeadInPadding(data.Adaptive_MACD, (v) => (v == null || isNaN(v)) ? null : v);
+  const Signal_data = this.seriesWithLeadInPadding(data.Signal, (v) => (v == null || isNaN(v)) ? null : v);
+  seriesMap.get('Adaptive_MACD').setData(Adaptive_MACD_data);
+  seriesMap.get('Signal').setData(Signal_data);
+}
+
+renderJurikMovingAverage(chart, data, colors, seriesMap){
+  if(!data || !data.JurikMA) return;
+  if(!seriesMap.has('JurikMA')) {
+    seriesMap.set('JurikMA', chart.addLineSeries({
+      color: colors.LINE1,
+      lineWidth: 2,
+      title: 'JurikMA',
+      crosshairMarkerVisible: false,
+      priceLineVisible: false,
+    }));
+  }
+
+  const JurikMA_data = this.seriesWithLeadInPadding(data.JurikMA, (v) => (v == null || isNaN(v)) ? null : v);
+  seriesMap.get('JurikMA').setData(JurikMA_data);
+}
+
+renderStochasticEMA(chart, data, colors, seriesMap){
+  if(!data || !data.K_EMA) return;
+  if(!seriesMap.has('K_EMA')) {
+    seriesMap.set('K_EMA', chart.addLineSeries({
+      color: colors.LINE1,
+      lineWidth: 2,
+      title: 'K_EMA',
+      crosshairMarkerVisible: false,
+      priceLineVisible: false,
+    }));
+  }
+  if(!seriesMap.has('D_EMA')) {
+    seriesMap.set('D_EMA', chart.addLineSeries({
+      color: colors.LINE2,
+      lineWidth: 2,
+      title: 'D_EMA',
+      crosshairMarkerVisible: false,  
+    priceLineVisible: false,
+    }));
+  }
+  const KEMA_data = this.seriesWithLeadInPadding(data.K_EMA, (v) => (v == null || isNaN(v)) ? null : v);
+  const DEMA_data = this.seriesWithLeadInPadding(data.D_EMA, (v) => (v == null || isNaN(v)) ? null : v);
+  seriesMap.get('K_EMA').setData(KEMA_data);
+  seriesMap.get('D_EMA').setData(DEMA_data);
+}
 
 renderHighLowOsc(chart, data, colors, seriesMap){
   if(!data || !data.HLO) return;

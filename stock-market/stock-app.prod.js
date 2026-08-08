@@ -17,6 +17,10 @@
   let positions = loadLS(STOCK_LS_KEYS.positions, {});
   let orders = loadLS(STOCK_LS_KEYS.orders, []);
   let localCandles = loadLS(STOCK_LS_KEYS.localCandles, {});
+  // Last price actually painted per symbol, so renderWatchlist() (which fully
+  // rebuilds its <li> markup every call) can tell whether a fresh price is an
+  // up-tick or down-tick and flash it accordingly - not persisted, resets each load.
+  const lastFlashedPrice = {};
 
   let currentSymbol = watchlist[0] || "AAPL";
   let timeframe = loadLS("stock_timeframe", DEFAULT_TIMEFRAME);
@@ -103,10 +107,26 @@
     { id:'KAMA',   group:'Other',           label:'Adaptive MA', color:'#4ade80', defaultParam:10  },
     { id:'HullMA', group:'Other',           label:'Hull MA',     color:'#fbbf24', defaultParam:10  },
     { id:'DEMA20', group:'Other',           label:'DEMA',        color:'#e879f9', defaultParam:20  },
+    { id:'ZLEMA',  group:'Other',           label:'Zero Lag EMA', color:'#fb923c', defaultParam:20  },
+    { id:'TEMA',   group:'Other',           label:'Triple EMA',   color:'#facc15', defaultParam:20  },
+    { id:'VIDYA',  group:'Other',           label:'VIDYA',        color:'#2dd4bf', defaultParam:10  },
+    { id:'MGD',    group:'Other',           label:'McGinley Dynamic', color:'#f472b6', defaultParam:10 },
     { id:'WVC',    group:'Bands', label:'WilliamsVC', color:'#38bdf8', colorUpper:'#f87171', colorLower:'#4ade80', multi:true, defaultParam:10, defaultParam2:9, paramLabel:'day', paramLabel2:'esp' },
+    { id:'BOLL4SD', group:'Bands', label:'Bollinger 4SD', color:'#c084fc', multi:true, defaultParam:10, defaultParam2:20, paramLabel:'MA', paramLabel2:'SD' },
     { id:'CKstop',          group:'Bands', label:'CK Stop',      color:'#4ade80', colorLong:'#4ade80', colorShort:'#f87171', multi:true, defaultParam:10, paramLabel:'n' },
     { id:'DonchianChannel', group:'Bands', label:'Donchian',      color:'#60a5fa',                                              multi:true, defaultParam:20, paramLabel:'n' },
     { id:'ChandelierExit',  group:'Bands', label:'Chandelier',    color:'#fbbf24', colorLong:'#4ade80', colorShort:'#f87171', multi:true, defaultParam:20, paramLabel:'n' },
+    { id:'FCB',    group:'Bands', label:'Fractal Chaos Bands', color:'#94a3b8', colorLong:'#f87171', colorShort:'#4ade80', multi:true },
+    { id:'PivotClassic',    group:'Pivots', label:'Pivot Classic',    color:'#60a5fa', multi:true,
+      pivotLines:[{key:'Resistance3',role:'resistance'},{key:'Resistance2',role:'resistance'},{key:'Resistance1',role:'resistance'},{key:'Support1',role:'support'},{key:'Support2',role:'support'},{key:'Support3',role:'support'}] },
+    { id:'PivotWoodie',     group:'Pivots', label:'Pivot Woodie',     color:'#a78bfa', multi:true,
+      pivotLines:[{key:'Resistance2',role:'resistance'},{key:'Resistance1',role:'resistance'},{key:'Support1',role:'support'},{key:'Support2',role:'support'}] },
+    { id:'PivotFibonacci',  group:'Pivots', label:'Pivot Fibonacci',  color:'#fbbf24', multi:true,
+      pivotLines:[{key:'Resistance3',role:'resistance'},{key:'Resistance2',role:'resistance'},{key:'Resistance1',role:'resistance'},{key:'Support1',role:'support'},{key:'Support2',role:'support'},{key:'Support3',role:'support'}] },
+    { id:'PivotCamarilla',  group:'Pivots', label:'Pivot Camarilla',  color:'#34d399', multi:true,
+      pivotLines:[{key:'Resist4',role:'resistance'},{key:'Resist3',role:'resistance'},{key:'Resist2',role:'resistance'},{key:'Resist1',role:'resistance'},{key:'Support1',role:'support'},{key:'Support2',role:'support'},{key:'Support3',role:'support'},{key:'Support4',role:'support'}] },
+    { id:'PivotDeMark',     group:'Pivots', label:'Pivot DeMark',     color:'#c084fc', multi:true,
+      pivotLines:[{key:'Resistance1',role:'resistance'},{key:'PivotPoints',role:'pivot'},{key:'Support1',role:'support'}] },
   ];
 
   // ─── Compute helpers ─────────────────────────────────────────────────────
@@ -194,6 +214,109 @@
     } catch (e) { return null; }
   }
 
+  function computeZeroLagEMAData(data, period) {
+    const fn = window.ZeroLagEMA;
+    if (!fn) return null;
+    const highs = data.map(d => d.high);
+    const lows = data.map(d => d.low);
+    const closes = data.map(d => d.close);
+    try {
+      const out = fn(highs, lows, closes, period);
+      const src = out && out.ZeroLag_EMA ? out.ZeroLag_EMA : [];
+      return data.map((d, i) => ({ time: d.time, value: (src[i] != null && Number.isFinite(src[i])) ? src[i] : null }));
+    } catch (e) { return null; }
+  }
+
+  function computeTripleEMAData(data, period) {
+    const fn = window.TripleEMA;
+    if (!fn) return null;
+    const highs = data.map(d => d.high);
+    const lows = data.map(d => d.low);
+    const closes = data.map(d => d.close);
+    try {
+      const out = fn(highs, lows, closes, period);
+      const src = out && out.Triple_EMA ? out.Triple_EMA : [];
+      return data.map((d, i) => ({ time: d.time, value: (src[i] != null && Number.isFinite(src[i])) ? src[i] : null }));
+    } catch (e) { return null; }
+  }
+
+  function computeVIDYAData(data, period) {
+    const fn = window.VariableIndexDynamicAvg;
+    if (!fn) return null;
+    const highs = data.map(d => d.high);
+    const lows = data.map(d => d.low);
+    const closes = data.map(d => d.close);
+    try {
+      const out = fn(highs, lows, closes, period);
+      const src = out && out.VIDYA ? out.VIDYA : [];
+      return data.map((d, i) => ({ time: d.time, value: (src[i] != null && Number.isFinite(src[i])) ? src[i] : null }));
+    } catch (e) { return null; }
+  }
+
+  function computeMGDData(data, period) {
+    const fn = window.McGinleyDynamic;
+    if (!fn) return null;
+    const highs = data.map(d => d.high);
+    const lows = data.map(d => d.low);
+    const closes = data.map(d => d.close);
+    try {
+      const out = fn(highs, lows, closes, period);
+      const src = out && out.MGD ? out.MGD : [];
+      return data.map((d, i) => ({ time: d.time, value: (src[i] != null && Number.isFinite(src[i])) ? src[i] : null }));
+    } catch (e) { return null; }
+  }
+
+  function computeFCBData(data) {
+    const fn = window.FractalChaosBands;
+    if (!fn) return null;
+    const highs = data.map(d => d.high);
+    const lows = data.map(d => d.low);
+    try {
+      const out = fn(highs, lows);
+      if (!out) return null;
+      const toSeries = src => data.map((d, i) => {
+        const v = src ? src[i] : undefined;
+        return { time: d.time, value: (v != null && Number.isFinite(v)) ? v : null };
+      });
+      return { high: toSeries(out.Fractal_High), low: toSeries(out.Fractal_Low) };
+    } catch (e) { return null; }
+  }
+
+  // ─── Pivot Points (Classic/Woodie/Fibonacci/Camarilla/DeMark) ────────────
+  // All five variants are keyed off the PREVIOUS bar's H/L/C, so - unlike
+  // this file's other Wang overlays - src[i] pairs directly with data[i]
+  // with no shift (the one-bar lag is already baked into the formula itself).
+  function mapPivotSeries(out, data) {
+    if (!out) return null;
+    const result = {};
+    Object.keys(out).forEach(key => {
+      const src = out[key];
+      result[key] = data.map((d, i) => {
+        const v = src ? src[i] : undefined;
+        return { time: d.time, value: (v != null && Number.isFinite(v)) ? v : null };
+      });
+    });
+    return result;
+  }
+
+  function computePivotData(fn, data) {
+    if (!fn) return null;
+    const highs = data.map(d => d.high);
+    const lows = data.map(d => d.low);
+    const closes = data.map(d => d.close);
+    try { return mapPivotSeries(fn(highs, lows, closes), data); } catch (e) { return null; }
+  }
+
+  function computePivotDeMarkData(data) {
+    const fn = window.PivotPointsDeMark;
+    if (!fn) return null;
+    const opens  = data.map(d => d.open);
+    const highs  = data.map(d => d.high);
+    const lows   = data.map(d => d.low);
+    const closes = data.map(d => d.close);
+    try { return mapPivotSeries(fn(opens, highs, lows, closes), data); } catch (e) { return null; }
+  }
+
   function computeWVCData(data, day, esp) {
     const fn = window.WilliamsVolatilityChannel;
     if (!fn) return null;
@@ -211,6 +334,24 @@
         value: (src[i + 1] != null && Number.isFinite(src[i + 1])) ? src[i + 1] : null
       }));
       return { middle: toSeries(srcMid), upper: toSeries(srcUpper), lower: toSeries(srcLower) };
+    } catch (e) { return null; }
+  }
+
+  function computeBoll4SDData(data, maDay, sdDay) {
+    const fn = window.computeBollinger4SD;
+    if (!fn) return null;
+    const closes = data.map(d => d.close);
+    try {
+      const out = fn(closes, maDay, sdDay);
+      if (!out) return null;
+      // computeBollinger4SD is 0-based-aligned (out.MA[i] pairs with data[i]
+      // directly, no +1 shift - verified empirically, unlike the other Wang
+      // overlays here that use the src[i+1] convention).
+      const toSeries = src => data.map((d, i) => {
+        const v = src ? src[i] : undefined;
+        return { time: d.time, value: (v != null && Number.isFinite(v)) ? v : null };
+      });
+      return { upper: toSeries(out.upperBand), middle: toSeries(out.MA), lower: toSeries(out.lowerBand) };
     } catch (e) { return null; }
   }
 
@@ -301,7 +442,18 @@
       case 'KAMA':   return { type:'single', data: computeKAMAData(d, p)   };
       case 'HullMA': return { type:'single', data: computeHullMAData(d, p) };
       case 'DEMA20': return { type:'single', data: computeDEMAData(d, p)   };
+      case 'ZLEMA':  return { type:'single', data: computeZeroLagEMAData(d, p) };
+      case 'TEMA':   return { type:'single', data: computeTripleEMAData(d, p)  };
+      case 'VIDYA':  return { type:'single', data: computeVIDYAData(d, p)      };
+      case 'MGD':    return { type:'single', data: computeMGDData(d, p)        };
       case 'WVC':    return { type:'wvc',    ...computeWVCData(d, p, getOverlayParam2(id)) };
+      case 'BOLL4SD': return { type:'boll4sd', ...computeBoll4SDData(d, p, getOverlayParam2(id)) };
+      case 'FCB':    return { type:'fcb', ...computeFCBData(d) };
+      case 'PivotClassic':   return { type:'pivot', ...computePivotData(window.PivotPointsClassic, d) };
+      case 'PivotWoodie':    return { type:'pivot', ...computePivotData(window.PivotPointsWoodie, d) };
+      case 'PivotFibonacci': return { type:'pivot', ...computePivotData(window.PivotPointsFibonacci, d) };
+      case 'PivotCamarilla': return { type:'pivot', ...computePivotData(window.PivotPointsCamarilla, d) };
+      case 'PivotDeMark':    return { type:'pivot', ...computePivotDeMarkData(d) };
       case 'CKstop':          return { type:'cks',      ...computeCKstopData(d, p)    };
       case 'DonchianChannel': return { type:'donchian', ...computeDonchianData(d, p)  };
       case 'ChandelierExit':  return { type:'cks',      ...computeChandelierData(d, p) };
@@ -341,6 +493,17 @@
       sMiddle.setData(nonNull(result.middle));
       sLower .setData(nonNull(result.lower));
       overlaySeries[id] = [sUpper, sMiddle, sLower];
+    } else if (result.type === 'boll4sd') {
+      const p    = getOverlayParam(id);
+      const p2   = getOverlayParam2(id);
+      const opts = { lineWidth: 2, lineStyle: 2, priceLineVisible: false, crosshairMarkerVisible: false, lastValueVisible: true };
+      const sUpper  = chart.addLineSeries({ ...opts, color: def.color, title: `B4SD+(${p},${p2})` });
+      const sMiddle = chart.addLineSeries({ ...opts, color: def.color, lineStyle: 0, title: `B4SD(${p},${p2})` });
+      const sLower  = chart.addLineSeries({ ...opts, color: def.color, title: `B4SD-(${p},${p2})` });
+      sUpper .setData(nonNull(result.upper));
+      sMiddle.setData(nonNull(result.middle));
+      sLower .setData(nonNull(result.lower));
+      overlaySeries[id] = [sUpper, sMiddle, sLower];
     } else if (result.type === 'cks') {
       if (!result.long || !result.short) return;
       const p    = getOverlayParam(id);
@@ -351,6 +514,23 @@
       sLong .setData(nonNull(result.long));
       sShort.setData(nonNull(result.short));
       overlaySeries[id] = [sLong, sShort];
+    } else if (result.type === 'fcb') {
+      if (!result.high || !result.low) return;
+      const opts = { lineWidth: 1.5, lineStyle: 2, priceLineVisible: false, crosshairMarkerVisible: false, lastValueVisible: true };
+      const sHigh = chart.addLineSeries({ ...opts, color: def.colorLong  || '#f87171', title: `${def.label} High` });
+      const sLow  = chart.addLineSeries({ ...opts, color: def.colorShort || '#4ade80', title: `${def.label} Low`  });
+      sHigh.setData(nonNull(result.high));
+      sLow .setData(nonNull(result.low));
+      overlaySeries[id] = [sHigh, sLow];
+    } else if (result.type === 'pivot') {
+      if (!def.pivotLines) return;
+      const opts = { lineWidth: 1, lineStyle: 2, priceLineVisible: false, crosshairMarkerVisible: false, lastValueVisible: true };
+      overlaySeries[id] = def.pivotLines.map(pl => {
+        const color = pl.role === 'resistance' ? '#f87171' : pl.role === 'support' ? '#4ade80' : (def.color || '#94a3b8');
+        const s = chart.addLineSeries({ ...opts, color, lineStyle: pl.key.endsWith('1') || pl.role === 'pivot' ? 0 : 2, title: `${def.label} ${pl.key}` });
+        s.setData(nonNull(result[pl.key]));
+        return s;
+      });
     } else if (result.type === 'donchian') {
       if (!result.upper || !result.lower) return;
       const p    = getOverlayParam(id);
@@ -391,9 +571,23 @@
         overlaySeries[id][0].setData(nonNull(result.upper));
         overlaySeries[id][1].setData(nonNull(result.middle));
         overlaySeries[id][2].setData(nonNull(result.lower));
+      } else if (result.type === 'boll4sd') {
+        overlaySeries[id][0].setData(nonNull(result.upper));
+        overlaySeries[id][1].setData(nonNull(result.middle));
+        overlaySeries[id][2].setData(nonNull(result.lower));
       } else if (result.type === 'cks') {
         overlaySeries[id][0].setData(nonNull(result.long));
         overlaySeries[id][1].setData(nonNull(result.short));
+      } else if (result.type === 'fcb') {
+        overlaySeries[id][0].setData(nonNull(result.high));
+        overlaySeries[id][1].setData(nonNull(result.low));
+      } else if (result.type === 'pivot') {
+        const def = OVERLAY_DEFS.find(x => x.id === id);
+        if (def && def.pivotLines) {
+          def.pivotLines.forEach((pl, i) => {
+            if (overlaySeries[id][i]) overlaySeries[id][i].setData(nonNull(result[pl.key]));
+          });
+        }
       } else if (result.type === 'donchian') {
         overlaySeries[id][0].setData(nonNull(result.upper));
         overlaySeries[id][1].setData(nonNull(result.middle));
@@ -619,6 +813,8 @@
       tfButtons: Array.from(document.querySelectorAll(".tab-btn")),
       indicatorCount: document.getElementById("indicator-count"),
       ohlcLegend: document.getElementById("ohlc-legend"),
+      themeToggle: document.getElementById("theme-toggle"),
+      watchlistRailBadges: document.getElementById("watchlist-rail-badges"),
     };
   }
   
@@ -639,7 +835,64 @@
     return true;
   }
 
+  // Comfort/Ultra-Modern UX toggle. The active theme is applied to
+  // <html data-theme="comfort"> - tradeflow-theme.css does the actual
+  // re-theming from there. A tiny inline script in index.html's <head>
+  // (not this function - that loads far too late via ScriptLoader) already
+  // applied the saved choice before first paint; this just wires the click
+  // handler and keeps the button's icon/label/aria-pressed in sync.
+  const THEME_STORAGE_KEY = 'tradeflow_ui_theme';
+  // Comfort (soft slate, spacious) is the app's default look - no attribute
+  // needed on <html> for it. Compact (dense, higher-contrast) is the opt-in
+  // alternate, flagged via data-theme="compact".
+  const THEME_META = {
+    comfort: { icon: 'sparkles', label: 'Comfort Mode', title: 'Switch to Compact View' },
+    compact: { icon: 'layout-dashboard', label: 'Compact View', title: 'Switch to Comfort Mode' },
+  };
+
+  function currentTheme() {
+    return document.documentElement.getAttribute('data-theme') === 'compact' ? 'compact' : 'comfort';
+  }
+
+  function applyThemeToggleUI(theme) {
+    if (!el.themeToggle) return;
+    const meta = THEME_META[theme];
+    const iconContainer = el.themeToggle.querySelector('.theme-toggle-icon');
+    const labelEl = el.themeToggle.querySelector('.theme-toggle-label');
+    if (iconContainer) {
+      // Lucide replaces <i data-lucide> with an inline <svg> the first time
+      // createIcons() runs, so on later toggles there's no [data-lucide]
+      // element left to update in place - rebuild the placeholder <i> fresh
+      // each time and let createIcons() convert it again.
+      iconContainer.innerHTML = `<i data-lucide="${meta.icon}" class="w-4 h-4"></i>`;
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    }
+    if (labelEl) labelEl.textContent = meta.label;
+    el.themeToggle.title = meta.title;
+    el.themeToggle.setAttribute('aria-pressed', theme === 'comfort' ? 'true' : 'false');
+  }
+
+  function setupThemeToggle() {
+    if (!el.themeToggle) return;
+    applyThemeToggleUI(currentTheme());
+
+    el.themeToggle.addEventListener('click', () => {
+      const next = currentTheme() === 'compact' ? 'comfort' : 'compact';
+      if (next === 'compact') {
+        document.documentElement.setAttribute('data-theme', 'compact');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+      try { localStorage.setItem(THEME_STORAGE_KEY, next); } catch (e) {}
+      applyThemeToggleUI(next);
+    });
+  }
+
   function setupEventHandlers() {
+    setupThemeToggle();
+
     if (el.addSymbol) {
       el.addSymbol.addEventListener("click", addSymbolToWatchlist);
     }
@@ -802,15 +1055,27 @@
 
       const lp = lastPrice[sym];
       const ch = changePct[sym];
-      
+
       const priceDisplay = lp ? formatStockPrice(lp) : "—";
       const changeDisplay = ch != null ? `${ch >= 0 ? '+' : ''}${ch.toFixed(2)}%` : "—";
       const changeColor = ch != null ? (ch >= 0 ? 'text-emerald-400' : 'text-red-400') : 'text-slate-400';
 
+      const prevFlashPrice = lastFlashedPrice[sym];
+      let flashClass = '';
+      if (lp != null && prevFlashPrice != null && lp !== prevFlashPrice) {
+        flashClass = lp > prevFlashPrice ? 'price-flash-up' : 'price-flash-down';
+      }
+      if (lp != null) lastFlashedPrice[sym] = lp;
+
+      const badgeDirClass = ch == null ? '' : (ch >= 0 ? 'badge-up' : 'badge-down');
+
       item.innerHTML = `
         <div class="flex justify-between items-start mb-1">
-          <span class="font-bold text-white text-sm">${sym}</span>
-          <span class="font-mono text-white text-sm">${priceDisplay}</span>
+          <span class="flex items-center gap-2">
+            <span class="ticker-badge ${badgeDirClass}">${sym.slice(0, 2)}</span>
+            <span class="font-bold text-white text-sm">${sym}</span>
+          </span>
+          <span class="font-mono text-white text-sm ${flashClass}">${priceDisplay}</span>
         </div>
         <div class="flex justify-between text-xs">
           <span class="text-slate-400">${getCompanyName(sym)}</span>
@@ -821,8 +1086,24 @@
       item.addEventListener("click", () => focusSymbol(sym));
       el.watchlist.appendChild(item);
     });
+
+    renderWatchlistRail();
   }
-  
+
+  // Collapsed-sidebar icon bar: one clickable badge per watchlist symbol, so
+  // collapsing the watchlist doesn't cost one-click symbol switching. Kept in
+  // sync with the full list by being called at the end of renderWatchlist().
+  function renderWatchlistRail() {
+    if (!el.watchlistRailBadges) return;
+    el.watchlistRailBadges.innerHTML = watchlist.map(sym => {
+      const activeClass = sym === currentSymbol ? 'active' : '';
+      return `<button type="button" class="watchlist-rail-badge ${activeClass}" data-sym="${sym}" title="${sym}">${sym.slice(0, 2)}</button>`;
+    }).join('');
+    el.watchlistRailBadges.querySelectorAll('[data-sym]').forEach(btn => {
+      btn.addEventListener('click', () => focusSymbol(btn.dataset.sym));
+    });
+  }
+
   function getCompanyName(symbol) {
     const names = {
       'AAPL': 'Apple',
@@ -836,17 +1117,23 @@
   }
 
   function highlightActiveWatchlist() {
-    if (!el.watchlist) return;
-    Array.from(el.watchlist.children).forEach((item) => {
-      const sym = item.dataset.sym;
-      if (sym === currentSymbol) {
-        item.classList.add('bg-slate-800');
-        item.classList.remove('hover:bg-slate-800');
-      } else {
-        item.classList.remove('bg-slate-800');
-        item.classList.add('hover:bg-slate-800');
-      }
-    });
+    if (el.watchlist) {
+      Array.from(el.watchlist.children).forEach((item) => {
+        const sym = item.dataset.sym;
+        if (sym === currentSymbol) {
+          item.classList.add('bg-slate-800');
+          item.classList.remove('hover:bg-slate-800');
+        } else {
+          item.classList.remove('bg-slate-800');
+          item.classList.add('hover:bg-slate-800');
+        }
+      });
+    }
+    if (el.watchlistRailBadges) {
+      Array.from(el.watchlistRailBadges.children).forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.sym === currentSymbol);
+      });
+    }
   }
 
   function startPriceUpdates() {

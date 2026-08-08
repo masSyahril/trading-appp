@@ -48,6 +48,10 @@
       document.getElementById(id)?.addEventListener('input', computeRR);
     });
 
+    document.querySelectorAll('.size-quick-btn').forEach(btn => {
+      btn.addEventListener('click', () => applyQuickSize(parseFloat(btn.dataset.sizePct)));
+    });
+
     document.getElementById('btn-buy')?.addEventListener('click', () => placeOrder('buy'));
     document.getElementById('btn-sell')?.addEventListener('click', () => placeOrder('sell'));
 
@@ -89,6 +93,23 @@
     riskEl.textContent = `$${risk.toFixed(2)}`;
     rewardEl.textContent = `$${reward.toFixed(2)}`;
     ratioEl.textContent = risk > 0 ? (reward / risk).toFixed(2) : '—';
+  }
+
+  // Quick position-size buttons (25/50/75/100%): size shares to spend that
+  // percentage of currently-available buying power (equity minus margin
+  // already committed to open positions), scaled by the selected leverage.
+  function applyQuickSize(pct) {
+    const entry = entryPriceEstimate();
+    const sizeInput = document.getElementById('order-size');
+    if (!sizeInput || entry == null || !isFinite(entry) || entry <= 0) return;
+
+    const summary = window.TradeFlowPortfolio?.getAccountSummary?.();
+    const available = summary ? Math.max(0, summary.available) : 0;
+    const leverage = parseFloat(document.getElementById('order-leverage')?.value) || 1;
+
+    const shares = Math.max(1, Math.floor((available * (pct / 100) * leverage) / entry));
+    sizeInput.value = shares;
+    computeRR();
   }
 
   function placeOrder(side) {

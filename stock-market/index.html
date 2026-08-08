@@ -4,10 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TradeFlow - Stock Market</title>
-    
+
+    <!-- Apply the saved UI density (comfort [default] | compact) before first
+         paint, so the page never flashes one look then snaps to the other on
+         load. Must run synchronously here, not from stock-app.prod.js - that
+         loads later via ScriptLoader, well after the browser has painted. -->
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('tradeflow_ui_theme') === 'compact') {
+                    document.documentElement.setAttribute('data-theme', 'compact');
+                }
+            } catch (e) {}
+        })();
+    </script>
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
+    <!-- Inter (interface/nav text) + JetBrains Mono (prices/sizes/P&L, so
+         financial figures don't visually flicker/shift on update) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
@@ -54,17 +74,19 @@
         }
 
         /* Chart panel sizing - chart:indicators split is proportional to how
-           many indicator panels are active. Baseline here (flex:3 / flex:3) is
-           the 3-panel case: chart 3/(3+3)=50%, indicators 3/(3+3)=50%, each of
-           the 3 panels flex:1 inside that = ~16.6% of the viewport each. With
-           fewer panels, MultiIndicatorSystem._updateSectionFlexForPanelCount()
-           lowers #indicators-section's own flex-grow (inline, overriding this
-           default) to `n` so the chart and remaining panels expand to fill the
-           freed space - see multi-indicator-system.js.
-           #main-chart-panel carries that flex weight; #chart itself is just the
-           canvas area filling whatever's left under the (fixed-height) toolbar. */
+           many indicator panels are active. Baseline here (flex:6 / flex:3) is
+           the 3-panel case: chart 6/(6+3)=~67%, indicators 3/(6+3)=~33%, each
+           of the 3 panels flex:1 inside that = ~11% of the viewport each -
+           keeps the main candlestick chart at roughly 60-70% of the vertical
+           workspace. With fewer panels, MultiIndicatorSystem.
+           _updateSectionFlexForPanelCount() lowers #indicators-section's own
+           flex-grow (inline, overriding this default) to `n` so the chart and
+           remaining panels expand to fill the freed space - see
+           multi-indicator-system.js. #main-chart-panel carries that flex
+           weight; #chart itself is just the canvas area filling whatever's
+           left under the (fixed-height) toolbar. */
         #main-chart-panel {
-            flex: 3 1 0%;
+            flex: 6 1 0%;
             min-height: 220px;
             display: flex;
             flex-direction: column;
@@ -304,6 +326,26 @@
                 <input id="symbol-input" type="text" placeholder="Add symbol..." class="bg-slate-800 border border-slate-600 text-white text-sm px-3 py-1.5 rounded focus:outline-none focus:border-emerald-500 w-32">
                 <button id="add-symbol" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors">Add</button>
             </div>
+            <button id="theme-toggle" type="button" class="theme-toggle-btn" title="Switch to Compact View" aria-pressed="true">
+                <span class="theme-toggle-icon"><i data-lucide="sparkles" class="w-4 h-4"></i></span>
+                <span class="theme-toggle-label">Comfort Mode</span>
+            </button>
+            <a href="zen.html" class="theme-toggle-btn" title="Focus-First floating-panel layout">
+                <i data-lucide="wand-2" class="w-4 h-4"></i>
+                <span class="theme-toggle-label">Zen Mode</span>
+            </a>
+            <a href="terminal.html" class="theme-toggle-btn" title="TradingView-inspired terminal layout">
+                <i data-lucide="terminal" class="w-4 h-4"></i>
+                <span class="theme-toggle-label">Terminal</span>
+            </a>
+            <a href="dashboard.html" class="theme-toggle-btn" title="Light TradingView-inspired dashboard layout">
+                <i data-lucide="layout-panel-left" class="w-4 h-4"></i>
+                <span class="theme-toggle-label">Dashboard</span>
+            </a>
+            <!-- <a href="canvas-chart.html" class="theme-toggle-btn" title="Custom HTML5 Canvas chart engine (no charting library)">
+                <i data-lucide="line-chart" class="w-4 h-4"></i>
+                <span class="theme-toggle-label">Canvas Engine</span> -->
+            </a>
             <button id="reset-data" class="p-2 hover:bg-slate-800 rounded-full" title="Reset Data">
                 <i data-lucide="refresh-cw" class="w-5 h-5 text-slate-300"></i>
             </button>
@@ -338,8 +380,15 @@
             </ul>
         </aside>
 
-        <!-- Collapsed-state expand handle (shown only when the watchlist is collapsed) -->
-        <button id="expand-sidebar" class="hidden absolute inset-y-0 left-0 w-5 z-40 items-center justify-center bg-slate-900 border-r border-slate-700 hover:bg-slate-800 text-slate-400 hover:text-white" title="Show watchlist">»</button>
+        <!-- Collapsed-state icon bar (shown only when the watchlist is collapsed):
+             the expand caret plus a clickable badge per watchlist symbol, so
+             collapsing doesn't lose one-click symbol switching. Badges are
+             populated by renderWatchlistRail() in stock-app.prod.js from the
+             same watchlist data as the full sidebar. -->
+        <div id="watchlist-rail" class="hidden absolute inset-y-0 left-0 w-9 z-40 flex-col bg-slate-900 border-r border-slate-700">
+            <button id="expand-sidebar" class="watchlist-rail-expand" title="Show watchlist">»</button>
+            <div id="watchlist-rail-badges"></div>
+        </div>
 
         <!-- CENTER CONTENT -->
         <main class="flex-1 flex flex-col min-w-0 bg-slate-950">
@@ -474,6 +523,13 @@
                     <input type="number" id="order-size" min="1" step="1" value="100">
                 </label>
 
+                <div class="size-quick-row">
+                    <button type="button" class="size-quick-btn" data-size-pct="25">25%</button>
+                    <button type="button" class="size-quick-btn" data-size-pct="50">50%</button>
+                    <button type="button" class="size-quick-btn" data-size-pct="75">75%</button>
+                    <button type="button" class="size-quick-btn" data-size-pct="100">100%</button>
+                </div>
+
                 <label class="order-field">
                     <span>Leverage</span>
                     <select id="order-leverage">
@@ -495,15 +551,15 @@
                     </label>
                 </div>
 
-                <div class="rounded-lg bg-slate-800 border border-slate-700 p-2 grid grid-cols-3 gap-2 text-xs">
+                <div class="rr-summary-box rounded-lg bg-slate-800 border border-slate-700 p-2 grid grid-cols-3 gap-2 text-xs">
                     <div><div class="text-slate-400">Risk</div><div id="rr-risk" class="text-red-400 font-bold">$0.00</div></div>
                     <div><div class="text-slate-400">Reward</div><div id="rr-reward" class="text-emerald-400 font-bold">$0.00</div></div>
                     <div><div class="text-slate-400">R:R</div><div id="rr-ratio" class="text-slate-100 font-bold">—</div></div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2 mt-1">
-                    <button id="btn-buy" type="button" class="py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition-colors">BUY</button>
-                    <button id="btn-sell" type="button" class="py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold transition-colors">SELL</button>
+                    <button id="btn-buy" type="button" class="py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold transition-all">BUY</button>
+                    <button id="btn-sell" type="button" class="py-2 rounded-lg bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold transition-all">SELL</button>
                 </div>
             </div>
         </aside>
@@ -560,9 +616,9 @@
             try {
                 if (localStorage.getItem('stock_watchlist_collapsed') === 'true') {
                     var sb = document.getElementById('sidebar');
-                    var eb = document.getElementById('expand-sidebar');
+                    var rail = document.getElementById('watchlist-rail');
                     if (sb) sb.style.display = 'none';
-                    if (eb) eb.style.display = 'flex';
+                    if (rail) rail.style.display = 'flex';
                 }
                 if (localStorage.getItem('stock_orderpanel_collapsed') === 'true') {
                     var op = document.getElementById('order-panel');
@@ -792,12 +848,13 @@
 
         // Desktop watchlist collapse/expand (independent of the mobile slide-in above)
         (function () {
+            const rail = document.getElementById('watchlist-rail');
             const expandBtn = document.getElementById('expand-sidebar');
             const collapseBtn = document.getElementById('collapse-sidebar');
 
             function setCollapsed(collapsed) {
                 sidebar.style.display = collapsed ? 'none' : '';
-                if (expandBtn) expandBtn.style.display = collapsed ? 'flex' : 'none';
+                if (rail) rail.style.display = collapsed ? 'flex' : 'none';
                 try { localStorage.setItem('stock_watchlist_collapsed', collapsed ? 'true' : 'false'); } catch (e) {}
             }
 

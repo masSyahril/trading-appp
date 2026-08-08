@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradeFlow - Canvas Engine</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            --cc-bg: #ffffff; --cc-panel: #f8f9fa; --cc-border: #e0e3eb;
+            --cc-text: #131722; --cc-text-muted: #787d8d;
+            --cc-up: #089981; --cc-down: #f23645; --cc-accent: #2962ff;
+        }
+        html[data-theme="dark"] {
+            --cc-bg: #131722; --cc-panel: #1e222d; --cc-border: #2a2e39;
+            --cc-text: #d1d4dc; --cc-text-muted: #787b86;
+        }
+        html, body { height: 100%; margin: 0; }
+        body {
+            background: var(--cc-bg); color: var(--cc-text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .cc-mono { font-family: 'Roboto Mono', 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+        #cc-header {
+            height: 44px; min-height: 44px; display: flex; align-items: center; gap: 8px;
+            padding: 0 12px; background: var(--cc-panel); border-bottom: 1px solid var(--cc-border);
+        }
+        .cc-logo { display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 13px; color: var(--cc-up); padding-right: 8px; border-right: 1px solid var(--cc-border); }
+        .cc-field { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--cc-text-muted); }
+        .cc-field input[type="text"] {
+            width: 60px; background: var(--cc-bg); border: 1px solid var(--cc-border); border-radius: 4px;
+            color: var(--cc-text); font-size: 12px; padding: 4px 6px;
+        }
+        .cc-btn {
+            display: flex; align-items: center; gap: 4px; padding: 5px 10px; font-size: 12px; font-weight: 600;
+            color: var(--cc-text-muted); background: var(--cc-bg); border: 1px solid var(--cc-border); border-radius: 4px;
+            cursor: pointer; transition: background-color .12s ease, color .12s ease;
+        }
+        .cc-btn:hover { color: var(--cc-text); }
+        .cc-btn.active { color: #fff; background: var(--cc-accent); border-color: var(--cc-accent); }
+        .cc-spacer { flex: 1 1 auto; }
+        .cc-icon-link {
+            display: flex; align-items: center; justify-content: center; width: 28px; height: 28px;
+            border-radius: 4px; color: var(--cc-text-muted); text-decoration: none;
+        }
+        .cc-icon-link:hover { color: var(--cc-text); background: var(--cc-border); }
+
+        /* Add-indicator dropdown */
+        .cc-dropdown-wrap { position: relative; }
+        .cc-dropdown-menu {
+            position: absolute; top: 100%; left: 0; margin-top: 4px; z-index: 100;
+            width: 260px; max-height: 360px; overflow-y: auto;
+            background: var(--cc-bg); border: 1px solid var(--cc-border); border-radius: 6px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+        }
+        .cc-dropdown-menu.hidden { display: none; }
+        .cc-dropdown-search {
+            width: 100%; box-sizing: border-box; padding: 8px 10px; border: none; border-bottom: 1px solid var(--cc-border);
+            background: transparent; color: var(--cc-text); font-size: 12px; outline: none;
+        }
+        .cc-dropdown-category {
+            padding: 8px 10px 3px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .04em; color: var(--cc-text-muted);
+        }
+        .cc-dropdown-item {
+            display: flex; align-items: center; justify-content: space-between; width: 100%;
+            padding: 7px 10px; font-size: 12px; color: var(--cc-text); background: transparent; border: none;
+            cursor: pointer; text-align: left;
+        }
+        .cc-dropdown-item:hover { background: var(--cc-panel); }
+        .cc-dropdown-item.cc-added { color: var(--cc-up); font-weight: 700; }
+
+        #cc-chips-row {
+            display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+            padding: 5px 12px; background: var(--cc-panel); border-bottom: 1px solid var(--cc-border);
+            min-height: 28px;
+        }
+        .cc-chip {
+            display: flex; align-items: center; gap: 6px; padding: 3px 4px 3px 9px; border-radius: 999px;
+            background: var(--cc-bg); border: 1px solid var(--cc-border); font-size: 11px; font-weight: 600;
+        }
+        .cc-chip .cc-chip-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .cc-chip button {
+            display: flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%;
+            border: none; background: transparent; color: var(--cc-text-muted); cursor: pointer; padding: 0; font-size: 13px;
+        }
+        .cc-chip button:hover { color: #fff; background: var(--cc-down); }
+        .cc-chips-empty { font-size: 11px; color: var(--cc-text-muted); }
+
+        #cc-stage { position: relative; flex: 1; min-height: 0; }
+        #cc-canvas-container { position: absolute; inset: 0; }
+
+        #cc-legend {
+            position: absolute; top: 10px; left: 10px; z-index: 10; pointer-events: none;
+            display: flex; flex-wrap: wrap; gap: 4px 14px; max-width: calc(100% - 80px);
+            background: color-mix(in srgb, var(--cc-bg) 85%, transparent);
+            border: 1px solid var(--cc-border); border-radius: 4px; padding: 6px 10px; font-size: 11px;
+        }
+        #cc-legend .cc-l-label { color: var(--cc-text-muted); margin-right: 3px; }
+        #cc-legend .cc-l-up { color: var(--cc-up); }
+        #cc-legend .cc-l-down { color: var(--cc-down); }
+
+        #cc-status { font-size: 11px; color: var(--cc-text-muted); padding: 0 10px; }
+    </style>
+</head>
+<body>
+    <header id="cc-header">
+        <div class="cc-logo"><i data-lucide="activity" class="w-4 h-4"></i>TradeFlow</div>
+
+        <div class="cc-field">
+            <input id="cc-symbol" type="text" value="AAPL" maxlength="8">
+            <button id="cc-load" class="cc-btn"><i data-lucide="search" class="w-3 h-3"></i> Load</button>
+        </div>
+
+        <div class="cc-dropdown-wrap">
+            <button id="cc-add-indicator-btn" class="cc-btn" title="Add a real indicator from this app's own library">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Indicator
+            </button>
+            <div id="cc-indicator-menu" class="cc-dropdown-menu hidden">
+                <input id="cc-indicator-search" type="text" class="cc-dropdown-search" placeholder="Search indicators...">
+                <div id="cc-indicator-list"></div>
+            </div>
+        </div>
+
+        <button id="cc-theme-toggle" class="cc-btn" title="Toggle light/dark"><i data-lucide="moon" class="w-3.5 h-3.5"></i></button>
+        <button id="cc-reset-view" class="cc-btn" title="Reset pan/zoom"><i data-lucide="maximize" class="w-3.5 h-3.5"></i></button>
+
+        <div class="cc-spacer"></div>
+        <span id="cc-status">Loading…</span>
+
+        <a href="dashboard.html" class="cc-icon-link" title="Dashboard"><i data-lucide="layout-panel-left" class="w-4 h-4"></i></a>
+        <a href="terminal.html" class="cc-icon-link" title="Terminal"><i data-lucide="terminal" class="w-4 h-4"></i></a>
+        <a href="zen.html" class="cc-icon-link" title="Zen Workspace"><i data-lucide="wand-2" class="w-4 h-4"></i></a>
+        <a href="index.html" class="cc-icon-link" title="Classic View"><i data-lucide="layout-dashboard" class="w-4 h-4"></i></a>
+    </header>
+
+    <div id="cc-chips-row"></div>
+
+    <div id="cc-stage">
+        <div id="cc-canvas-container"></div>
+        <div id="cc-legend" class="cc-mono"></div>
+    </div>
+
+    <!-- Real indicator math (same functions MultiIndicatorSystem's own
+         wrapper methods call for the other four pages), loaded in the same
+         order the rest of the app uses so behavior matches exactly. -->
+    <script src="../src/js/core/utils.js"></script>
+    <script src="../src/js/utils/indicators.js"></script>
+    <script src="../src/js/core/technical-indicators.js"></script>
+
+    <script src="js/chart-canvas-engine.js"></script>
+    <script src="js/chart-indicator-registry.js"></script>
+    <script>
+        (function () {
+            const container = document.getElementById('cc-canvas-container');
+            const legend = document.getElementById('cc-legend');
+            const statusEl = document.getElementById('cc-status');
+            const chipsRow = document.getElementById('cc-chips-row');
+            let currentSymbol = 'AAPL';
+
+            // id -> registry entry, for whatever's currently on the chart.
+            const active = new Map();
+
+            const chart = ChartCanvasEngine.createChartCanvas(container, {
+                theme: 'light',
+                onHover: renderLegend,
+            });
+
+            // ─── Indicator dropdown + chips ─────────────────────────────────
+            function addIndicator(entry) {
+                if (active.has(entry.id)) return;
+                const cfg = entry.build(entry.defaultParams);
+                if (entry.type === 'overlay') chart.addOverlayIndicator(cfg);
+                else chart.addSubPaneIndicator(cfg);
+                active.set(entry.id, entry);
+                renderChips();
+                renderDropdownList(document.getElementById('cc-indicator-search').value);
+            }
+
+            function removeIndicator(id) {
+                chart.removeIndicator(id);
+                active.delete(id);
+                renderChips();
+                renderDropdownList(document.getElementById('cc-indicator-search').value);
+            }
+
+            function renderChips() {
+                chipsRow.innerHTML = '';
+                if (!active.size) {
+                    chipsRow.innerHTML = '<span class="cc-chips-empty">No indicators added - click "+ Indicator" to add real SMA/RSI/MACD/Bollinger/Stochastic/ADX/CCI/ATR/Williams %R from this app\'s own library.</span>';
+                    return;
+                }
+                active.forEach((entry, id) => {
+                    const registered = (entry.type === 'overlay' ? chart.overlays : chart.subPanes).find((x) => x.id === id);
+                    const dotColor = (registered && registered.series[0] && registered.series[0].color) || '#888';
+                    const chip = document.createElement('div');
+                    chip.className = 'cc-chip';
+                    chip.innerHTML = `<span class="cc-chip-dot" style="background:${dotColor}"></span><span>${registered ? registered.label : entry.label}</span>`;
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.title = 'Remove';
+                    removeBtn.textContent = '×';
+                    removeBtn.addEventListener('click', () => removeIndicator(id));
+                    chip.appendChild(removeBtn);
+                    chipsRow.appendChild(chip);
+                });
+            }
+
+            function renderDropdownList(filter) {
+                const listEl = document.getElementById('cc-indicator-list');
+                listEl.innerHTML = '';
+                const q = (filter || '').toLowerCase();
+                const byCategory = {};
+                ChartIndicatorRegistry.REGISTRY.forEach((entry) => {
+                    if (q && !entry.label.toLowerCase().includes(q)) return;
+                    (byCategory[entry.category] = byCategory[entry.category] || []).push(entry);
+                });
+                Object.keys(byCategory).forEach((cat) => {
+                    const catEl = document.createElement('div');
+                    catEl.className = 'cc-dropdown-category';
+                    catEl.textContent = cat;
+                    listEl.appendChild(catEl);
+                    byCategory[cat].forEach((entry) => {
+                        const isActive = active.has(entry.id);
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'cc-dropdown-item' + (isActive ? ' cc-added' : '');
+                        btn.textContent = (isActive ? '✓ ' : '') + entry.label;
+                        btn.addEventListener('click', () => (isActive ? removeIndicator(entry.id) : addIndicator(entry)));
+                        listEl.appendChild(btn);
+                    });
+                });
+                if (!listEl.children.length) {
+                    listEl.innerHTML = '<div class="cc-dropdown-category">No matches</div>';
+                }
+            }
+
+            const menuBtn = document.getElementById('cc-add-indicator-btn');
+            const menu = document.getElementById('cc-indicator-menu');
+            menuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                menu.classList.toggle('hidden');
+                if (!menu.classList.contains('hidden')) {
+                    renderDropdownList('');
+                    document.getElementById('cc-indicator-search').value = '';
+                    document.getElementById('cc-indicator-search').focus();
+                }
+            });
+            document.getElementById('cc-indicator-search').addEventListener('input', (e) => renderDropdownList(e.target.value));
+            document.addEventListener('click', (e) => {
+                if (!menu.contains(e.target) && e.target !== menuBtn && !menuBtn.contains(e.target)) menu.classList.add('hidden');
+            });
+
+            // ─── Floating OHLCV + live indicator-value legend ───────────────
+            function renderLegend(hover) {
+                if (!hover) { legend.innerHTML = ''; return; }
+                const b = hover.bar;
+                const up = b.close >= b.open;
+                const dir = up ? 'cc-l-up' : 'cc-l-down';
+                const parts = [
+                    `<span><span class="cc-l-label">O</span><span class="${dir}">${b.open.toFixed(2)}</span></span>`,
+                    `<span><span class="cc-l-label">H</span><span class="${dir}">${b.high.toFixed(2)}</span></span>`,
+                    `<span><span class="cc-l-label">L</span><span class="${dir}">${b.low.toFixed(2)}</span></span>`,
+                    `<span><span class="cc-l-label">C</span><span class="${dir}">${b.close.toFixed(2)}</span></span>`,
+                    `<span><span class="cc-l-label">Vol</span>${(b.volume || 0).toLocaleString()}</span>`,
+                ];
+                [...chart.overlays, ...chart.subPanes].forEach((item) => {
+                    item.series.forEach((s) => {
+                        const vals = s.key == null ? (Array.isArray(item.data) ? item.data : []) : ((item.data && item.data[s.key]) || []);
+                        const v = vals[hover.index];
+                        const name = s.key ? `${item.label.split('(')[0]}.${s.key}` : item.label;
+                        const color = s.color || '#888';
+                        parts.push(`<span style="color:${color}"><span class="cc-l-label">${name}</span>${v != null ? v.toFixed(2) : '—'}</span>`);
+                    });
+                });
+                legend.innerHTML = parts.join('');
+            }
+
+            // ─── Data loading: real OHLCV via the app's existing Yahoo Finance
+            // proxy (same endpoint/shape stock-app.prod.js already uses), with a
+            // deterministic synthetic fallback so the page still demonstrates the
+            // rendering/indicator math if the API is unreachable. Active
+            // indicators automatically recompute against the new data -
+            // chart.setData() itself calls _recomputeIndicators(). ───
+            async function loadSymbol(symbol) {
+                statusEl.textContent = `Loading ${symbol}…`;
+                try {
+                    const res = await fetch(`../api/stocks.php?symbol=${encodeURIComponent(symbol)}`);
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    const json = await res.json();
+                    if (!json || !json.candles || !json.candles.length) throw new Error('empty candles');
+                    const data = json.candles.map((c) => ({
+                        time: c.time, open: c.open, high: c.high, low: c.low, close: c.close, volume: c.volume ?? 0,
+                    }));
+                    currentSymbol = symbol;
+                    chart.setData(data);
+                    statusEl.textContent = `${symbol} · ${data.length} bars (live)`;
+                } catch (err) {
+                    console.warn('canvas-chart: falling back to synthetic data -', err.message);
+                    const data = generateSyntheticOHLCV(symbol, 180);
+                    currentSymbol = symbol;
+                    chart.setData(data);
+                    statusEl.textContent = `${symbol} · ${data.length} bars (synthetic - API unreachable)`;
+                }
+            }
+
+            // Deterministic (seeded) pseudo-random walk, e.g. reference shape:
+            // [{ time: '2026-08-01', open: 7462, high: 7512, low: 7399, close: 7489, volume: 12000 }, ...]
+            function generateSyntheticOHLCV(symbol, bars) {
+                let seed = 0;
+                for (let i = 0; i < symbol.length; i++) seed = (seed * 31 + symbol.charCodeAt(i)) % 100000;
+                const rand = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+                const out = [];
+                let price = 100 + (seed % 400);
+                const dayMs = 86400000;
+                const start = Date.now() - bars * dayMs;
+                for (let i = 0; i < bars; i++) {
+                    const open = price;
+                    const vol = open * 0.02;
+                    const close = Math.max(1, open + (rand() - 0.5) * vol);
+                    const high = Math.max(open, close) + rand() * vol * 0.4;
+                    const low = Math.min(open, close) - rand() * vol * 0.4;
+                    out.push({ time: start + i * dayMs, open, high, low: Math.max(0.5, low), close, volume: Math.round(5000 + rand() * 50000) });
+                    price = close;
+                }
+                return out;
+            }
+
+            document.getElementById('cc-load').addEventListener('click', () => {
+                const sym = document.getElementById('cc-symbol').value.trim().toUpperCase();
+                if (sym) loadSymbol(sym);
+            });
+            document.getElementById('cc-symbol').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') document.getElementById('cc-load').click();
+            });
+            document.getElementById('cc-theme-toggle').addEventListener('click', (e) => {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+                chart.setTheme(isDark ? 'light' : 'dark');
+                e.currentTarget.innerHTML = isDark
+                    ? '<i data-lucide="moon" class="w-3.5 h-3.5"></i>'
+                    : '<i data-lucide="sun" class="w-3.5 h-3.5"></i>';
+                lucide.createIcons();
+            });
+            document.getElementById('cc-reset-view').addEventListener('click', () => chart.resetView());
+
+            // Default view: the same SMA(20) overlay + RSI(14) sub-pane the page
+            // used to hardcode, now added through the real registry/dropdown
+            // system instead of the bespoke calculateSMA/calculateRSI helpers.
+            loadSymbol(currentSymbol);
+            addIndicator(ChartIndicatorRegistry.REGISTRY.find((e) => e.id === 'sma'));
+            addIndicator(ChartIndicatorRegistry.REGISTRY.find((e) => e.id === 'rsi'));
+            renderChips();
+            lucide.createIcons();
+        })();
+    </script>
+</body>
+</html>

@@ -40,7 +40,7 @@ function computeMA(values, Ma_day) {
     sum=sum-values[i-Ma_day]+values[i];   //subtract the old value and add the new value
     MA[i]=sum/Ma_day;
   }
-  return MA;
+  return { MA };
   // Drawing the MA figure in the K-line area.
   // For example, if Ma_day=10, then MA[]=10,11,...,2000.
 }
@@ -861,15 +861,15 @@ window.StochasticOSC = StochasticOSC;
 //===designed by Prof Wang, 2025-Oct-29===modified on 2026-April-07==
 //Williams %R 威廉指標(William’s Overbought/Oversold Index)。
 //WilliamR=(Hn-Ct)/(Hn-Ln)*100.
-function WilliamR(STK_high, STK_low, STK_close, WR_day) {
-  //STK_high, STK_low, STK_close,  WR_day=10,15,... 天數
+function WilliamR(STK_close, WR_day) {
+  //STK_close=STK_close,  WR_day=10,15,... 天數
   const WilliamR=[];
-  for(let i=0; i<STK_close.length-WR_day+1; i++) { // i=0 to 2000-10+1=1991
-    let Max_high=0;
+  for(let i=1; i<STK_close.length-WR_day+1; i++) { // i=1 to 2000-10+1=1991
+    let Max_high=0; 
     let Min_low=9999;   // initial value can not be zero
-    for(let j=i; j<=WR_day+i-1; j++) {
-      if (STK_high[j]>Max_high) Max_high=STK_high[j];
-      if (STK_low[j]<Min_low) Min_low=STK_low[j];
+    for(j=i; j<=WR_day+i-1; j++) {
+      if (STK_high[j]>Max_high); Max_high=STK_high[j];
+      if (STK_low[j]<Min_low); Min_low=STK_low[j];  
     }
     if(Max_high==Min_low) {
       WilliamR[WR_day+i-1]=100; }
@@ -1066,7 +1066,7 @@ function VolAccuDistOsc(STK_high, STK_low, STK_close, STK_vol, esp) {  //原名�
     if (STK_high[i]-STK_low[i]==0) {
       VolAccuDistOsc[i]=0;  }
     else {
-      VolAccuDistOsc[i]=(2*STK_close[i]-STK_low[i]-STK_high[i])/(STK_high[i]-STK_low[i])*STK_vol[i];
+      VolAccuDistOsc[i]=(2*STK_close[i]-STK_low[i]-STK_high[i])/(STK_high[i]-STK_low[i])*STK_vol;
     }
     if(i==1) {  //i=1,初值=VolAccuDistOsc(1)。
       eVolAccuDistOsc[i]=VolAccuDistOsc[i]; }
@@ -1088,10 +1088,11 @@ window.VolAccuDistOsc = VolAccuDistOsc;
 function HighLowOsc(STK_high, STK_low, STK_close, esp) {  //原名稱:HLO
   // Menu Name=High Low Oscillator  === esp=9, 平滑化因子
   const HLO=[], eHLO=[];   //自創新指標，eHLO[]為平滑化後的數值。
+  const TR=0;     //True Range, TR
   HLO[1]=50;      //HLO(1)初值=50,適當否？
   eHLO[1]=50;     //eHLO(1)初值=50,適當否？
   for(let i=2; i<STK_close.length; i++) {  //i=2 to 2000
-    const TR=Math.max(STK_high[i]-STK_low[i], STK_high[i]-STK_close[i-1], Math.abs(STK_low[i]-STK_close[i-1]));
+    TR=max(STK_high[i]-STK_low[i], STK_high[i]-STK_close[i-1], Math.abs(STK_low[i]-STK_close[i-1]));
     HLO[i]=(STK_high[i]-STK_close[i-1])/TR*100;
     eHLO[i]=(esp-1)/(esp+1)*eHLO[i-1]+2/(esp+1)*HLO[i];  //自創新指標
     //eHLO[]是HLO[]的平滑化，即：(n-1)/(n+1)*昨+(2/(n+1)*今
@@ -1155,7 +1156,6 @@ function VolRatio(STK_close, STK_vol, day, esp) {   //原名=VR
   // UpVol=STK_vol(1);
   // DnVol=STK_vol(1);
   VolRatio[day]=100;       //初值三個均設為第一天的成交量，此時初值VR=100。VR(20)=100
-  eVolRatio[day]=100;      //eVR初值與VR初值相同，供eVR(day+1)遞迴計算使用
   //第一輪先算第一個VR,假設day=20,則j=2 to 21,算出第一個VR(21)
   for(let j=2; j<=(day+1); j++) {          // j=2 to 21 (first round)
     if (STK_close[j]>=STK_close[j-1]) {   //上漲
@@ -1330,7 +1330,7 @@ window.VariantRateMA2DaysAgo = VariantRateMA2DaysAgo;
 function IntradayMomentum(STK_open, STK_close, day1, day2) {  //原名: IMI
   // Menu Name: Intraday Momentum  , day1=10, day2=20, ...
   const IMI1=[], IMI2=[];
-  let Iup = 0, Idn = 0;
+  let Iup, Idn = 0;
   for (let i=1; i<day1; i++) {     //例: i=1 to 10
     if(STK_close[i]>STK_open[i]) {
       Iup=Iup+(STK_close[i]-STK_open[i]); }
@@ -1772,7 +1772,7 @@ function EOM_EMV(STK_high, STK_low, STK_close, STK_vol, esp) {
     else { 
       EOM_EMV[i]=MID/VPU*100;
     }
-    if(i===2){             //指數平滑移動平均
+    if(i===1){             //指數平滑移動平均
       eEOM_EMV[2]=EOM_EMV[2]; }    //eEOM_EMV初值
     else {
       eEOM_EMV[i]=(esp-1)/(esp+1)*eEOM_EMV[i-1]+2/(esp+1)*EOM_EMV[i];
@@ -4709,7 +4709,7 @@ function ZeroLagHullMA(K_close, day1, day2, esp) {
   }
   let wgt_count;     //權重計數, 1,2,...,5 或 1,2,...,10     
   let sum_close;     //分子=5天加權收盤價加總
-  for(let i=half_day1; i<=K_close.length; i++) {  //i=5 to 2000
+  for(let i=half_day1; i<K_close.length; i++) {  //i=5 to 2000
     sum_close=0;
     wgt_count=1;     //權重計數
     for(let j=i-half_day1+1; j<i; j++) {  //j=1 to 5, j=2 to 6,...
@@ -4727,7 +4727,7 @@ function ZeroLagHullMA(K_close, day1, day2, esp) {
   for(let i=1; i<day1; i++) {   //i=1 to 10 (i=1 to day1)
     sum_wgt2=sum_wgt2+i;  //例如=1+2+...+10=55,加總WMA2的總權重,要放分母
   }  
-  for(let i=day1; i<=K_close.length; i++) {  //i=10 to 2000
+  for(let i=day1; i<K_close.length; i++) {  //i=10 to 2000
     sum_close=0;    //分子=10天加權收盤價加總
     wgt_count=1;    //權重計數
     for(let j=i-day1+1; j<=i; j++) {  //j=1 to 10, j=2 to 11,...
@@ -4739,7 +4739,7 @@ function ZeroLagHullMA(K_close, day1, day2, esp) {
 
   //3-----計算 RawHMA2-------------------------------------------
   //計算RawHMA, day1=10, RawHMA=10 to 2000
-  for(let i=day1; i<=K_close.length; i++) {  //i=10 to 2000
+  for(let i=day1; i<K_close.length; i++) {  //i=10 to 2000
     RawHMA[i]=2*WMA1[i]-WMA2[i];             //RawHMA[]=10 to 2000
   }  // if day1=10 , RawHMA[i]=10 to 2000
 
@@ -4754,7 +4754,7 @@ function ZeroLagHullMA(K_close, day1, day2, esp) {
   // what kind of type is sum_temp ??? 
   let sum_temp = 0;    //暫時加總用
   wgt_count=1;     //權重計數, 1,2,...,5 或 1,2,...,10 或 1,2,...m1=4
-  for(let i=day1+m1-1; i<=K_close.length; i++) {  //i=(10+4-1)=13,14,...,2000
+  for(let i=day1+m1-1; i<K_close.length; i++) {  //i=(10+4-1)=13,14,...,2000
     sum_temp=0;
     wgt_count=1;   //原設計count=1;
     for(let j=i-m1+1; j<=i; j++) { //j=10 to 13  (j=i-m1+1 to i)=(j=13-4+1 to 13)=(j=10 to 13)
@@ -4799,7 +4799,7 @@ function ZeroLagHullMA(K_close, day1, day2, esp) {
   wgt_count=0;     //權重計數, 1,2,...,5 或 1,2,...,10     
   sum_close=0;     //分子=5天加權收盤價加總
   //let first_HMA_is=day1+m1-1;    //第1個HMA[]是13， =10+4-1=13, if day1=10
-  for(let i=first_HMA_is+half_day2-1; i<=K_close.length; i++) { //i=17 to 2000,13+5-1=17
+  for(let i=first_HMA_is+half_day2-1; i<K_close.length; i++) { //i=17 to 2000,13+5-1=17 
     sum_close=0;
     wgt_count=1;  //權重計數
     for(let j=i-half_day2+1; j<=i; j++) {     //j=13 to 17, j=14 to 18,...
@@ -4817,7 +4817,7 @@ function ZeroLagHullMA(K_close, day1, day2, esp) {
   for(let i=1; i<day2; i++) {  //i=1 to 10 (i=1 to day2)
     sum_wgt2=sum_wgt2+i;        //例如=1+2+...+10=55,加總WMA2的總權重,要放分母
   }  
-  for(let i=first_HMA_is+day2-1; i<=K_close.length; i++) {  //i=22 to 2000, (13+10-1=22)
+  for(let i=first_HMA_is+day2-1; i<K_close.length; i++) {  //i=22 to 2000, (13+10-1=22)
     sum_close=0;    //分子=10天加權收盤價加總
     wgt_count=1;    //權重計數
     for(let j=i-day2+1; j<=i; j++) {        //j=13 to 22, j=14 to 23,...
@@ -4829,7 +4829,7 @@ function ZeroLagHullMA(K_close, day1, day2, esp) {
 
   //3-----計算 RawHMA2---if day1=10 and day2=10, then RawHMA2=22 to 2000-----------
   // first_HMA_is+day2-1 = 13+10-1=22
-  for(let i=first_HMA_is+day2-1; i<=K_close.length; i++) {  //i=22 to 2000
+  for(let i=first_HMA_is+day2-1; i<K_close.length; i++) {  //i=22 to 2000
     RawHMA2[i]=2*WMA_HMA1[i]-WMA_HMA2[i];             //RawHMA2[]=22 to 2000
   } // if day2=10 , RawHMA2[i]=22 to 2000
 
@@ -4845,7 +4845,7 @@ function ZeroLagHullMA(K_close, day1, day2, esp) {
   wgt_count=1;     //權重計數, 1,2,...,5 或 1,2,...,10 或 1,2,...m=4
   // let first_HMA_is=day1+m1-1;     //第1個HMA[]是13， =10+4-1=13
   let day_temp=first_HMA_is+day2+m2-2;  //=(day1+m1-1)+(day2+m2-2)=day1+day2+m1+m2-3=25
-  for(let i=day_temp; i<=K_close.length; i++) {  //i=(13+10+4-2)=25 to 2000
+  for(let i=day_temp; i<K_close.length; i++) {  //i=(13+10+4-2)=25 to 2000
     sum_temp=0;
     wgt_count=1;   //權重計數
     for(let j=i-m2+1; j<=i; j++) { //j=22 to 25  (j=i-m2+1 to i)=(j=25-4+1 to 25)=(j=22 to 25)
@@ -6590,7 +6590,7 @@ function KingMA(values, ma_day) {
      sum=sum-values[i-ma_day]+values[i];   //先減前10天的值,再加今天的值
      MA[i]=sum/ma_day;
   }
-  return MA;
+  return { MA };
   //Drawing the MA[] figure in the K_Line area.
   //if ma_day=10, then MA[]=10,11,...,2000
 }
@@ -8555,10 +8555,10 @@ function LaguerreRSI(STK_close, Gamma_value, esp) {
   const LaguerreRSI=[];     //Laguerre RSI=2 to 2000
   const eLaguerreRSI=[];    //自創, =2 to 2000
   for(let i=2; i<=STK_close.length; i++) {   //i=2 to 2000 
-    L0=(1-Gamma)*STK_close[i]+Gamma*L0prev;  //Laguerre filter的第一個變數L0
-    L1=-Gamma*L0+L0prev+Gamma*L1prev;        //Laguerre filter的第二個變數L1
-    L2=-Gamma*L1+L1prev+Gamma*L2prev;        //Laguerre filter的第三個變數L2
-    L3=-Gamma*L2+L2prev+Gamma*L3prev;        //Laguerre filter的第四個變數L3
+    L0=(1-gamma)*STK_close[i]+gamma*L0prev;  //Laguerre filter的第一個變數L0
+    L1=-gamma*L0+L0prev+gamma*L1prev;        //Laguerre filter的第二個變數L1
+    L2=-gamma*L1+L1prev+gamma*L2prev;        //Laguerre filter的第三個變數L2
+    L3=-gamma*L2+L2prev+gamma*L3prev;        //Laguerre filter的第四個變數L3
     // 計算上漲/下跌動能。下列二式簡潔扼要！
     cum_Up=Math.max(L0-L1,0)+Math.max(L1-L2,0)+Math.max(L2-L3,0);
     cum_Down=Math.max(L1-L0,0)+Math.max(L2-L1,0)+Math.max(L3-L2,0);
@@ -8591,7 +8591,7 @@ function InstantaneousTrendline(STK_high, STK_low, STK_close, Alpha_value) {
   // Menu Name: Inst Trend     //alpha= 0.05~0.2
   //以TP=TypicalPrice替代MedianPrice=(H+L)/2.
   const TP=[];      //TypicalPrice=[]; //=1 to 2000
-  for(let i=1; i<STK_high.length; i++) {  //i=1 to 2000
+  for(let i=1; i<=STK_high.length; i++) {  //i=1 to 2000
     TP[i]=(STK_high[i]+STK_low[i]+6*STK_close[i])/8;
   }
   if(Alpha_value<=5)  { Alpha_value=5; }  //控制alpha= 0.05~0.2
@@ -8602,7 +8602,7 @@ function InstantaneousTrendline(STK_high, STK_low, STK_close, Alpha_value) {
   const IT=[];       //InstTrend=[]; //=1 to 2000
   const Trigger=[];  //Trigger Line交易訊號。Trigger(k)=2*IT(k)-IT(k-2)
   IT[1]=TP[1];   IT[2]=TP[2];  //initial values
-  for(let i=3; i<STK_high.length; i++) {    //i=3 to 2000
+  for(let i=3; i<=STK_high.length; i++) {    //i=3 to 2000
     IT[i]=(A-A*A/4)*TP[i]+0.5*(A*A)*TP[i-1]-(A-0.75*A*A)*TP[i-2]+2*(1-A)*IT[i-1]-((1-A)**2)*IT[i-2];
     Trigger[i]=2*IT[i]-IT[i-2];
   }
@@ -8712,7 +8712,7 @@ function AdaptiveRSI(STK_high, STK_low, STK_close, esp) {
     for(let j=i-RSI_Period+1; j<=i; j++) { //j=48-10+1=39 to 48
       if(dif[j] > 0) {
         sum_Up = sum_Up + dif[j]; }   //收盤價漲幅之和
-      else {
+      else {s
         sum_Dn=sum_Dn+Math.abs(dif[j]);   //收盤價跌幅之和
       }
     }
@@ -8734,8 +8734,657 @@ function AdaptiveRSI(STK_high, STK_low, STK_close, esp) {
 window.AdaptiveRSI = AdaptiveRSI;
 //----------------------------------------------------------------------
 
+//===designed by Prof Wang, 2026-July-28==================================
+// Adaptive MACD(自適應MACD)是將傳統MACD的固定EMA週期，改為依據市場主循環(Dominant Cycle)
+// 自動調整的MACD。這個概念主要由John F. Ehlers提出，其核心思想是：快速EMA、慢速EMA與訊號線的長度
+// ，會隨市場循環而改變，而不是固定使用 12、26、9。
+// 指數平滑移動平均的參數:exponential smoothing parameter(esp)
+function AdaptiveMACD(STK_high, STK_low, STK_close, esp) {
+  // Menu Name: Adaptive MACD   //esp=3, 5. 自動調整的MACD是動態的,沒有固定的值.
+  const TP=[];  //TP[]=TypicalPrice=[]; //=1 to 2000, 以TypicalPrice取代Close
+  for(let i=1; i<=STK_high.length; i++) {  //i=1 to 2000
+    TP[i]=(STK_high[i]+STK_low[i]+6*STK_close[i])/8;
+  }
+  //Calculate Q(t)
+  const Q=[];  //Quadrature, Q[]=7 to 2000
+  for(let i=7; i<=STK_close.length; i++) { //i=7 to 2000
+    Q[i]=0.0962*TP[i]+0.5769*TP[i-2]-0.5769*TP[i-4]-0.0962*TP[i-6];
+  }
+  //Calculate Re[], Im[], 相位差=atan(Im[]/Re[]), I(t)=TP(t-3)
+  //Re[]=I(t)*I(t-1)+Q(t)*Q(t-1),  Im[]=I(t)*Q(t-1)-Q(t)*I(t-1)
+  const Re=[], Im=[], dif_phase=[];  //=8 to 2000
+  const DC=[]; //主循環週期:Dominant Cycle(DC), DC(t)=360/dif_phase
+  const Period=[]; //Adaptive MACD週期: Period=DC,每一天都重新決定MACD長度(週期)
+  for(let i=8; i<=STK_close.length; i++) {  //i=8 to 2000
+    Re[i]=TP[i-3]*TP[i-4]+Q[i]*Q[i-1];    //=I(t)*I(t-1)+Q(t)*Q(t-1)
+    Im[i]=TP[i-3]*Q[i-1]-Q[i]*TP[i-4];    //=I(t)*Q(t-1)-Q(t)*I(t-1)
+    dif_phase[i]=Math.atan(Im[i]/Re[i]);  //相位差=atan(Im[]/Re[])
+    //主循環週期:Dominant Cycle(DC), DC(t)=360/dif_phase, 10≤DC(t)≤48
+    DC[i]=360/dif_phase[i];
+    if(DC[i]<10) { DC[i]=10; }  //10≤DC(t)≤48
+    if(DC[i]>48) { DC[i]=48; }  //10≤DC(t)≤48
+    // 5.Adaptive MACD週期: Period[]=DC[]/2, 每一天都重新決定MACD長度(週期)
+    // 在RSI的Period[i]=Math.round(DC[i]/2);
+    Period[i]=Math.round(DC[i]);  //MACD,慢速EMA  //四捨五入. =8 to 2000
+    //慢速EMA的Period[]=DC, 快速EMA的Period[]=DC/2
+  }
+  //Fast EMA=0.5DC,   Slow EMA=DC
+  const fast_EMA=[];       //Period=DC/2
+  const slow_EMA=[];       //Period=DC
+  const Adaptive_MACD=[];  //fast_EMA[]-slow_EMA[]
+  const Signal=[];         //=EMA(MACD, N), N=Period[]/4
+  const Histogram=[];      //=Adaptive_MACD[]-Signal[],長條圖
+  fast_EMA[1]=TP[1];  slow_EMA[1]=TP[1];   //initial values=TP[1]
+  for(let i=20; i<=STK_close.length; i++) {  //i=20 to 2000,本人訂起點為第20天
+    for(let j=2; j<=i; j++) {  //第1輪：j=2 to 20
+      fast_EMA[j]=(Period[i]/2-1)/(Period[i]/2+1)*fast_EMA[j-1]+2/(Period[i]/2+1)*TP[j];
+      slow_EMA[j]=(Period[i]-1)/(Period[i]+1)*slow_EMA[j-1]+2/(Period[i]+1)*TP[j];
+    }
+    // 8.Adaptive MACD=fast_EMA[]-slow_EMA[]
+    Adaptive_MACD[i]=fast_EMA[i]-slow_EMA[i];  //first=MACD[20]
+    // 9.Adaptive Signal Line
+    if(i===20) {
+      Signal[i]=Adaptive_MACD[i]; }  //first value=Signal[20]
+    else {
+      Signal[i]=(Period[i]/4-1)/(Period[i]/4+1)*Signal[i-1]+2/(Period[i]/4+1)*Adaptive_MACD[i];
+    }
+    Histogram[i]=Adaptive_MACD[i]-Signal[i];  //first value=Histogram[20]
+  }
+  return { Adaptive_MACD, Signal };
+  // drawing these figures in the small windows.
+  // these indicators[]=20 to 2000. 本人訂起點為第20天
+}
+window.AdaptiveMACD = AdaptiveMACD;
+//----------------------------------------------------------------------
+
+//===designed by Prof Wang, 2026-July-29==================================
+// Jurik Moving Average(JMA)是由Mark Jurik所開發的一種低延遲(Low Lag)、低噪聲(Low Noise)移動平均線。
+// 它最大的特色是在平滑價格的同時，仍能保持極快的反應速度，因此廣泛應用於量化交易與高階技術分析。
+// JMA 的完整演算法並未公開，屬於商業專利演算法，因此官方並沒有公布完整數學公式。
+function JurikMovingAverage(STK_high, STK_low, STK_close, Length) {
+  // Menu Name: JMA       // Length=20, 使用者設定週期
+  const TP=[];  //TP[]=TypicalPrice=[]; //=1 to 2000, 以TypicalPrice取代Close
+  for(let i=1; i<=STK_high.length; i++) {  //i=1 to 2000
+    TP[i]=(STK_high[i]+STK_low[i]+6*STK_close[i])/8;
+  }
+  // Calculate beta, alpha.  
+  let beta, alpha;
+  beta=(0.45*(Length-1))/(0.45*(Length-1)+2);
+  // JMA引入Phase Ratio。令Phase的範圍： -100≤Phase≤100
+  let Phase=50;
+  let PR=Phase/100+1.5;  //PR=Phase Ratio, 0.5≤PR≤2.5
+  alpha=Math.pow(beta, PR);
+  // 第三步：第一層EMA
+  const E0=[], E1=[], E2=[], JurikMA=[];
+  // 本人補充，初始值如下：
+  E0[1]=TP[1]; E1[1]=0; E2[1]=0; JurikMA[1]=TP[1];
+  for(let i=2; i<=STK_close.length; i++) { //i=2 to 2000
+    E0[i]=(1-alpha)*TP[i]+alpha*E0[i-1];
+    // 第四步：誤差修正
+    E1[i]=(TP[i]-E0[i])*(1-beta)+beta*E1[i-1];
+    // 第五步：第二層平滑
+    E2[i]=E0[i]+PR*E1[i];
+    // 第六步：最終 Jurik Filter, 最後再做一次平滑
+    JurikMA[i]=JurikMA[i-1]+((1-alpha)**2)*(E2[i]-JurikMA[i-1]);
+  }
+  return { JurikMA };
+  // drawing these figures in the small windows.
+  // these indicators[]=2 to 2000.
+}
+window.JurikMovingAverage = JurikMovingAverage;
+//----------------------------------------------------------------------
+
+//===designed by Prof Wang, 2026-July-30==================================
+// Zero Lag EMA(ZLEMA,零延遲指數移動平均)是由John Ehlers與Ric Way提出的一種移動平均方法，
+// 其目的是消除一般EMA的時間延遲(lag)，使平均線更快反映價格變化，同時保有EMA的平滑效果。
+function ZeroLagEMA(STK_high, STK_low, STK_close, period) {
+  // Menu Name: Zero Lag EMA       // period=20,...
+  const TP=[];   //TP[]=TypicalPrice=[]; //=1 to 2000, 以TypicalPrice取代Close
+  const ZeroLag_EMA=[];  //=10 to 2000
+  for(let i=1; i<=STK_high.length; i++) {  //i=1 to 2000
+    TP[i]=(STK_high[i]+STK_low[i]+6*STK_close[i])/8;
+  }
+  //傳統EMA為： EMA(t)=alpha*P(t)+(1-alpha)*EMA(t-1), // alpha=2/(N+1)
+  let alpha=2/(period+1);
+  let lag=Math.round((period-1)/2);  //四捨五入, Lag(延遲)的估計
+  ZeroLag_EMA[lag]=TP[lag];  //initial values, ZeroLag_EMA[10]
+  for(let i=(lag+1); i<=STK_high.length; i++)  { //i=11 to 2000
+    ZeroLag_EMA[i]=alpha*(2*TP[i]-TP[i-lag])+(1-alpha)*ZeroLag_EMA[i-1];
+  }
+  return { ZeroLag_EMA };
+  // drawing these figures in the K_Line area.
+  // if period=20, these indicators[]=10 to 2000.
+}
+window.ZeroLagEMA = ZeroLagEMA;
+//----------------------------------------------------------------------
+
+//===designed by Prof Wang, 2026-July-30==================================
+// 三重EMA(Triple Exponential Moving Average,TEMA)是由Patrick Mulloy於1994年提出的移動平均技術，
+// 其目的不是進行三次平滑，而是利用三層EMA的線性組合來大幅降低 EMA 的延遲(Lag)，同時保持平滑性。
+function TripleEMA(STK_high, STK_low, STK_close, period) {
+  // Menu Name: Triple EMA       // period=20,...
+  const TP=[];   //TP[]=TypicalPrice=[]; //=1 to 2000, 以TypicalPrice取代Close
+  for(let i=1; i<=STK_high.length; i++) {  //i=1 to 2000
+    TP[i]=(STK_high[i]+STK_low[i]+6*STK_close[i])/8;
+  }
+  //傳統EMA為： EMA(t)=alpha*P(t)+(1-alpha)*EMA(t-1), // alpha=2/(N+1)
+  //真正的 TEMA 並不是第三層 EMA，而是三層 EMA 的線性組合：
+  let alpha=2/(period+1);
+  const EMA1=[], EMA2=[], EMA3=[];  //=1 to 2000
+  const Triple_EMA=[];               //=1 to 2000
+  EMA1[1]=TP[1], EMA2[1]=TP[1], EMA3[1]=TP[1];  //EMA1, EMA2, EMA3[]初值
+  Triple_EMA[1]=3*EMA1[1]-3*EMA2[1]+EMA3[1];    //初值
+  for(let i=2; i<=STK_high.length; i++) {  //i=2 to 2000
+    EMA1[i]=alpha*TP[i]+(1-alpha)*EMA1[i-1];
+    EMA2[i]=alpha*EMA1[i]+(1-alpha)*EMA2[i-1];
+    EMA3[i]=alpha*EMA2[i]+(1-alpha)*EMA3[i-1];
+    Triple_EMA[i]=3*EMA1[i]-3*EMA2[i]+EMA3[i];
+  }
+  return { Triple_EMA };
+  // drawing these figures in the K_Line area.
+  // these indicators[]=1 to 2000.
+}
+window.TripleEMA = TripleEMA;
+//----------------------------------------------------------------------
+
+//===designed by Prof Wang, 2026-July-31============完全自行創新===========
+// Stochastic EMA(Stochastic Exponential Moving Average, 隨機指數移動平均) (完全自行創新)
+//Stochastic EMA並不是一個像EMA、MACD或Stochastic Oscillator那樣具有公認標準定義的技術指標，
+// 因此沒有唯一的標準方程式。不同交易平台或程式作者可能有不同的實作方式。
+// 指數平滑移動平均的參數:exponential smoothing parameter(esp)
+function StochasticEMA(STK_high, STK_low, STK_close, esp, KD_num) {
+  // Menu Name: Stochastic EMA    // esp=9,10,... //KD_num=9,10,...
+  const TP=[];   //TP[]=TypicalPrice=[]; //=1 to 2000,以TypicalPrice取代Close
+  for(let i=1; i<=STK_high.length; i++) {  //i=1 to 2000
+    TP[i]=(STK_high[i]+STK_low[i]+6*STK_close[i])/8;
+  }
+  //方法一：先計算EMA，再對EMA計算Stochastic(最常見) // 1.Calculate EMA[]=1 to 2000
+  const EMA=[];  //=1 to 2000
+  EMA[1]=TP[1];  //initial values
+  for(let i=2; i<=STK_high.length; i++) {  //i=2 to 2000
+    EMA[i]=(esp-1)/(esp+1)*EMA[i-1]+2/(esp+1)*TP[i];
+  }
+  // 2.Calculate對EMA做Stochastic正規化  //KD_num=9,10,...
+  let max_EMA, min_EMA;
+  const rsv_EMA=[];          //=10 to 2000, Raw Stochastic Value(RSV)
+  const K_EMA=[], D_EMA=[];  //=10 to 2000, 類似KD_Line的K與D
+  //const eK_EMA=[], eD_EMA=[];  //=10 to 2000
+  for(let i=KD_num; i<=STK_high.length; i++) {  //i=10 to 2000
+    max_EMA=EMA[i-KD_num+1];  //max_EMA=EMA[1]
+    min_EMA=EMA[i-KD_num+1];  //min_EMA=EMA[1]
+    for(let j=i-KD_num+2; j<=i; j++){  //j=2 to 10
+      if(max_EMA<EMA[j]) { max_EMA=EMA[j]; }
+      if(min_EMA>EMA[j]) { min_EMA=EMA[j]; }
+    }
+    if(max_EMA===min_EMA) {
+      rsv_EMA[i]=100; }
+    else {
+      rsv_EMA[i]=100*(EMA[i]-min_EMA)/(max_EMA-min_EMA);
+    }
+    if(i===KD_num) {
+      K_EMA[i]=50;    //initial values
+      D_EMA[i]=50;
+      //eK_EMA[i]=K_EMA[i];
+      //eD_EMA[i]=D_EMA[i]
+     }
+    else {
+       K_EMA[i]=(2/3)*K_EMA[i-1]+(1/3)*rsv_EMA[i];
+       D_EMA[i]=(2/3)*D_EMA[i-1]+(1/3)*K_EMA[i];
+       //可以再對K_EMA[]與D_EMA[]指數平滑化！
+       //eK_EMA[i]=(esp-1)/(esp+1)*eK_EMA[i-1]+2/(esp+1)*K_EMA[i];
+       //eD_EMA[i]=(esp-1)/(esp+1)*eD_EMA[i-1]+2/(esp+1)*D_EMA[i];
+    }
+  }
+  return { K_EMA, D_EMA };   //return {eK_EMA, eD_EMA}
+  // drawing these figures in the small windows.
+  // if KD_num=10, then these indicators[]=10 to 2000.
+}
+window.StochasticEMA = StochasticEMA;
+//----------------------------------------------------------------------
+
+//===designed by Prof Wang, 2026-July-31============完全自行創新===========
+// Stochastic EMA(Stochastic Exponential Moving Average, 隨機指數移動平均) (完全自行創新)
+//Stochastic EMA並不是一個像EMA、MACD或Stochastic Oscillator那樣具有公認標準定義的技術指標，
+// 因此沒有唯一的標準方程式。不同交易平台或程式作者可能有不同的實作方式。
+//本程式再對K_EMA[]與D_EMA[]指數平滑化！   <完全自行創新>
+// 指數平滑移動平均的參數:exponential smoothing parameter(esp)
+function StochasticEMA_esp(STK_high, STK_low, STK_close, esp, KD_num) {
+  // Menu Name: Stochastic EMA_esp    // esp=9,10,... //KD_num=9,10,...
+  const TP=[];   //TP[]=TypicalPrice=[]; //=1 to 2000,以TypicalPrice取代Close
+  for(let i=1; i<=STK_high.length; i++) {  //i=1 to 2000
+    TP[i]=(STK_high[i]+STK_low[i]+6*STK_close[i])/8;
+  }
+  //方法一：先計算EMA，再對EMA計算Stochastic(最常見) // 1.Calculate EMA[]=1 to 2000
+  const EMA=[];  //=1 to 2000
+  EMA[1]=TP[1];  //initial values
+  for(let i=2; i<=STK_high.length; i++) {  //i=2 to 2000
+    EMA[i]=(esp-1)/(esp+1)*EMA[i-1]+2/(esp+1)*TP[i];
+  }
+  // 2.Calculate對EMA做Stochastic正規化  //KD_num=9,10,...
+  let max_EMA, min_EMA;
+  const rsv_EMA=[];          //=10 to 2000, Raw Stochastic Value(RSV)
+  const K_EMA=[], D_EMA=[];  //=10 to 2000, 類似KD_Line的K與D
+  const eK_EMA=[], eD_EMA=[]; //=10 to 2000,再對K_EMA[]與D_EMA[]指數平滑化！完全自行創新
+  for(let i=KD_num; i<=STK_high.length; i++) {  //i=10 to 2000
+    max_EMA=EMA[i-KD_num+1];  //max_EMA=EMA[1]
+    min_EMA=EMA[i-KD_num+1];  //min_EMA=EMA[1]
+    for(let j=i-KD_num+2; j<=i; j++){  //j=2 to 10
+      if(max_EMA<EMA[j]) { max_EMA=EMA[j]; }
+      if(min_EMA>EMA[j]) { min_EMA=EMA[j]; }
+    }
+    if(max_EMA===min_EMA) {
+      rsv_EMA[i]=100; }
+    else {
+      rsv_EMA[i]=100*(EMA[i]-min_EMA)/(max_EMA-min_EMA);
+    }
+    if(i===KD_num) {
+      K_EMA[i]=50;    //initial values
+      D_EMA[i]=50;
+      eK_EMA[i]=K_EMA[i]; //initial values
+      eD_EMA[i]=D_EMA[i]
+     }
+    else {
+       K_EMA[i]=(2/3)*K_EMA[i-1]+(1/3)*rsv_EMA[i];
+       D_EMA[i]=(2/3)*D_EMA[i-1]+(1/3)*K_EMA[i];
+       //可以再對K_EMA[]與D_EMA[]指數平滑化！
+       eK_EMA[i]=(esp-1)/(esp+1)*eK_EMA[i-1]+2/(esp+1)*K_EMA[i];
+       eD_EMA[i]=(esp-1)/(esp+1)*eD_EMA[i-1]+2/(esp+1)*D_EMA[i];
+    }
+  }
+  return {eK_EMA, eD_EMA}   // return { K_EMA, D_EMA };
+  // drawing these figures in the small windows.
+  // if KD_num=10, then these indicators[]=10 to 2000.
+}
+window.StochasticEMA_esp = StochasticEMA_esp;
+//----------------------------------------------------------------------
+
+//===designed by Prof Wang, 2026-July-31==================================
+//Variable Index Dynamic Average(VIDYA,可變指數動態平均)是由Tushar Chande提出的
+// 自適應移動平均線(Adaptive Moving Average)。它的特色是利用市場波動性或動能來
+// 自動調整EMA的平滑係數，因此在趨勢明顯時反應較快，在盤整時則較平滑。
+//錢德動量擺動指標(Chande Momentum Oscillator, CMO)
+//CMO=(N日內漲幅總和-N日內跌幅總和)/(N日內漲幅總和+N日內跌幅總和)*100
+//N日內漲幅總和=N日內漲幅1+N日內漲幅2+...+N日內漲幅N
+//今N日內漲幅=今收盤價-昨收盤價, if 今收盤價>昨收盤價, else 今N日內漲幅=0
+//今N日內跌幅總和=N日內跌幅1+N日內跌幅2+...+N日內跌幅N
+//今N日內跌幅=昨收盤價-今收盤價, if 昨收盤價>今收盤價, else 今N日內跌幅=0
+//CMO=(N日內漲幅總和-N日內跌幅總和)/(N日內漲幅總和+N日內跌幅總和)*100
+function VariableIndexDynamicAvg(STK_high, STK_low, STK_close, period) {
+  // Menu Name: Variable DynamicAvg   //N=period=10,... alpha=2/(i+period)
+  const TP=[];   //TP[]=TypicalPrice=[]; //=1 to 2000,以TypicalPrice取代Close
+  for(let i=1; i<=STK_high.length; i++) {  //i=1 to 2000
+    TP[i]=(STK_high[i]+STK_low[i]+6*STK_close[i])/8;
+  }
+  //計算每天上漲,下跌的值。利用Chande Momentum Oscillator(CMO)
+  const up = [];    //例如:N=10, up=2 to 2000, 上漲
+  const down = [];  //例如:N=10, down=2 to 2000, 下跌
+  for(let i=2; i<=STK_close.length; i++) {   //i=2 to 2000
+    if(TP[i]>TP[i-1]) {       //上漲：今收盤價>昨收盤價
+      up[i]=TP[i]-TP[i-1]; 
+      down[i]=0; }
+    else if(TP[i-1]>TP[i]) {  //下跌：昨收盤價>今收盤價
+      up[i]=0;
+      down[i]=TP[i-1]-TP[i]; }
+    else {    //平盤
+      up[i]=0;
+      down[i]=0; }
+  }
+  //Calculate CMO, VIDYA[]=10 to 2000.(if period=10)
+  const VIDYA=[];  //=10 to 2000.例如:period=N=10
+  VIDYA[period]=TP[period];  //VIDYA[10]初值
+  let CMO; //CMO版本目前最普遍,CMO=(sum_up-sum_down)/(sum_up+sum_down)*100;
+  let sum_up=0;    //加總N日內漲幅總和
+  let sum_down=0;  //加總N日內跌幅總和
+  for(let i=period+1; i<=STK_close.length; i++) {  //i=11 to 2000
+    sum_up=0;    //加總N日內漲幅總和
+    sum_down=0;  //加總N日內跌幅總和
+    for(let j=i-period+1; j<=i; j++) {  //j=2 to 11, 例如:N=10
+      sum_up+=up[j];
+      sum_down+=down[j];
+    }
+    // CMO=math.abs(sum_up-sum_down)/(sum_up+sum_down)*100; // prof Wang 2026-07-31, CMO=(sum_up-sum_down)/(sum_up+sum_down)*100;
+    CMO=(sum_up+sum_down===0) ? 0 : (sum_up-sum_down)/(sum_up+sum_down)*100;  // chat gpt correction
+    VIDYA[i]=VIDYA[i-1]+2/(period+1)*(CMO/100)*(TP[i]-VIDYA[i-1]);
+  }
+  return { VIDYA };
+  //drawing these figures in the K_Line area.
+  //if period=10, then indicators[]=10 to 2000.
+}
+window.VariableIndexDynamicAvg = VariableIndexDynamicAvg;
+/*-------------------原設計的思維---2026-07-31--------------
+for(let i=2; i<=STK_close.length; i++) {   //i=2 to 2000
+    if(TP[i]>TP[i-1]) {   //上漲：今收盤價>昨收盤價
+      up[i]=TP[i]-TP[i-1]; }
+    else {
+      up[i]=0;
+    }
+    if(TP[i-1]>TP[i]) {   //下跌：昨收盤價>今收盤價
+      down[i]=TP[i-1]-TP[i]; }
+    else {
+      down[i]=0;
+    }
+  }  */
+//----------------------------------------------------------------------
+
+//===designed by Prof Wang, 2026-August-01==================================
+//McGinley Dynamic(MGD)是由John R. McGinley提出的自適應移動平均(Adaptive Moving Average)，
+// 其目的不是預測價格，而是讓均線能自動跟隨市場速度，避免一般SMA或EMA在快速行情中產生明顯落後。
+function McGinleyDynamic(STK_high, STK_low, STK_close, period) {
+  // Menu Name: McGinley Dynamic   //N=period=10,...
+  const TP=[];   //TP[]=TypicalPrice=[]; //=1 to 2000,以TypicalPrice取代Close
+  for(let i=1; i<=STK_high.length; i++) {  //i=1 to 2000
+    TP[i]=(STK_high[i]+STK_low[i]+6*STK_close[i])/8;
+  }
+  //Calculate MGD[]=1 to 2000
+  const MGD=[];  //=1 to 2000
+  let alpha;     //=1/(k*N*[Pt/MGD(t-1)]**4)
+  let k=0.6;
+  MGD[1]=TP[1];  //initial values
+  for(let i=2; i<=STK_close.length; i++) {   //i=2 to 2000
+    alpha=1/(k*period*Math.pow(TP[i]/MGD[i-1],4));
+    MGD[i]=MGD[i-1]+alpha*(TP[i]-MGD[i-1]);
+  }
+  return { MGD };
+  //drawing these figures in the K_Line area.
+  //if period=10, then indicators[]=1 to 2000.
+}
+window.McGinleyDynamic = McGinleyDynamic;
+//----------------------------------------------------------------------
+
+//===designed by Prof Wang, 2026-August-02==================================
+//Fractal Chaos Bands(FCB,分形混沌帶)由Bill Williams的Fractal(分形)概念衍生而來的價格通道指標。
+//利用最近確認的分形高點(Fractal High)與分形低點(Fractal Low)建立上下通道，因此可視為一種動態支撐/阻力通道。
+//將Fractal_High與Fractal_Low繪製在K線圖上，形成動態支撐/阻力通道。
+function FractalChaosBands(STK_high, STK_low) {
+  // Menu Name: Fractal Bands
+  //上分形(Bearish Fractal)  //下分形(Bullish Fractal)
+  const Fractal_High=[], Fractal_Low=[];  //=2 to 2000
+  Fractal_High[1]=STK_high[1];  //Fractal_High[1] = STK_high[1]
+  Fractal_Low[1]=STK_low[1];    //Fractal_Low[1] = STK_low[1]
+  Fractal_High[2]=STK_high[2];  //Fractal_High[2] = STK_high[2]
+  Fractal_Low[2]=STK_low[2];    //Fractal_Low[2] = STK_low[2]
+  for(let i=3; i<=STK_high.length-2; i++) {   //i=3 to 2000-2 (was STK_close, undefined - this function only takes high/low)
+    if(STK_high[i]>STK_high[i-1] && STK_high[i]>STK_high[i-2] && STK_high[i]>STK_high[i+1] && STK_high[i]>STK_high[i+2]) {
+      Fractal_High[i]=STK_high[i];  }
+    else {
+      Fractal_High[i]=Fractal_High[i-1];
+    }
+    //下分形 (Bullish Fractal)
+    if(STK_low[i]<STK_low[i-1] && STK_low[i]<STK_low[i-2] && STK_low[i]<STK_low[i+1] && STK_low[i]<STK_low[i+2]) {
+      Fractal_Low[i]=STK_low[i];  }
+    else {  
+      Fractal_Low[i]=Fractal_Low[i-1];
+    }
+    //計算中間線(Middle of the Fractal Chaos Bands)
+    //const middleLine = (Fractal_High[i] + Fractal_Low[i]) / 2;
+    //最後2筆的Fractal_High與Fractal_Low保持不變，因為無法計算分形.
+    if(i===STK_high.length-2) {         //最後2筆 (was STK_close, undefined - this function only takes high/low)
+      Fractal_High[i+1]=Fractal_High[i]; Fractal_Low[i+1]=Fractal_Low[i];
+      Fractal_High[i+2]=Fractal_High[i]; Fractal_Low[i+2]=Fractal_Low[i];
+    }
+  }
+  return { Fractal_High, Fractal_Low };
+  //drawing these figures in the K_Line area.
+  //indicators[]=1 to 2000.
+}
+window.FractalChaosBands = FractalChaosBands;
+//----------------------------------------------------------------------
+
+//===designed by Prof Wang, 2026-August-03==================================
+//Pivot Points(樞紐點)是技術分析中最常用的支撐／壓力計算方法之一。它利用前一交易日
+// (或前一週、前一月)的最高價、最低價與收盤價，推算下一交易期間的重要價格水準。
+//最常見的是Classic Pivot Points(經典樞紐點)，此外還有Woodie、Fibonacci、Camarilla、DeMark等版本.
+//===1.Classic Pivot Points(經典公式)計算公式========================================
+function PivotPointsClassic(STK_high, STK_low, STK_close) {
+  // Menu Name: Pivot Classic         //Pivot Points Classic
+  //計算樞紐點(經典公式)的支撐與壓力
+  let PivotPoints;
+  const Resistance1=[], Resistance2=[], Resistance3=[];  //3個壓力
+  const Support1=[], Support2=[], Support3=[];           //3個支撐
+  for(let i = 2; i <= STK_high.length; i++) {  // i=2 to 2000
+    PivotPoints=(STK_high[i-1]+STK_low[i-1]+STK_close[i-1])/3;
+    Resistance1[i]= (2*PivotPoints)-STK_low[i-1];               //第一支壓力
+    Resistance2[i]= PivotPoints+(STK_high[i-1]-STK_low[i-1]);   //第二支壓力
+    Resistance3[i]= STK_high[i-1]+2*(PivotPoints-STK_low[i-1]); //第三支壓力
+    //計算支撐點
+    Support1[i]= (2*PivotPoints)-STK_high[i-1];              //第一支支撐
+    Support2[i]= PivotPoints-(STK_high[i-1]-STK_low[i-1]);   //第二支支撐
+    Support3[i]= STK_low[i-1]-2*(STK_high[i-1]-PivotPoints); //第三支支撐
+  }
+  return { Support1, Support2, Support3, Resistance1, Resistance2, Resistance3 };
+  //drawing these figures in the K_Line area.
+  //these indicators[]=2 to 2000.
+}
+window.PivotPointsClassic = PivotPointsClassic;
+//----------------------------------------------------------------------
+
+//===designed by Prof Wang, 2026-August-03==================================
+//Pivot Points(樞紐點)是技術分析中最常用的支撐／壓力計算方法之一。它利用前一交易日
+// (或前一週、前一月)的最高價、最低價與收盤價，推算下一交易期間的重要價格水準。
+//最常見的是Classic Pivot Points(經典樞紐點)，此外還有Woodie、Fibonacci、Camarilla、DeMark等版本.
+//===2.Woodie Pivot Points計算公式========================================
+function PivotPointsWoodie(STK_high, STK_low, STK_close) {
+  // Menu Name: Pivot Woodie         //Pivot Points Woodie
+  //計算樞紐點(Woodie Pivot Points)的支撐與壓力
+  let PivotPoints;
+  const Resistance1=[], Resistance2=[];  //2個壓力
+  const Support1=[], Support2=[];        //2個支撐
+  for(let i = 2; i <= STK_high.length; i++) {  // i=2 to 2000
+    PivotPoints=(STK_high[i-1]+STK_low[i-1]+2*STK_close[i-1])/4;
+    Resistance1[i]= (2*PivotPoints)-STK_low[i-1];               //第一支壓力
+    Resistance2[i]= PivotPoints+(STK_high[i-1]-STK_low[i-1]);   //第二支壓力
+    //計算支撐點
+    Support1[i]= (2*PivotPoints)-STK_high[i-1];              //第一支支撐
+    Support2[i]= PivotPoints-(STK_high[i-1]-STK_low[i-1]);   //第二支支撐
+  }
+  return { Support1, Support2, Resistance1, Resistance2 };
+  //drawing these figures in the K_Line area.
+  //these indicators[]=2 to 2000.
+}
+window.PivotPointsWoodie = PivotPointsWoodie;
+
+//===designed by Prof Wang, 2026-August-03==================================
+//Pivot Points(樞紐點)是技術分析中最常用的支撐／壓力計算方法之一。它利用前一交易日
+// (或前一週、前一月)的最高價、最低價與收盤價，推算下一交易期間的重要價格水準。
+//最常見的是Classic Pivot Points(經典樞紐點)，此外還有Woodie、Fibonacci、Camarilla、DeMark等版本.
+//===3.Fibonacci Pivot Points計算公式========================================
+function PivotPointsFibonacci(STK_high, STK_low, STK_close) {
+  // Menu Name: Pivot Fibonacci         //Pivot Points Fibonacci
+  //計算樞紐點(Fibonacci Pivot Points)的支撐與壓力
+  let PivotPoints;
+  const Resistance1=[], Resistance2=[], Resistance3=[];  //3個壓力
+  const Support1=[], Support2=[], Support3=[];           //3個支撐
+  for(let i = 2; i <= STK_high.length; i++) {  // i=2 to 2000
+    PivotPoints=(STK_high[i-1]+STK_low[i-1]+STK_close[i-1])/3;
+    Resistance1[i]= PivotPoints+0.382*(STK_high[i-1]-STK_low[i-1]); //第一支壓力
+    Resistance2[i]= PivotPoints+0.618*(STK_high[i-1]-STK_low[i-1]); //第二支壓力
+    Resistance3[i]= PivotPoints+1.0*(STK_high[i-1]-STK_low[i-1]);   //第三支壓力
+    //計算支撐點
+    Support1[i]= PivotPoints-0.382*(STK_high[i-1]-STK_low[i-1]); //第一支支撐
+    Support2[i]= PivotPoints-0.618*(STK_high[i-1]-STK_low[i-1]); //第二支支撐
+    Support3[i]= PivotPoints-1.0*(STK_high[i-1]-STK_low[i-1]);   //第三支支撐
+  }
+  return { Support1, Support2, Support3, Resistance1, Resistance2, Resistance3 };
+  //drawing these figures in the K_Line area.
+  //these indicators[]=2 to 2000.
+}
+window.PivotPointsFibonacci = PivotPointsFibonacci;
+//----------------------------------------------------------------------
+
+//===designed by Prof Wang, 2026-August-03==================================
+//Pivot Points(樞紐點)是技術分析中最常用的支撐／壓力計算方法之一。它利用前一交易日
+// (或前一週、前一月)的最高價、最低價與收盤價，推算下一交易期間的重要價格水準。
+//最常見的是Classic Pivot Points(經典樞紐點)，此外還有Woodie、Fibonacci、Camarilla、DeMark等版本.
+//===4.Camarilla Pivot Points計算公式========================================
+function PivotPointsCamarilla(STK_high, STK_low, STK_close) {
+  // Menu Name: Pivot Camarilla         //Pivot Points Camarilla
+  //計算樞紐點(Camarilla Pivot Points)的支撐與壓力
+  let temp;  //Camarilla採用固定係數
+  const Resist1=[], Resist2=[], Resist3=[], Resist4=[];      //4個壓力
+  const Support1=[], Support2=[], Support3=[], Support4=[];  //4個支撐
+  for(let i = 2; i <= STK_high.length; i++) {  // i=2 to 2000
+    temp=1.1*(STK_high[i-1]-STK_low[i-1]);
+    Resist1[i]= STK_close[i-1]+temp/12; //第一支壓力
+    Resist2[i]= STK_close[i-1]+temp/6;  //第二支壓力
+    Resist3[i]= STK_close[i-1]+temp/4;  //第三支壓力
+    Resist4[i]= STK_close[i-1]+temp/2;  //第四支壓力
+    //計算支撐點
+    Support1[i]= STK_close[i-1]-temp/12;    //第一支支撐
+    Support2[i]= STK_close[i-1]-temp/6;     //第二支支撐
+    Support3[i]= STK_close[i-1]-temp/4;     //第三支支撐
+    Support4[i]= STK_close[i-1]-temp/2;     //第四支支撐
+  }
+  return { Support1, Support2, Support3, Support4, Resist1, Resist2, Resist3, Resist4 };
+  //drawing these figures in the K_Line area.
+  //these indicators[]=2 to 2000.
+}
+window.PivotPointsCamarilla = PivotPointsCamarilla;
+//----------------------------------------------------------------------
+
+//===designed by Prof Wang, 2026-August-03==================================
+//Pivot Points(樞紐點)是技術分析中最常用的支撐／壓力計算方法之一。它利用前一交易日
+// (或前一週、前一月)的最高價、最低價與收盤價，推算下一交易期間的重要價格水準。
+//最常見的是Classic Pivot Points(經典樞紐點)，此外還有Woodie、Fibonacci、Camarilla、DeMark等版本.
+//===5.DeMark Pivot Points計算公式========================================
+function PivotPointsDeMark(STK_open, STK_high, STK_low, STK_close) {
+  // Menu Name: Pivot DeMark         //Pivot Points DeMark
+  //計算樞紐點的支撐與壓力.通常只計算一組支撐S1與壓力R1，不像Classic Pivot有R2,R3,S2,S3。 
+  const PivotPoints=[];   //let PivotPoints; //PivotPoints=X/4
+  let X;
+  const Resistance1=[];  //1個壓力
+  const Support1=[];     //1個支撐
+  for(let i = 2; i <= STK_high.length; i++) {   // i=2 to 2000
+    if (STK_close[i-1] < STK_open[i-1]) {       //情況一：收盤價 < 開盤價（看跌）
+      X = STK_high[i-1]+2*STK_low[i-1]+STK_close[i-1]; } 
+    else if (STK_close[i-1] > STK_open[i-1]) {  //情況二：收盤價 > 開盤價（看漲）
+      X = 2*STK_high[i-1]+STK_low[i-1]+STK_close[i-1]; }
+    else {                                      //情況三：收盤價 = 開盤價（盤整）
+      X = STK_high[i-1]+STK_low[i-1]+2*STK_close[i-1];
+    }
+    PivotPoints[i]=X/4;
+    Resistance1[i]=X/2-STK_low[i-1];  //第一支壓力
+    Support1[i]=X/2-STK_high[i-1];    //第一支支撐
+  }
+  return { Support1, Resistance1, PivotPoints };
+  //drawing these figures in the K_Line area.
+  //these indicators[]=2 to 2000.
+}
+window.PivotPointsDeMark = PivotPointsDeMark;
+//----------------------------------------------------------------------
+
+//===designed by Prof Wang, 2026-August-04==================================
+//ATR Percentage(ATR%)，又稱Average True Range Percentage或 Normalized ATR(NATR)，
+// 是將Average True Range(ATR)以價格標準化後的波動率指標。由於ATR本身的單位與價格相同，
+// 不同價位股票間不易直接比較，因此ATR Percentage以百分比表示波動程度，更適合跨股票、跨市場比較。
+//ATR均幅指標(ATR, Average True Range)indicator,ATR[]=TR的指數平滑移動平均
+//本程式用ATR_num計算ATR[],不用Wilder的平滑公式=(n-1)/n*ATR[i-1]+1/n*TR
+// 而是用移動平均公式=(n-1)/(n+1)*ATR[i-1]+2/(n+1)*TR.
+//指數平滑移動平均的參數:exponential smoothing parameter(ATR_num)
+function ATRPercentage(STK_high, STK_low, STK_close, ATR_num) {
+  // Menu Name: ATR Percent        //ATR_num=14, 20
+  const ATR=[];          //ATR[]=TR的指數平滑移動平均, =2 to 2000
+  const ATR_percent=[];  //ATR%=ATR/Close*100, =2 to 2000
+  //const TR=[];  //TR=真實波幅(True Range),TR是陣列不是變數
+  let TR;         //TR=真實波幅(True Range),改為變數
+  let temp1, temp2, temp3;
+  for(let i=2; i<=STK_close.length; i++) {  //i=2 to 2000
+    temp1 = STK_high[i] - STK_low[i];
+    temp2 = Math.abs(STK_high[i] - STK_close[i-1]);
+    temp3 = Math.abs(STK_low[i] - STK_close[i-1]);
+    TR = Math.max(temp1, temp2, temp3);
+    if(i===2) {
+      ATR[2]=TR; }  //ATR[2]=TR,因為i=2才開始計算TR,所以ATR[2]=TR.
+    else {
+      ATR[i]=(ATR_num-1)/(ATR_num+1)*ATR[i-1]+2/(ATR_num+1)*TR;
+    }
+    ATR_percent[i]=ATR[i]/STK_close[i]*100;  //有些平台使用EMA(Close)當分母
+  }
+  return { ATR_percent };
+  // drawing these figures in the small windows.
+  // ATR[], ATR_percent[]=2,3,...,2000.
+}
+window.ATRPercentage = ATRPercentage;
+//----------------------------------------------------------------------
+
+//===designed by Prof Wang, 2026-August-04==================================
+//Historical Volatility(HV, 歷史波動率)是衡量金融資產在過去一段期間價格波動程度的指標。
+// 它是根據**對數報酬率(Logarithmic Return)**的標準差計算而得，通常再換算成年化百分比。
+// 本程式碼使用Close價格計算歷史波動率。
+function HistoricalVolatility_Close(STK_high, STK_low, STK_close, HV_num) {
+  // Menu Name: Historical Volatility(Close)  //HV_num=10,20,...
+  // 本人意見：HV_num應該不是資料庫中全部的筆數！而是使用者指定的期間數。
+  // 1.計算每日對數報酬率,原創=r_t=ln(Close_t/Close_(t-1)),t=2,3,...,2000.
+  const ln_ROI=[];     //每日對數報酬率=2 to 2000
+  for(let i=2; i<=STK_high.length; i++) {  //i=2 to 2000
+    ln_ROI[i] = Math.log(STK_close[i] / STK_close[i-1]);
+  }
+  // 2.計算對數報酬率的標準差
+  const HV=[];  //歷史波動率=HV_num+1 to 2000 =21 to 2000
+  let sum;
+  for(let i=HV_num+1; i<=STK_close.length; i++) {  //i=21 to 2000
+    sum=0;
+    for(let j=i-HV_num+1; j<=i; j++) {  //j=2 to 21,設HV_num=20,取最近20個ln_ROI計算SD
+      sum += ln_ROI[j];
+    }
+    let mean = sum / HV_num;  //計算最近HV_num個ln_ROI的平均值
+    let sumSquared = 0;
+    for(let j=i-HV_num+1; j<=i; j++) {  //j=2 to 21,設HV_num=20,取最近20個ln_ROI計算SD
+      sumSquared += Math.pow(ln_ROI[j] - mean, 2);
+    }
+    let std_dev = Math.sqrt(sumSquared/(HV_num-1));  //計算最近HV_num個ln_ROI的標準差
+    // 3.計算歷史波動率,原創=HV=std_dev*sqrt(252)*100%,t=2,3,...,2000.
+    HV[i] = std_dev*Math.sqrt(252)*100;  //換算成年化百分比=21 to 2000
+  }
+  return { HV };
+  // drawing these figures in the small windows.
+  // if HV_num=20, then HV[]=21 to 2000.
+}
+window.HistoricalVolatility_Close = HistoricalVolatility_Close;
+//----------------------------------------------------------------------
+
+//===designed by Prof Wang, 2026-August-04==================================
+//Historical Volatility(HV, 歷史波動率)是衡量金融資產在過去一段期間價格波動程度的指標。
+// 它是根據**對數報酬率(Logarithmic Return)**的標準差計算而得，通常再換算成年化百分比。
+// 本程式碼創新使用Typical Price替代Close價格計算歷史波動率。
+function HistoricalVolatility_TP(STK_high, STK_low, STK_close, HV_num) {
+  // Menu Name: Historical Volatility(TP)  //HV_num=10,20,...
+  // 本人意見：HV_num應該不是資料庫中全部的筆數！而是使用者指定的期間數。
+  // 1.計算每日對數報酬率,原創=r_t=ln(Close_t/Close_(t-1)),t=2,3,...,2000.
+  // 本人改以Typical Price替代Close,新創=TP_t=(High_t+Low_t+6*Close_t)/8
+  const ln_ROI=[];     //每日對數報酬率=2 to 2000
+  const TP=[];  //TP[]=TypicalPrice=[]; //=1 to 2000,以TypicalPrice取代Close
+  for(let i=1; i<=STK_high.length; i++) {  //i=1 to 2000
+    TP[i]=(STK_high[i]+STK_low[i]+6*STK_close[i])/8;
+    if(i >= 2) {
+      ln_ROI[i] = Math.log(TP[i] / TP[i-1]);
+    }
+  }
+  // 2.計算對數報酬率的標準差
+  const HV=[];  //歷史波動率=HV_num+1 to 2000 =21 to 2000
+  let sum;
+  for(let i=HV_num+1; i<=STK_close.length; i++) {  //i=21 to 2000
+    sum=0;
+    for(let j=i-HV_num+1; j<=i; j++) {  //j=2 to 21,設HV_num=20,取最近20個ln_ROI計算SD
+      sum += ln_ROI[j];
+    }
+    let mean = sum / HV_num;  //計算最近HV_num個ln_ROI的平均值
+    let sumSquared = 0;
+    for(let j=i-HV_num+1; j<=i; j++) {  //j=2 to 21,設HV_num=20,取最近20個ln_ROI計算SD
+      sumSquared += Math.pow(ln_ROI[j] - mean, 2);
+    }
+    let std_dev = Math.sqrt(sumSquared/(HV_num-1));  //計算最近HV_num個ln_ROI的標準差
+    // 3.計算歷史波動率,原創=HV=std_dev*sqrt(252)*100%,t=2,3,...,2000.
+    HV[i] = std_dev*Math.sqrt(252)*100;  //換算成年化百分比=21 to 2000
+  }
+  return { HV };
+  // drawing these figures in the small windows.
+  // if HV_num=20, then HV[]=21 to 2000.
+}
+window.HistoricalVolatility_TP = HistoricalVolatility_TP;
+//----------------------------------------------------------------------
 
 
+
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -8745,6 +9394,8 @@ window.AdaptiveRSI = AdaptiveRSI;
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
+
+
 
 
 //===designed by Prof Wang, 2026-Jan-19====Redesigned on 2026-Feb-22

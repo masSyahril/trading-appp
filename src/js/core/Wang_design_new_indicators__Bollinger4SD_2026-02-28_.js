@@ -49,11 +49,10 @@ function computeBollinger4SD(K_close, MA_day, SD_day) {
     percentB[i]=(K_close[i]-lowerBand[i])/(upperBand[i]-lowerBand[i])*100;
     Bandwith[i]=(upperBand[i]-lowerBand[i])/MA[tp]*100;
   }
-  // return upperBand, MA, lowerBand;
-  return {upperBand_lowerBand, percentB, Bandwith};
-  //Normally drawing the upperBand, MA, lowerBand figures in the K_Line area.
+  // upperBand/MA/lowerBand are drawn in the K_Line area (main chart overlay);
+  // upperBand_lowerBand/percentB/Bandwith are drawn in the small window (sub-pane).
+  return {upperBand, MA, lowerBand, upperBand_lowerBand, percentB, Bandwith};
   //MA_day=10, SD_day=20, THREE Indicators[]=29,30,...,2000.
-  //drawing the upperBand_lowerBand, percentB, Bandwith figures in the small window.
 }
 
 window.computeBollinger4SD = computeBollinger4SD;

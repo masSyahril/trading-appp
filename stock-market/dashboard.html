@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradeFlow - Dashboard</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
+
+    <link rel="stylesheet" href="../src/css/multi-indicator-styles.css">
+
+    <script>
+        tailwind.config = { theme: { extend: { colors: { slate: { 950: '#020617' } } } } }
+    </script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .indicator-panel { transition: all 0.3s ease-in-out; }
+
+        #alert-toast-container {
+            position: fixed; top: 52px; right: 16px; z-index: 10000;
+            display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+        }
+        .alert-toast {
+            background: #ffffff; border: 1px solid #f59e0b; color: #131722;
+            padding: 10px 14px; border-radius: 6px; font-size: 0.8rem;
+            box-shadow: 0 8px 24px rgba(19, 23, 34, 0.12); max-width: 320px;
+            opacity: 1; transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .alert-toast-out { opacity: 0; transform: translateX(20px); }
+    </style>
+
+    <!-- Fixed light TradingView-style palette - standalone, like terminal.html
+         is for the dark one; not layered on the Comfort/Compact --tf-* system
+         the Classic/Zen pages toggle between. -->
+    <link rel="stylesheet" href="tradeflow-dashboard.css">
+</head>
+<body class="td-body flex flex-col h-screen overflow-hidden">
+
+    <!-- ═══ TOP NAVIGATION BAR ═══ -->
+    <header id="td-header">
+        <div class="td-logo"><i data-lucide="activity" class="w-4 h-4"></i><span>TradeFlow</span></div>
+
+        <div class="td-symbol-widget">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400"></i>
+            <input id="symbol-input" type="text" placeholder="Symbol">
+            <button id="add-symbol" title="Add to watchlist"><i data-lucide="plus" class="w-3.5 h-3.5"></i></button>
+        </div>
+
+        <div class="td-divider"></div>
+
+        <div class="td-tf-group">
+            <button class="tab-btn" data-tf="1d">1D</button>
+            <button class="tab-btn active" data-tf="5d">5D</button>
+            <button class="tab-btn" data-tf="1m">1M</button>
+            <button class="tab-btn" data-tf="ytd">YTD</button>
+        </div>
+
+        <div class="td-divider"></div>
+
+        <button id="chart-style-btn" class="td-header-btn" title="Chart Style">
+            <i data-lucide="candlestick-chart" class="w-3.5 h-3.5"></i> Candles <span style="font-size:9px">▾</span>
+        </button>
+        <button id="add-indicator-btn" class="td-header-btn" title="Add Indicator">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Indicators
+        </button>
+
+        <div class="td-spacer"></div>
+
+        <button id="reset-data" class="td-header-icon" title="Reset Data"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+        <a href="companies.html" class="td-header-icon" title="Companies"><i data-lucide="building" class="w-4 h-4"></i></a>
+        <a href="zen.html" class="td-header-icon" title="Zen Workspace"><i data-lucide="wand-2" class="w-4 h-4"></i></a>
+        <a href="terminal.html" class="td-header-icon" title="Dark Terminal"><i data-lucide="terminal" class="w-4 h-4"></i></a>
+        <a href="canvas-chart.html" class="td-header-icon" title="Custom Canvas chart engine"><i data-lucide="line-chart" class="w-4 h-4"></i></a>
+        <a href="index.html" class="td-header-icon" title="Classic View"><i data-lucide="layout-dashboard" class="w-4 h-4"></i></a>
+
+        <button id="td-publish-btn" class="td-btn-outline" title="Visual only - no sharing backend exists yet">Publish</button>
+        <button id="td-trade-btn" class="td-btn-accent" title="Jump to the quick-trade panel">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i> Trade
+        </button>
+    </header>
+
+    <!-- ═══ MAIN LAYOUT ═══ -->
+    <div class="flex flex-1 overflow-hidden">
+
+        <!-- LEFT: drawing tools rail -->
+        <aside id="td-tools-rail">
+            <button type="button" class="draw-tool-btn active" data-tool="crosshair" title="Crosshair"><i data-lucide="mouse-pointer-2" class="w-4 h-4"></i></button>
+            <button type="button" class="draw-tool-btn" data-tool="trendline" title="Trend Line"><i data-lucide="trending-up" class="w-4 h-4"></i></button>
+            <button type="button" class="draw-tool-btn" data-tool="ray" title="Ray"><i data-lucide="move-up-right" class="w-4 h-4"></i></button>
+            <button type="button" class="draw-tool-btn" data-tool="text" title="Text"><i data-lucide="type" class="w-4 h-4"></i></button>
+            <button type="button" class="draw-tool-btn" data-tool="measure" title="Measure / Zoom"><i data-lucide="ruler" class="w-4 h-4"></i></button>
+            <div class="td-rail-divider"></div>
+            <button type="button" id="draw-clear-btn" class="draw-tool-btn td-rail-danger" title="Clear drawings for this symbol"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+        </aside>
+
+        <!-- CENTER: chart + stacked indicators -->
+        <main class="flex-1 flex flex-col min-w-0">
+            <div class="flex-1 flex flex-col min-h-0" id="viz-area">
+                <div id="main-chart-panel" class="flex flex-col min-h-0">
+                    <div id="chart-toolbar">
+                        <button id="overlay-toggle-btn" class="toolbar-btn" title="Chart Overlay Indicators">Overlay <span style="font-size:9px">▾</span></button>
+                        <div class="td-divider"></div>
+                        <button id="btn-pan-left" class="toolbar-btn" title="Pan Left">←</button>
+                        <button id="btn-pan-right" class="toolbar-btn" title="Pan Right">→</button>
+                        <button id="btn-reset-view" class="toolbar-btn" title="Reset">Reset</button>
+                        <div class="td-divider"></div>
+                        <button id="btn-jump-first" class="toolbar-btn" title="Jump to First">&lt;&lt;</button>
+                        <button id="btn-jump-last" class="toolbar-btn" title="Jump to Last">&gt;&gt;</button>
+                    </div>
+                    <div id="chart">
+                        <div id="chart-overlay-legend" class="absolute left-1.5 top-1.5 z-10 pointer-events-none flex flex-col gap-0.5">
+                            <div id="ohlc-legend" class="td-mono text-[11px] leading-tight flex flex-wrap items-center gap-x-2 gap-y-0.5"></div>
+                            <div id="indicator-tooltip-row" class="td-mono text-[11px] leading-tight flex flex-wrap items-center gap-x-3 gap-y-0.5"></div>
+                        </div>
+                        <div id="main-chart-xline" class="crosshair-sync-line"></div>
+                        <canvas id="drawing-overlay" class="absolute inset-0 z-[5]" style="pointer-events:none;"></canvas>
+                    </div>
+                </div>
+
+                <div id="main-splitter" title="Drag to resize"></div>
+
+                <div id="indicators-section">
+                    <div class="flex items-center px-2 py-0.5 justify-between shrink-0 select-none gap-2">
+                        <span id="indicator-count" class="text-xs font-bold text-slate-600 uppercase tracking-wider">Indicators (3)</span>
+                        <button id="view-toggle-btn" class="flex items-center gap-1 text-xs border border-slate-300 text-slate-500 hover:text-slate-800 hover:border-slate-400 px-2 py-0.5 rounded transition-colors" title="Switch between stacked and tabbed indicator layout">
+                            <i data-lucide="layout-list" class="w-3 h-3"></i> <span id="view-toggle-label">Stacked</span>
+                        </button>
+                    </div>
+                    <div id="indicators-tabbar" hidden></div>
+                    <div id="indicators-container" class="flex flex-col flex-1 overflow-y-auto w-full"></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- RIGHT: watchlist table (top) + asset summary card (bottom) -->
+        <aside id="td-right-sidebar">
+            <div class="td-watchlist-header">
+                <div class="td-watchlist-title">Watchlist</div>
+                <div class="td-watchlist-search">
+                    <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400"></i>
+                    <input id="td-watchlist-filter" type="text" placeholder="Filter symbols...">
+                </div>
+            </div>
+            <div class="td-watchlist-cols"><span>Symbol</span><span>Last</span><span>Chg %</span></div>
+            <ul id="watchlist" class="no-scrollbar"></ul>
+
+            <div id="td-summary-card">
+                <div>
+                    <div class="text-xs font-bold text-slate-500" id="td-summary-symbol">—</div>
+                    <div class="td-summary-price-row">
+                        <span id="td-summary-price" class="td-mono">$0.00</span>
+                        <span id="td-summary-change" class="td-change-pill">—</span>
+                    </div>
+                    <div id="td-summary-status"><span class="td-status-dot"></span><span id="td-summary-status-text">Market Open</span></div>
+                </div>
+
+                <div class="td-summary-metrics">
+                    <div><div class="td-metric-label">Day High</div><div class="td-metric-value" id="td-metric-high">—</div></div>
+                    <div><div class="td-metric-label">Day Low</div><div class="td-metric-value" id="td-metric-low">—</div></div>
+                    <div><div class="td-metric-label">Volume</div><div class="td-metric-value" id="td-metric-volume">—</div></div>
+                    <div><div class="td-metric-label">Prev Close</div><div class="td-metric-value" id="td-metric-prevclose">—</div></div>
+                </div>
+
+                <div>
+                    <div class="td-dial-label"><span>Day Range Position</span><span id="td-dial-pct">50%</span></div>
+                    <div class="td-dial-track"><div class="td-dial-fill"></div><div class="td-dial-marker" id="td-dial-marker"></div></div>
+                </div>
+
+                <!-- Quick trade: the real order ticket (order-panel.js), compacted
+                     into the summary card rather than a separate tab - this spec
+                     didn't call for a dedicated order-execution section like the
+                     Terminal layout's did. -->
+                <div class="td-quick-trade">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Quick Trade</span>
+                        <span id="order-symbol" class="td-mono font-bold text-xs"></span>
+                    </div>
+                    <div class="flex gap-1">
+                        <button type="button" class="order-type-tab active" data-type="market">Market</button>
+                        <button type="button" class="order-type-tab" data-type="limit">Limit</button>
+                        <button type="button" class="order-type-tab" data-type="stop">Stop</button>
+                    </div>
+                    <label class="order-field" id="order-price-field" hidden><span>Trigger</span><input type="number" id="order-price" step="0.01" placeholder="0.00"></label>
+                    <div class="td-quick-trade-row">
+                        <label class="order-field"><span>Size</span><input type="number" id="order-size" min="1" step="1" value="100"></label>
+                        <label class="order-field"><span>Leverage</span>
+                            <select id="order-leverage"><option value="1">1x</option><option value="2">2x</option><option value="5">5x</option><option value="10">10x</option></select>
+                        </label>
+                    </div>
+                    <div class="size-quick-row">
+                        <button type="button" class="size-quick-btn" data-size-pct="25">25%</button>
+                        <button type="button" class="size-quick-btn" data-size-pct="50">50%</button>
+                        <button type="button" class="size-quick-btn" data-size-pct="75">75%</button>
+                        <button type="button" class="size-quick-btn" data-size-pct="100">100%</button>
+                    </div>
+                    <div class="td-quick-trade-row">
+                        <label class="order-field"><span>Stop-Loss</span><input type="number" id="order-sl" step="0.01"></label>
+                        <label class="order-field"><span>Take-Profit</span><input type="number" id="order-tp" step="0.01"></label>
+                    </div>
+                    <div class="rr-summary-box rounded border p-2 grid grid-cols-3 gap-1 text-[10px]">
+                        <div><div class="text-slate-400">Loss</div><div id="rr-risk" class="td-mono font-bold" style="color: var(--tf-down);">$0.00</div></div>
+                        <div><div class="text-slate-400">Gain</div><div id="rr-reward" class="td-mono font-bold" style="color: var(--tf-up);">$0.00</div></div>
+                        <div><div class="text-slate-400">R:R</div><div id="rr-ratio" class="td-mono font-bold">—</div></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="btn-buy" type="button" class="py-2 rounded text-white text-xs font-bold transition-transform active:scale-95">BUY</button>
+                        <button id="btn-sell" type="button" class="py-2 rounded text-white text-xs font-bold transition-transform active:scale-95">SELL</button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- ═══ BOTTOM STATUS BAR ═══ -->
+    <section id="bottom-drawer" class="flex flex-col text-sm" style="height: 180px;">
+        <div class="flex items-center justify-between px-2 border-b border-slate-200 shrink-0">
+            <div class="flex gap-1 py-1.5">
+                <button type="button" class="drawer-tab active" data-panel="positions">Positions <span class="drawer-badge" id="count-positions">0</span></button>
+                <button type="button" class="drawer-tab" data-panel="orders">Working Orders <span class="drawer-badge" id="count-orders">0</span></button>
+                <button type="button" class="drawer-tab" data-panel="history">History</button>
+                <button type="button" class="drawer-tab" data-panel="account">Account Summary</button>
+            </div>
+            <button id="drawer-collapse-btn" type="button" class="text-slate-400 hover:text-slate-800 p-1" title="Collapse drawer">
+                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-auto">
+            <table id="panel-positions" class="drawer-panel w-full text-xs">
+                <thead><tr><th>Symbol</th><th>Side</th><th>Size</th><th>Entry</th><th>Current</th><th>P&amp;L ($)</th><th>P&amp;L (%)</th><th></th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <table id="panel-orders" class="drawer-panel w-full text-xs" hidden>
+                <thead><tr><th>Symbol</th><th>Type</th><th>Side</th><th>Size</th><th>Trigger Price</th><th></th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <table id="panel-history" class="drawer-panel w-full text-xs" hidden>
+                <thead><tr><th>Symbol</th><th>Side</th><th>Size</th><th>Entry</th><th>Exit</th><th>P&amp;L ($)</th><th>Closed</th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <div id="panel-account" class="drawer-panel p-3 grid grid-cols-4 gap-3" hidden>
+                <div class="drawer-stat"><div class="drawer-stat-label">Balance</div><div class="drawer-stat-value" id="acct-balance">$0.00</div></div>
+                <div class="drawer-stat"><div class="drawer-stat-label">Equity</div><div class="drawer-stat-value" id="acct-equity">$0.00</div></div>
+                <div class="drawer-stat"><div class="drawer-stat-label">Margin Used</div><div class="drawer-stat-value" id="acct-margin">$0.00</div></div>
+                <div class="drawer-stat"><div class="drawer-stat-label">Available</div><div class="drawer-stat-value" id="acct-available">$0.00</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Script Loading System (identical chain/order to index.html) -->
+    <script src="../src/js/utils/script-loader.js?v=2"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await ScriptLoader.loadTradingScripts([
+                    { name: 'utils', src: '../src/js/core/utils.js', description: 'Core Utilities' },
+                    { name: 'indicators', src: '../src/js/utils/indicators.js', description: 'Chart Indicators' },
+                    { name: 'technical-indicators', src: '../src/js/core/technical-indicators.js', description: 'Technical Analysis' },
+                    { name: 'HullMA', src: '../src/js/core/Wang_design__HullMA%20_2026-01-18.js', description: 'Prof. Wang Hull MA (window.computeHullMA)' },
+                    { name: 'DEMA', src: '../src/js/core/Wang_design_DEMA_2026-03-14.js', description: 'Prof. Wang DEMA (window.computeDEMA)' },
+                    { name: 'technical-indicators-wang', src: '../src/js/core/technical-indicators-wang.js', description: 'Prof. Wang Indicators' },
+                    { name: 'multi-indicator-system', src: '../src/js/core/multi-indicator-system.js', description: 'Multi-Panel System' },
+                    { name: 'stock-app', src: 'stock-app.prod.js', description: 'Stock Platform' },
+                    { name: 'RWI', src:'../src/js/core/Wang_design_new_indicators__RandomWalkIndex _2026-01-20.js', descrption:'RWI indicator'},
+                    { name: 'MAoneMAtwo', src:'../src/js/core/Wang_design__MAoneMAtwor_2026-04-06.js', descrption:'MAoneMAtwo indicator'},
+                    { name: 'Alligator', src:'../src/js/core/Wang_design_new_indicators__Alligator_2026-01-29.js', description:'Prof. Wang Alligator (window.computeAlligator)'},
+                    { name: 'PVI', src:'../src/js/core/Wang_design_new_indicators__PVI_percentRiseFall_2026-03-10.js', description:'Prof. Wang PVI%RiseFall (window.computePVIpercentRiseFall)'},
+                    { name: 'Bollinger4SD', src:'../src/js/core/Wang_design_new_indicators__Bollinger4SD_2026-02-28_.js', description:'Prof. Wang Bollinger4SD (window.computeBollinger4SD)'},
+                    { name: 'VolumeRSI', src:'../src/js/core/Wang_design_new_indicators__VolumeRSI_2026-03-08.js', description:'Prof. Wang VolumeRSI (window.computeVolumeRSI)'},
+                    { name: 'technical-indicators-wang-prods', src:'../src/js/core/technical-indicators.prods__Wang__2026.js', descrption:'Prof. Wang Indicators (prod bundle)' },
+                    { name: 'drawing-tools', src: 'js/drawing-tools.js', description: 'Chart Drawing Tools' },
+                    { name: 'price-alerts', src: 'js/price-alerts.js', description: 'Interactive Price Alerts' },
+                    { name: 'portfolio', src: 'js/portfolio.js', description: 'Positions, Orders & Account Portfolio' },
+                    { name: 'order-panel', src: 'js/order-panel.js', description: 'Order Execution Panel' },
+                ]);
+
+                console.log('✨ Dashboard scripts loaded successfully!');
+                lucide.createIcons();
+                initDashboardChrome();
+            } catch (error) {
+                console.error('❌ Script loading failed:', error);
+            }
+        });
+
+        // ─── Dashboard-specific chrome: watchlist search filter, asset summary
+        // card (price/change/day-range gauge), Trade button scroll-to, and
+        // Publish (explicitly decorative - no sharing backend exists). Pure
+        // additions on top of the unmodified app scripts - reads their public
+        // surface (window.TradeFlowChart / window.TradeFlowPortfolio) and
+        // already-rendered DOM, never reaches into their internals. ───
+        function initDashboardChrome() {
+            document.getElementById('td-watchlist-filter')?.addEventListener('input', (e) => {
+                const q = e.target.value.trim().toUpperCase();
+                document.querySelectorAll('#watchlist li[data-sym]').forEach(li => {
+                    li.style.display = !q || li.dataset.sym.toUpperCase().includes(q) ? '' : 'none';
+                });
+            });
+
+            document.getElementById('td-trade-btn')?.addEventListener('click', () => {
+                document.getElementById('td-summary-card')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                document.getElementById('order-size')?.focus();
+            });
+
+            // Asset summary card: price/change pill/status from the same public
+            // chart API the other three pages already read; day high/low/volume/
+            // prev-close and the range-position gauge come straight off the
+            // latest bar in the loaded chart data (getChart() -> no separate
+            // data source, so this can't drift from what's on the candlesticks).
+            function updateSummaryCard() {
+                const sym = window.TradeFlowChart?.getCurrentSymbol?.();
+                const data = window.TradeFlowChart?.getChartData?.() || [];
+                const bar = data.length ? data[data.length - 1] : null;
+                const prevBar = data.length > 1 ? data[data.length - 2] : null;
+                const price = sym ? window.TradeFlowChart?.getLastPrice?.(sym) : null;
+
+                const symEl = document.getElementById('td-summary-symbol');
+                if (symEl) symEl.textContent = sym || '—';
+
+                const priceEl = document.getElementById('td-summary-price');
+                if (priceEl) priceEl.textContent = (typeof price === 'number' && isFinite(price)) ? `$${price.toFixed(2)}` : '$0.00';
+
+                const changeEl = document.getElementById('td-summary-change');
+                if (changeEl && bar && prevBar && prevBar.close) {
+                    const pct = ((bar.close - prevBar.close) / prevBar.close) * 100;
+                    changeEl.textContent = `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
+                    changeEl.classList.toggle('pos', pct >= 0);
+                    changeEl.classList.toggle('neg', pct < 0);
+                }
+
+                const setMetric = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+                if (bar) {
+                    setMetric('td-metric-high', bar.high != null ? bar.high.toFixed(2) : '—');
+                    setMetric('td-metric-low', bar.low != null ? bar.low.toFixed(2) : '—');
+                    setMetric('td-metric-volume', bar.volume != null ? Number(bar.volume).toLocaleString() : '—');
+                }
+                setMetric('td-metric-prevclose', prevBar?.close != null ? prevBar.close.toFixed(2) : '—');
+
+                // Day Range Position - an honest, directly-computable gauge (where
+                // the last close sits between today's low and high), not a
+                // fabricated stand-in for a real technical indicator like RSI.
+                if (bar && bar.high > bar.low) {
+                    const pos = Math.max(0, Math.min(100, ((bar.close - bar.low) / (bar.high - bar.low)) * 100));
+                    const marker = document.getElementById('td-dial-marker');
+                    const label = document.getElementById('td-dial-pct');
+                    if (marker) marker.style.left = `${pos}%`;
+                    if (label) label.textContent = `${pos.toFixed(0)}%`;
+                }
+            }
+            updateSummaryCard();
+            setInterval(updateSummaryCard, 2000);
+            window.TradeFlowChart?.onSymbolChange?.(updateSummaryCard);
+        }
+    </script>
+</body>
+</html>

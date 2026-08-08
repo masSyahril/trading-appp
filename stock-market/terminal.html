@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradeFlow - Terminal</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Roboto Mono (numeric values) - Terminal uses the exact TradingView-style
+         font stack (spec'd system sans for UI, monospace for numbers), not the
+         Inter/JetBrains Mono pairing the Comfort/Zen pages use. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Lightweight Charts -->
+    <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
+
+    <!-- Indicator Styles (unmodified) -->
+    <link rel="stylesheet" href="../src/css/multi-indicator-styles.css">
+
+    <script>
+        tailwind.config = { theme: { extend: { colors: { slate: { 950: '#020617' } } } } }
+    </script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .indicator-panel { transition: all 0.3s ease-in-out; }
+
+        #alert-toast-container {
+            position: fixed; top: 50px; right: 16px; z-index: 10000;
+            display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+        }
+        .alert-toast {
+            background: #1e222d; border: 1px solid #f59e0b; color: #d1d4dc;
+            padding: 10px 14px; border-radius: 6px; font-size: 0.8rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); max-width: 320px;
+            opacity: 1; transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .alert-toast-out { opacity: 0; transform: translateX(20px); }
+    </style>
+
+    <!-- Fixed TradingView-style palette - standalone, not layered on the
+         Comfort/Compact --tf-* system used by the other two pages. -->
+    <link rel="stylesheet" href="tradeflow-tv.css">
+</head>
+<body class="tv-body flex flex-col h-screen overflow-hidden">
+
+    <!-- ═══ TOP HEADER ═══ -->
+    <header id="tv-header">
+        <div class="tv-logo"><i data-lucide="activity" class="w-4 h-4"></i><span>TradeFlow</span></div>
+
+        <div class="tv-symbol-widget">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-500"></i>
+            <input id="symbol-input" type="text" placeholder="Symbol">
+            <button id="add-symbol" title="Add to watchlist"><i data-lucide="plus" class="w-3.5 h-3.5"></i></button>
+            <span id="tv-symbol-readout" class="tv-mono">— • 5D</span>
+        </div>
+
+        <div class="tv-divider"></div>
+
+        <div class="tv-tf-group">
+            <button class="tab-btn" data-tf="1d">1D</button>
+            <button class="tab-btn active" data-tf="5d">5D</button>
+            <button class="tab-btn" data-tf="1m">1M</button>
+            <button class="tab-btn" data-tf="3m">3M</button>
+            <button class="tab-btn" data-tf="1y">1Y</button>
+        </div>
+
+        <div class="tv-divider"></div>
+
+        <button id="chart-style-btn" class="tv-header-btn" title="Chart Style">
+            <i data-lucide="candlestick-chart" class="w-3.5 h-3.5"></i> Candles <span style="font-size:9px">▾</span>
+        </button>
+        <button id="add-indicator-btn" class="tv-header-btn" title="Add Indicator">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Indicators
+        </button>
+
+        <div class="tv-spacer"></div>
+
+        <button id="tv-layout-picker" class="tv-header-icon" title="Layout grid (visual only)">
+            <i data-lucide="layout-grid" class="w-4 h-4"></i>
+        </button>
+        <button id="tv-undo" class="tv-header-icon" title="Undo (visual only)"><i data-lucide="undo-2" class="w-4 h-4"></i></button>
+        <button id="tv-redo" class="tv-header-icon" title="Redo (visual only)"><i data-lucide="redo-2" class="w-4 h-4"></i></button>
+        <button id="tv-fullscreen" class="tv-header-icon" title="Fullscreen"><i data-lucide="maximize" class="w-4 h-4"></i></button>
+        <button id="reset-data" class="tv-header-icon" title="Reset Data"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+        <a href="companies.html" class="tv-header-icon" title="Companies"><i data-lucide="building" class="w-4 h-4"></i></a>
+        <a href="zen.html" class="tv-header-icon" title="Zen Workspace"><i data-lucide="wand-2" class="w-4 h-4"></i></a>
+        <a href="dashboard.html" class="tv-header-icon" title="Light Dashboard"><i data-lucide="layout-panel-left" class="w-4 h-4"></i></a>
+        <a href="canvas-chart.html" class="tv-header-icon" title="Custom Canvas chart engine"><i data-lucide="line-chart" class="w-4 h-4"></i></a>
+        <a href="index.html" class="tv-header-icon" title="Classic View"><i data-lucide="layout-dashboard" class="w-4 h-4"></i></a>
+
+        <button id="tv-trade-btn" class="tv-trade-btn" title="Open the Trade panel">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i> Trade
+        </button>
+    </header>
+
+    <!-- ═══ MAIN LAYOUT ═══ -->
+    <div class="flex flex-1 overflow-hidden">
+
+        <!-- LEFT: drawing tools rail -->
+        <aside id="tv-tools-rail">
+            <button type="button" class="draw-tool-btn active" data-tool="crosshair" title="Crosshair"><i data-lucide="mouse-pointer-2" class="w-4 h-4"></i></button>
+            <button type="button" class="draw-tool-btn" data-tool="trendline" title="Trend Line"><i data-lucide="trending-up" class="w-4 h-4"></i></button>
+            <button type="button" class="draw-tool-btn" data-tool="ray" title="Ray"><i data-lucide="move-up-right" class="w-4 h-4"></i></button>
+            <button type="button" class="draw-tool-btn" data-tool="fibonacci" title="Fibonacci Retracement"><i data-lucide="percent" class="w-4 h-4"></i></button>
+            <button type="button" class="draw-tool-btn" data-tool="text" title="Text"><i data-lucide="type" class="w-4 h-4"></i></button>
+            <button type="button" class="draw-tool-btn" data-tool="measure" title="Measure"><i data-lucide="ruler" class="w-4 h-4"></i></button>
+            <div class="tv-rail-divider"></div>
+            <button type="button" id="draw-clear-btn" class="draw-tool-btn tv-rail-danger" title="Clear drawings for this symbol"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+        </aside>
+
+        <!-- CENTER: chart + stacked indicators -->
+        <main class="flex-1 flex flex-col min-w-0">
+            <div class="flex-1 flex flex-col min-h-0" id="viz-area">
+                <div id="main-chart-panel" class="flex flex-col min-h-0">
+                    <div id="chart-toolbar">
+                        <button id="overlay-toggle-btn" class="toolbar-btn" title="Chart Overlay Indicators">Overlay <span style="font-size:9px">▾</span></button>
+                        <div class="tv-divider"></div>
+                        <button id="btn-pan-left" class="toolbar-btn" title="Pan Left">←</button>
+                        <button id="btn-pan-right" class="toolbar-btn" title="Pan Right">→</button>
+                        <button id="btn-reset-view" class="toolbar-btn" title="Reset">Reset</button>
+                        <div class="tv-divider"></div>
+                        <button id="btn-jump-first" class="toolbar-btn" title="Jump to First">&lt;&lt;</button>
+                        <button id="btn-jump-last" class="toolbar-btn" title="Jump to Last">&gt;&gt;</button>
+                    </div>
+                    <div id="chart">
+                        <div id="chart-watermark"></div>
+                        <div id="chart-overlay-legend" class="absolute left-1.5 top-1.5 z-10 pointer-events-none flex flex-col gap-0.5">
+                            <div id="ohlc-legend" class="tv-mono text-[11px] leading-tight flex flex-wrap items-center gap-x-2 gap-y-0.5"></div>
+                            <div id="indicator-tooltip-row" class="tv-mono text-[11px] leading-tight flex flex-wrap items-center gap-x-3 gap-y-0.5"></div>
+                        </div>
+                        <div id="main-chart-xline" class="crosshair-sync-line"></div>
+                        <canvas id="drawing-overlay" class="absolute inset-0 z-[5]" style="pointer-events:none;"></canvas>
+                    </div>
+                </div>
+
+                <div id="main-splitter" title="Drag to resize"></div>
+
+                <div id="indicators-section">
+                    <div class="flex items-center px-2 py-0.5 justify-between shrink-0 select-none gap-2">
+                        <span id="indicator-count" class="text-xs font-bold text-slate-300 uppercase tracking-wider">Indicators (3)</span>
+                        <button id="view-toggle-btn" class="flex items-center gap-1 text-xs border border-slate-600 text-slate-300 hover:text-white hover:border-slate-500 px-2 py-0.5 rounded transition-colors" title="Switch between stacked and tabbed indicator layout">
+                            <i data-lucide="layout-list" class="w-3 h-3"></i> <span id="view-toggle-label">Stacked</span>
+                        </button>
+                    </div>
+                    <div id="indicators-tabbar" hidden></div>
+                    <div id="indicators-container" class="flex flex-col flex-1 overflow-y-auto w-full"></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- RIGHT: dual-tab drawer (Watchlist / Trade) -->
+        <aside id="tv-right-drawer">
+            <div class="tv-right-tabs">
+                <button type="button" class="tv-right-tab active" data-tvtab="watchlist"><i data-lucide="list" class="w-3.5 h-3.5"></i><span>Watchlist</span></button>
+                <button type="button" class="tv-right-tab" data-tvtab="trade"><i data-lucide="zap" class="w-3.5 h-3.5"></i><span>Trade</span></button>
+                <button type="button" id="tv-right-collapse" title="Collapse"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+            </div>
+
+            <div class="tv-right-panel-wrap" data-tvpanel="watchlist">
+                <ul id="watchlist" class="no-scrollbar"></ul>
+            </div>
+
+            <div class="tv-right-panel-wrap" data-tvpanel="trade" hidden>
+                <aside id="order-panel" class="text-sm no-scrollbar">
+                    <div class="px-3 py-2 border-b border-slate-700 flex items-center justify-between shrink-0">
+                        <span class="font-semibold text-slate-200 text-xs">Order Ticket</span>
+                        <span id="order-symbol" class="tv-mono font-bold text-xs"></span>
+                    </div>
+
+                    <div class="flex px-2 pt-2 gap-1 shrink-0">
+                        <button type="button" class="order-type-tab active" data-type="market">Market</button>
+                        <button type="button" class="order-type-tab" data-type="limit">Limit</button>
+                        <button type="button" class="order-type-tab" data-type="stop">Stop</button>
+                    </div>
+
+                    <div class="p-3 flex flex-col gap-3">
+                        <label class="order-field" id="order-price-field" hidden>
+                            <span>Trigger Price</span>
+                            <input type="number" id="order-price" step="0.01" placeholder="0.00">
+                        </label>
+
+                        <label class="order-field">
+                            <span>Size (shares)</span>
+                            <input type="number" id="order-size" min="1" step="1" value="100">
+                        </label>
+
+                        <div>
+                            <input type="range" id="tv-size-slider" min="0" max="100" step="5" value="0">
+                            <div class="flex justify-between text-[10px] text-slate-500"><span>0%</span><span>Position size (% of buying power)</span><span>100%</span></div>
+                        </div>
+
+                        <div class="size-quick-row">
+                            <button type="button" class="size-quick-btn" data-size-pct="25">25%</button>
+                            <button type="button" class="size-quick-btn" data-size-pct="50">50%</button>
+                            <button type="button" class="size-quick-btn" data-size-pct="75">75%</button>
+                            <button type="button" class="size-quick-btn" data-size-pct="100">100%</button>
+                        </div>
+
+                        <label class="order-field">
+                            <span>Leverage</span>
+                            <select id="order-leverage">
+                                <option value="1">1x</option>
+                                <option value="2">2x</option>
+                                <option value="5">5x</option>
+                                <option value="10">10x</option>
+                            </select>
+                        </label>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="order-field"><span>Stop-Loss</span><input type="number" id="order-sl" step="0.01"></label>
+                            <label class="order-field"><span>Take-Profit</span><input type="number" id="order-tp" step="0.01"></label>
+                        </div>
+
+                        <div class="rr-summary-box rounded border p-2 grid grid-cols-1 gap-1 text-xs">
+                            <div class="flex justify-between"><span class="text-slate-400">Potential Loss</span><span id="rr-risk" class="tv-mono font-bold" style="color: var(--tv-down);">$0.00</span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Potential Gain</span><span id="rr-reward" class="tv-mono font-bold" style="color: var(--tv-up);">$0.00</span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">R:R</span><span id="rr-ratio" class="tv-mono font-bold text-slate-100">—</span></div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 mt-1">
+                            <button id="btn-buy" type="button" class="py-2 rounded text-white font-bold transition-transform active:scale-95">BUY</button>
+                            <button id="btn-sell" type="button" class="py-2 rounded text-white font-bold transition-transform active:scale-95">SELL</button>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </aside>
+    </div>
+
+    <!-- ═══ BOTTOM STATUS BAR ═══ -->
+    <section id="bottom-drawer" class="flex flex-col text-sm" style="height: 200px;">
+        <div class="flex items-center justify-between px-2 border-b border-slate-700 shrink-0">
+            <div class="flex gap-1 py-1.5">
+                <button type="button" class="drawer-tab active" data-panel="positions">Positions <span class="drawer-badge" id="count-positions">0</span></button>
+                <button type="button" class="drawer-tab" data-panel="orders">Working Orders <span class="drawer-badge" id="count-orders">0</span></button>
+                <button type="button" class="drawer-tab" data-panel="history">History</button>
+                <button type="button" class="drawer-tab" data-panel="account">Account Summary</button>
+            </div>
+            <div class="flex items-center">
+                <div class="tv-scale-group">
+                    <button type="button" id="tv-scale-pct" class="tv-scale-btn" title="Percentage price scale">%</button>
+                    <button type="button" id="tv-scale-log" class="tv-scale-btn" title="Logarithmic price scale">Log</button>
+                    <button type="button" id="tv-scale-auto" class="tv-scale-btn active" title="Auto-scale">Auto</button>
+                </div>
+                <button id="drawer-collapse-btn" type="button" class="text-slate-400 hover:text-white p-1" title="Collapse drawer">
+                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-auto">
+            <table id="panel-positions" class="drawer-panel w-full text-xs">
+                <thead><tr><th>Symbol</th><th>Side</th><th>Size</th><th>Entry</th><th>Current</th><th>P&amp;L ($)</th><th>P&amp;L (%)</th><th></th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <table id="panel-orders" class="drawer-panel w-full text-xs" hidden>
+                <thead><tr><th>Symbol</th><th>Type</th><th>Side</th><th>Size</th><th>Trigger Price</th><th></th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <table id="panel-history" class="drawer-panel w-full text-xs" hidden>
+                <thead><tr><th>Symbol</th><th>Side</th><th>Size</th><th>Entry</th><th>Exit</th><th>P&amp;L ($)</th><th>Closed</th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <div id="panel-account" class="drawer-panel p-3 grid grid-cols-4 gap-3" hidden>
+                <div class="drawer-stat"><div class="drawer-stat-label">Balance</div><div class="drawer-stat-value" id="acct-balance">$0.00</div></div>
+                <div class="drawer-stat"><div class="drawer-stat-label">Equity</div><div class="drawer-stat-value" id="acct-equity">$0.00</div></div>
+                <div class="drawer-stat"><div class="drawer-stat-label">Margin Used</div><div class="drawer-stat-value" id="acct-margin">$0.00</div></div>
+                <div class="drawer-stat"><div class="drawer-stat-label">Available</div><div class="drawer-stat-value" id="acct-available">$0.00</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Script Loading System (identical chain/order to index.html) -->
+    <script src="../src/js/utils/script-loader.js?v=2"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await ScriptLoader.loadTradingScripts([
+                    { name: 'utils', src: '../src/js/core/utils.js', description: 'Core Utilities' },
+                    { name: 'indicators', src: '../src/js/utils/indicators.js', description: 'Chart Indicators' },
+                    { name: 'technical-indicators', src: '../src/js/core/technical-indicators.js', description: 'Technical Analysis' },
+                    { name: 'HullMA', src: '../src/js/core/Wang_design__HullMA%20_2026-01-18.js', description: 'Prof. Wang Hull MA (window.computeHullMA)' },
+                    { name: 'DEMA', src: '../src/js/core/Wang_design_DEMA_2026-03-14.js', description: 'Prof. Wang DEMA (window.computeDEMA)' },
+                    { name: 'technical-indicators-wang', src: '../src/js/core/technical-indicators-wang.js', description: 'Prof. Wang Indicators' },
+                    { name: 'multi-indicator-system', src: '../src/js/core/multi-indicator-system.js', description: 'Multi-Panel System' },
+                    { name: 'stock-app', src: 'stock-app.prod.js', description: 'Stock Platform' },
+                    { name: 'RWI', src:'../src/js/core/Wang_design_new_indicators__RandomWalkIndex _2026-01-20.js', descrption:'RWI indicator'},
+                    { name: 'MAoneMAtwo', src:'../src/js/core/Wang_design__MAoneMAtwor_2026-04-06.js', descrption:'MAoneMAtwo indicator'},
+                    { name: 'Alligator', src:'../src/js/core/Wang_design_new_indicators__Alligator_2026-01-29.js', description:'Prof. Wang Alligator (window.computeAlligator)'},
+                    { name: 'PVI', src:'../src/js/core/Wang_design_new_indicators__PVI_percentRiseFall_2026-03-10.js', description:'Prof. Wang PVI%RiseFall (window.computePVIpercentRiseFall)'},
+                    { name: 'Bollinger4SD', src:'../src/js/core/Wang_design_new_indicators__Bollinger4SD_2026-02-28_.js', description:'Prof. Wang Bollinger4SD (window.computeBollinger4SD)'},
+                    { name: 'VolumeRSI', src:'../src/js/core/Wang_design_new_indicators__VolumeRSI_2026-03-08.js', description:'Prof. Wang VolumeRSI (window.computeVolumeRSI)'},
+                    { name: 'technical-indicators-wang-prods', src:'../src/js/core/technical-indicators.prods__Wang__2026.js', descrption:'Prof. Wang Indicators (prod bundle)' },
+                    { name: 'drawing-tools', src: 'js/drawing-tools.js', description: 'Chart Drawing Tools' },
+                    { name: 'price-alerts', src: 'js/price-alerts.js', description: 'Interactive Price Alerts' },
+                    { name: 'portfolio', src: 'js/portfolio.js', description: 'Positions, Orders & Account Portfolio' },
+                    { name: 'order-panel', src: 'js/order-panel.js', description: 'Order Execution Panel' },
+                ]);
+
+                console.log('✨ Terminal scripts loaded successfully!');
+                lucide.createIcons();
+                initTerminalChrome();
+            } catch (error) {
+                console.error('❌ Script loading failed:', error);
+            }
+        });
+
+        // ─── Terminal-specific chrome: right-drawer tabs, header wiring,
+        // watermark, fullscreen, and real %/Log/Auto price-scale toggles via
+        // the public window.TradeFlowChart.getChart() accessor. Pure
+        // additions on top of the unmodified app scripts - never reaches
+        // into their internals. ───
+        function initTerminalChrome() {
+            // Right drawer: Watchlist / Trade tabs. Deliberately its OWN class
+            // names (.tv-right-tab/.tv-right-panel-wrap), NOT .drawer-tab/
+            // .drawer-panel - those are already claimed globally by
+            // portfolio.js's setupTabs() for the bottom account drawer, and
+            // reusing them here would cross-wire the two tab systems.
+            const rightTabs = document.querySelectorAll('.tv-right-tab');
+            rightTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    rightTabs.forEach(t => t.classList.toggle('active', t === tab));
+                    document.querySelectorAll('.tv-right-panel-wrap').forEach(p => {
+                        p.hidden = p.dataset.tvpanel !== tab.dataset.tvtab;
+                    });
+                });
+            });
+
+            const rightDrawer = document.getElementById('tv-right-drawer');
+            document.getElementById('tv-right-collapse')?.addEventListener('click', () => {
+                rightDrawer?.classList.toggle('tv-collapsed');
+            });
+
+            document.getElementById('tv-trade-btn')?.addEventListener('click', () => {
+                rightDrawer?.classList.remove('tv-collapsed');
+                document.querySelector('.tv-right-tab[data-tvtab="trade"]')?.click();
+            });
+
+            document.getElementById('tv-fullscreen')?.addEventListener('click', () => {
+                if (document.fullscreenElement) {
+                    document.exitFullscreen?.();
+                } else {
+                    document.documentElement.requestFullscreen?.().catch(() => {});
+                }
+            });
+
+            // Position-size slider - mirrors order-panel.js's own quick-%
+            // button math (available buying power x leverage / entry price)
+            // without modifying that file; writes into the same #order-size
+            // input it already listens on, so computeRR() still fires.
+            const slider = document.getElementById('tv-size-slider');
+            slider?.addEventListener('input', () => {
+                const pct = parseFloat(slider.value) || 0;
+                const sizeInput = document.getElementById('order-size');
+                const priceEl = document.getElementById('order-price');
+                const orderType = document.querySelector('.order-type-tab.active')?.dataset.type;
+                const entry = (orderType && orderType !== 'market' && priceEl?.value)
+                    ? parseFloat(priceEl.value)
+                    : window.TradeFlowChart?.getLastPrice?.(window.TradeFlowChart?.getCurrentSymbol?.());
+                const leverage = parseFloat(document.getElementById('order-leverage')?.value) || 1;
+                const summary = window.TradeFlowPortfolio?.getAccountSummary?.();
+                const available = summary ? Math.max(0, summary.available) : 0;
+                if (!sizeInput || !entry || !isFinite(entry) || entry <= 0) return;
+                sizeInput.value = Math.max(1, Math.floor((available * (pct / 100) * leverage) / entry));
+                sizeInput.dispatchEvent(new Event('input'));
+            });
+
+            // Watermark + symbol readout, kept live off the same public API
+            // the other pages already use.
+            function updateTerminalReadouts() {
+                const sym = window.TradeFlowChart?.getCurrentSymbol?.() || '—';
+                const tf = document.querySelector('#tv-header .tab-btn.active')?.textContent?.trim() || '5D';
+                const watermark = document.getElementById('chart-watermark');
+                if (watermark) watermark.textContent = sym;
+                const readout = document.getElementById('tv-symbol-readout');
+                if (readout) readout.textContent = `${sym} • ${tf}`;
+            }
+            updateTerminalReadouts();
+            window.TradeFlowChart?.onSymbolChange?.(updateTerminalReadouts);
+            document.querySelectorAll('#tv-header .tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => setTimeout(updateTerminalReadouts, 0));
+            });
+
+            // Real %/Log/Auto price-scale toggles via the chart's public
+            // getChart() accessor - genuinely functional, unlike the
+            // layout-grid/undo/redo icons in the header (those mirror
+            // TradingView's chrome visually only; this app has no multi-chart
+            // layouts or a drawing command history to back them with).
+            let scaleMode = 'normal';
+            function applyScaleMode(next) {
+                const chart = window.TradeFlowChart?.getChart?.();
+                if (!chart || typeof LightweightCharts === 'undefined') return;
+                scaleMode = (scaleMode === next) ? 'normal' : next;
+                const modeMap = {
+                    normal: LightweightCharts.PriceScaleMode.Normal,
+                    percentage: LightweightCharts.PriceScaleMode.Percentage,
+                    log: LightweightCharts.PriceScaleMode.Logarithmic,
+                };
+                try { chart.priceScale('right').applyOptions({ mode: modeMap[scaleMode] }); } catch (e) {}
+                document.getElementById('tv-scale-pct')?.classList.toggle('active', scaleMode === 'percentage');
+                document.getElementById('tv-scale-log')?.classList.toggle('active', scaleMode === 'log');
+            }
+            document.getElementById('tv-scale-pct')?.addEventListener('click', () => applyScaleMode('percentage'));
+            document.getElementById('tv-scale-log')?.addEventListener('click', () => applyScaleMode('log'));
+
+            let autoScaleOn = true;
+            document.getElementById('tv-scale-auto')?.addEventListener('click', () => {
+                autoScaleOn = !autoScaleOn;
+                const chart = window.TradeFlowChart?.getChart?.();
+                try { chart?.priceScale('right').applyOptions({ autoScale: autoScaleOn }); } catch (e) {}
+                document.getElementById('tv-scale-auto')?.classList.toggle('active', autoScaleOn);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,487 @@
+/*
+ * TradeFlow "Zen Workflow" layout - a floating-panel restructure of the same
+ * app (Figma/Linear/Raycast-inspired), used only by zen.html. This file is
+ * layout/positioning only: it never touches what stock-app.prod.js,
+ * multi-indicator-system.js, order-panel.js, portfolio.js, price-alerts.js or
+ * drawing-tools.js render *into* these elements - only where those same
+ * elements (#watchlist, #chart, #order-panel, #bottom-drawer,
+ * #indicators-section, etc., all unmodified) sit on screen. Loaded after
+ * tradeflow-theme.css so its color variables (--tf-*) are available and its
+ * !important Tailwind remaps can still be beaten where this file needs to.
+ */
+
+html, body {
+  height: 100%;
+}
+
+body.zen-body {
+  overflow: hidden;
+  background:
+    radial-gradient(1200px 700px at 20% -10%, rgba(16, 185, 129, 0.10), transparent 60%),
+    radial-gradient(1000px 600px at 100% 0%, rgba(41, 98, 255, 0.10), transparent 55%),
+    var(--tf-bg);
+}
+
+#zen-workspace {
+  position: relative;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Top floating command capsule
+   ═══════════════════════════════════════════════════════════════════════ */
+#zen-command-bar {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: calc(100vw - 260px);
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: rgba(30, 41, 59, 0.75);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid var(--tf-border);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  overflow-x: auto;
+}
+#zen-command-bar::-webkit-scrollbar { display: none; }
+
+.zen-cmd-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.zen-cmd-divider {
+  width: 1px;
+  height: 22px;
+  background: var(--tf-border);
+  flex-shrink: 0;
+  margin: 0 2px;
+}
+.zen-logo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 6px 12px;
+  font-weight: 800;
+  color: var(--tf-up);
+  font-size: 14px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.zen-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  color: var(--tf-text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  flex-shrink: 0;
+}
+.zen-icon-btn:hover { background: var(--tf-bg-hover); color: var(--tf-text); }
+.zen-icon-btn:active { transform: scale(0.92); }
+.zen-icon-btn.zen-active { color: var(--tf-up); background: rgba(16, 185, 129, 0.15); }
+
+.zen-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--tf-bg);
+  border: 1px solid var(--tf-border);
+  border-radius: 999px;
+  padding: 5px 6px 5px 12px;
+  flex-shrink: 0;
+}
+.zen-search-wrap input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--tf-text);
+  font-size: 13px;
+  width: 108px;
+}
+.zen-search-kbd {
+  font-size: 10px;
+  color: var(--tf-text-muted);
+  border: 1px solid var(--tf-border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+.zen-search-wrap button {
+  background: var(--tf-up);
+  color: #06251b;
+  border: none;
+  border-radius: 999px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: 800;
+  transition: transform 0.1s ease, filter 0.15s ease;
+  flex-shrink: 0;
+}
+.zen-search-wrap button:hover { filter: brightness(1.1); }
+.zen-search-wrap button:active { transform: scale(0.92); }
+
+#zen-command-bar .tab-btn {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--tf-text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+#zen-command-bar .tab-btn:hover { color: var(--tf-text); background: var(--tf-bg-hover); }
+#zen-command-bar .tab-btn.active {
+  color: #fff;
+  background: var(--tf-accent);
+  border-color: var(--tf-accent);
+}
+
+.zen-price-ticker {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 0 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.zen-price-ticker .zen-price-symbol {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--tf-text-muted);
+}
+.zen-price-ticker .zen-price-value {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tf-text);
+}
+.zen-price-ticker .zen-price-change { font-size: 11px; font-weight: 700; }
+
+#zen-command-bar .theme-toggle-btn {
+  padding: 6px;
+  width: 32px;
+  height: 32px;
+  justify-content: center;
+}
+#zen-command-bar .theme-toggle-label { display: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Account status chip (top-right)
+   ═══════════════════════════════════════════════════════════════════════ */
+#zen-status-chip {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(30, 41, 59, 0.75);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid var(--tf-border);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+.zen-chip-stat { display: flex; flex-direction: column; gap: 1px; }
+.zen-chip-stat-label {
+  color: var(--tf-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 9px;
+  font-weight: 600;
+}
+.zen-chip-stat-value {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--tf-text);
+  font-size: 12px;
+}
+#zen-chip-available.margin-warning {
+  padding: 1px 8px;
+  font-size: 11px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Floating glass main stage (chart)
+   ═══════════════════════════════════════════════════════════════════════ */
+#viz-area {
+  height: 100%;
+  padding: 84px 24px 136px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+#main-chart-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex !important;
+  flex-direction: column;
+  background: rgba(30, 41, 59, 0.55) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--tf-border) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+#chart-toolbar {
+  border-radius: 0 !important;
+  background: rgba(15, 23, 42, 0.5) !important;
+  border-bottom: 1px solid var(--tf-border) !important;
+}
+#chart {
+  border-radius: 0 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Watchlist: persistent thin rail + slide-over drawer (left edge)
+   ═══════════════════════════════════════════════════════════════════════ */
+#watchlist-rail {
+  position: fixed !important;
+  display: flex !important;
+  top: 92px;
+  bottom: 148px;
+  left: 16px;
+  width: 40px;
+  z-index: 25;
+  border-radius: 14px !important;
+  border: 1px solid var(--tf-border) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  padding-bottom: 6px;
+  overflow-y: auto;
+}
+.watchlist-rail-expand { border-radius: 14px 14px 0 0 !important; }
+
+#sidebar {
+  position: fixed !important;
+  display: flex !important;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 300px !important;
+  z-index: 50;
+  border-right: 1px solid var(--tf-border) !important;
+  border-radius: 0 20px 20px 0 !important;
+  box-shadow: 24px 0 60px rgba(0, 0, 0, 0.5);
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+  visibility: hidden;
+}
+#sidebar.zen-open {
+  transform: translateX(0);
+  visibility: visible;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Indicator drawer - a bottom sheet, closed by default (kept laid-out via
+   visibility:hidden rather than display:none so indicator charts inside
+   #indicators-container measure a real, non-zero size from the moment
+   MultiIndicatorSystem creates them - this app has a documented history of
+   0x0-container chart bugs, so this sidesteps that whole class of problem).
+
+   IMPORTANT: left/right are pinned to the exact same 24px inset #viz-area
+   uses for the chart card, so this drawer's width always equals #chart's
+   width exactly (not just approximately). That's required, not cosmetic -
+   MultiIndicatorSystem.syncIndicatorChartWidths() force-sets every
+   indicator panel's pixel width to match #chart.clientWidth on every
+   resize (stock-app.prod.js wires that to a ResizeObserver on #chart), so
+   if this drawer were narrower than the chart, every panel would be forced
+   wider than its own container and clip. Matching widths by construction
+   sidesteps that entirely instead of fighting it with JS overrides. */
+#indicators-section {
+  position: fixed !important;
+  left: 24px;
+  right: 24px;
+  bottom: 148px;
+  width: auto !important;
+  height: 380px !important;
+  max-height: 55vh;
+  z-index: 45;
+  display: flex !important;
+  flex-direction: column;
+  border-radius: 18px !important;
+  border: 1px solid var(--tf-border) !important;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(16px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+}
+#indicators-section.zen-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+#indicators-section > div:first-child {
+  border-radius: 18px 18px 0 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Shared backdrop for the watchlist + indicator overlays
+   ═══════════════════════════════════════════════════════════════════════ */
+#zen-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 42;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s;
+}
+#zen-backdrop.zen-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Execution dock - horizontal floating order ticket, always visible just
+   above the positions sheet's collapsed bar (JS keeps --zen-dock-bottom in
+   sync with the sheet's collapsed/expanded state).
+   ═══════════════════════════════════════════════════════════════════════ */
+#order-panel {
+  position: fixed !important;
+  left: 50%;
+  bottom: var(--zen-dock-bottom, 60px);
+  transform: translateX(-50%);
+  width: auto !important;
+  max-width: calc(100vw - 32px);
+  z-index: 30;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(30, 41, 59, 0.85) !important;
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid var(--tf-border) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  transition: bottom 0.2s ease;
+  font-size: 12px;
+}
+.zen-dock-symbol {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 800;
+  color: var(--tf-up);
+  padding: 0 4px;
+}
+#order-panel .order-type-tab { padding: 5px 10px; }
+#order-panel .order-field {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+#order-panel .order-field span {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+#order-panel .order-field input,
+#order-panel .order-field select {
+  width: 76px;
+  padding: 5px 8px;
+  border-radius: 999px;
+}
+#order-panel .size-quick-row { gap: 3px; }
+#order-panel .size-quick-btn {
+  padding: 5px 8px;
+  border-radius: 999px;
+}
+#order-panel .rr-summary-box {
+  display: flex !important;
+  gap: 10px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border-left: none !important;
+  border: 1px solid var(--tf-border) !important;
+}
+#order-panel .rr-summary-box > div { display: flex; align-items: baseline; gap: 4px; }
+#order-panel #btn-buy,
+#order-panel #btn-sell {
+  padding: 8px 18px;
+  border-radius: 999px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Positions/Orders/History/Account slide-up sheet - collapsed by default,
+   shows a persistent mini bar (position count + live P&L); reuses
+   portfolio.js's existing setupCollapse()/.collapsed class toggle
+   unmodified, just redefines what "collapsed" means visually here
+   (transform, not height:34px) so tables underneath keep a real, laid-out
+   size at all times.
+   ═══════════════════════════════════════════════════════════════════════ */
+#bottom-drawer {
+  position: fixed !important;
+  display: flex !important;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  bottom: 0;
+  width: min(1040px, calc(100vw - 32px)) !important;
+  height: 320px !important;
+  z-index: 30;
+  border-radius: 20px 20px 0 0 !important;
+  border: 1px solid var(--tf-border) !important;
+  border-bottom: none !important;
+  box-shadow: 0 -16px 40px rgba(0, 0, 0, 0.45);
+  transition: transform 0.25s ease;
+}
+#bottom-drawer.collapsed {
+  height: 320px !important;
+  transform: translateX(-50%) translateY(calc(100% - 44px));
+}
+#bottom-drawer-header {
+  height: 44px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+#bottom-drawer.collapsed #bottom-drawer-header {
+  cursor: pointer;
+}
+.zen-drawer-summary {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--tf-text-muted);
+  padding: 0 10px;
+  white-space: nowrap;
+}
+.zen-drawer-summary.pnl-positive { color: var(--tf-up) !important; }
+.zen-drawer-summary.pnl-negative { color: var(--tf-down) !important; }
+
+@media (max-width: 768px) {
+  #zen-status-chip .zen-chip-stat:not(:last-child) { display: none; }
+  #sidebar { width: 82vw !important; }
+  #watchlist-rail { display: none !important; }
+}

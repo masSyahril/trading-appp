@@ -245,7 +245,7 @@ window.TradeFlowPortfolio = (function () {
     }).join('') || emptyRow(7, 'No closed trades yet');
   }
 
-  function renderAccount() {
+  function getAccountSummary() {
     const unrealized = state.positions.reduce((sum, p) => {
       const cur = currentPrice(p.symbol) ?? p.entryPrice;
       return sum + (cur - p.entryPrice) * p.size * (p.side === 'sell' ? -1 : 1);
@@ -253,11 +253,19 @@ window.TradeFlowPortfolio = (function () {
     const marginUsed = state.positions.reduce((sum, p) => sum + (p.entryPrice * p.size) / (p.leverage || 1), 0);
     const equity = state.balance + unrealized;
     const available = equity - marginUsed;
+    return { balance: state.balance, equity, marginUsed, available };
+  }
 
-    setText('acct-balance', fmtMoney(state.balance));
+  function renderAccount() {
+    const { balance, equity, marginUsed, available } = getAccountSummary();
+
+    setText('acct-balance', fmtMoney(balance));
     setText('acct-equity', fmtMoney(equity));
     setText('acct-margin', fmtMoney(marginUsed));
     setText('acct-available', fmtMoney(available));
+
+    const availEl = document.getElementById('acct-available');
+    if (availEl) availEl.classList.toggle('margin-warning', available < 0);
   }
 
   function setText(id, text) {
@@ -304,5 +312,5 @@ window.TradeFlowPortfolio = (function () {
     }, 4000);
   }
 
-  return { submitOrder, closePosition, cancelOrder, editOrderPrice };
+  return { submitOrder, closePosition, cancelOrder, editOrderPrice, getAccountSummary };
 })();
