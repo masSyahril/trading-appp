@@ -1,111 +1,4 @@
-/* TradeLite Multi-Indicator System */
 
-function computeRandomWalkIndex(RWI_n, esp, high, low, close) {
-  const len = close.length;
-  const RWI_high = new Array(len).fill(NaN);
-  const RWI_low = new Array(len).fill(NaN);
-  const TR = new Array(len).fill(0);
-  const ATR = new Array(len).fill(NaN);
-
-  // 1) True Range (need previous close) — start at i=1
-  for (let i = 1; i < len; i++) {
-    const tp1 = high[i] - low[i];
-    const tp2 = Math.abs(high[i] - close[i - 1]);
-    const tp3 = Math.abs(low[i] - close[i - 1]);
-    TR[i] = Math.max(tp1, tp2, tp3);
-  }
-    
-  // 2) ATR as EMA of TR. Initialize ATR[1]=TR[1] if available
-  if (len > 1) ATR[1] = TR[1];
-  for (let i = 2; i < len; i++) {
-    ATR[i] = (esp - 1) / (esp + 1) * ATR[i - 1] + (2 / (esp + 1)) * TR[i];
-  }
-
-  // 3) For each bar compute rolling max/min over the RWI window and RWI values
-  for (let i = RWI_n - 1; i < len; i++) {
-    let max_high = -Infinity;
-    let min_low = Infinity;
-    const start = i - RWI_n + 1;
-    for (let j = start; j <= i; j++) {
-      if (high[j] > max_high) max_high = high[j];
-      if (low[j] < min_low) min_low = low[j];
-    }
-    const denom = ATR[i] * Math.sqrt(RWI_n);
-    if (denom && !isNaN(denom) && denom !== 0) {
-      RWI_high[i] = (high[i] - min_low) / denom;
-      RWI_low[i] = (max_high - low[i]) / denom;
-    } else {
-      RWI_high[i] = NaN;
-      RWI_low[i] = NaN;
-    }
-  }
-
-  return { RWI_high, RWI_low };
-}
-
-function computeBollinger4SD(K_close, MA_day, SD_day) {
-  //K_high=STK_close, for example: MA_day=10, SD_day=20
-  const MA=[];         // =middleBand[]
-  const upperBand=[];  // =MA+2SD
-  const lowerBand=[];  // =MA-2SD
-  const SD=[];         // SD(Standard Deviation)
-  const upperBand_lowerBand=[];  //upperBand-lowerBand=4SD
-  const percentB=[];   // B percent布林極限％B
-  const Bandwith=[];   // wide the Bollinger Bands 
-  let sum=0;
-  //compute MA[], MA_day=10, MA[]=10,11,...,2000
-  for(let i=1; i<=MA_day; i++) {   //i=1 to 10
-    sum=sum+K_close[i];
-  }
-  MA[MA_day]=sum/MA_day;     //first MA[10]=sum/10
-  for(let i=MA_day+1; i<=K_close.length; i++) {  //i=11 to 2000
-    sum=sum-K_close[i-MA_day]+K_close[i];   //先扣除舊的，再加新的
-    MA[i]=sum/MA_day;       //second MA[21]=sum/20
-  }
-  //compute SD(Standard Deviation), SD[]=29,30,...,2000
-  let sum_SD=0;
-  for(let i=MA_day; i<=MA_day+SD_day-1; i++) {  //i=10 to 29(=10+20-1)
-    sum_SD=sum_SD+(K_close[i]-MA[i])**2;   //平方=x**2，或=Math.pow(x,2)
-  }
-  let tp;
-  tp=MA_day+SD_day-1;   //tp=10+20-1=29
-  SD[tp]=Math.sqrt(sum_SD/SD_day);  //first SD[29],開根號=Math.sqrt()
-  upperBand[tp]=MA[tp]+2*SD[tp];    //first=[29]
-  lowerBand[tp]=MA[tp]-2*SD[tp];
-  upperBand_lowerBand[tp]=4*SD[tp];
-  percentB[tp]=(K_close[tp]-lowerBand[tp])/(upperBand[tp]-lowerBand[tp])*100;
-  Bandwith[tp]=(upperBand[tp]-lowerBand[tp])/MA[tp]*100;
-  //======================以上計算是所有指標的第1個數值。
-  //======以下計算所有指標的其餘數值  SD[]=30,31,...2000
-  for(let i=MA_day+SD_day; i<=K_close.length; i++) {  //i=30(10+20) to 2000
-    //sum_SD先扣除舊的，再加新的
-    sum_SD=sum_SD-(K_close[i-SD_day]-MA[i-SD_day])**2+(K_close[i]-MA[i])**2;
-    SD[i]=Math.sqrt(sum_SD/SD_day);   //second SD[30]
-    upperBand[i]=MA[i]+2*SD[i];       //first=[29]
-    lowerBand[i]=MA[i]-2*SD[i];
-    upperBand_lowerBand[i]=4*SD[i];   //second =[30]
-    percentB[i]=(K_close[i]-lowerBand[i])/(upperBand[i]-lowerBand[i])*100;
-    Bandwith[i]=(upperBand[i]-lowerBand[i])/MA[tp]*100;
-  }
-  // upperBand/MA/lowerBand are drawn in the K_Line area (main chart overlay);
-  // upperBand_lowerBand/percentB/Bandwith are drawn in the small window (sub-pane).
-  return {upperBand, MA, lowerBand, upperBand_lowerBand, percentB, Bandwith};
-  //MA_day=10, SD_day=20, THREE Indicators[]=29,30,...,2000.
-}
-// REX Oscillator: TVB = 2*close - (high + low), REX = EMA(TVB, esp)
-// function computeREXOscillator(K_high, K_low, K_close, esp) {
-//   const len = K_close.length;
-//   const TVB = [];
-//   const REX = [];
-//   for (let i = 1; i < len; i++) {
-//     TVB[i] = 2 * K_close[i] - (K_high[i] + K_low[i]);
-//   }
-//   if (len > 1) REX[1] = TVB[1];
-//   for (let i = 2; i < len; i++) {
-//     REX[i] = (esp - 1) / (esp + 1) * REX[i - 1] + (2 / (esp + 1)) * TVB[i];
-//   }
-//   return { REX, TVB };
-// }
 
 
 
@@ -114,20 +7,6 @@ function computeBollinger4SD(K_close, MA_day, SD_day) {
 const PRICE_SCALE_ALIGN_WIDTH = 56;
 const TIME_SCALE_RIGHT_OFFSET = 8;
 const TIME_SCALE_BAR_SPACING = 6;
-
-
-function computeREXOSC(K_high, K_low, K_close, esp) {
-  const TVB = [];
-  const REX = [];
-  for (let i = 1; i < K_close.length; i++) {
-    TVB[i] = 2 * K_close[i] - (K_high[i] + K_low[i]);
-  }
-  if (K_close.length > 1) REX[1] = TVB[1];
-  for (let i = 2; i < K_close.length; i++) {
-    REX[i] = (esp - 1) / (esp + 1) * REX[i - 1] + (2 / (esp + 1)) * TVB[i];
-  }
-  return { REX, TVB };
-}
 
 function _rsi0Based(closes, period) {
   const n = closes.length;
@@ -607,10 +486,10 @@ class MultiIndicatorSystem {
       REX_OSC: {
         name: 'REX Oscillator',
         type: 'oscillator',
-        defaultParams: { esp: 9, parameters: 10 },
-        paramLabels: { esp: 'Smooth', parameters: 'Parameters' },
+        defaultParams: { esp: 9},
+        paramLabels: { esp: 'Smooth' },
         minPeriod: 2,
-        compute: (data, params) => this.computeREXOscillatorIndicator(data, params.esp, params.parameters),
+        compute: (data, params) => this.computeREXOscillatorIndicator(data, params.esp),
         render: (chart, data, colors, seriesMap) => this.renderREXOscillator(chart, data, colors, seriesMap)
       },
       VR: {
@@ -864,7 +743,7 @@ class MultiIndicatorSystem {
         defaultParams: { MA_day: 10, SD_day: 20 },
         paramLabels: { MA_day: 'MA_day', SD_day: 'SD_day' },
         minPeriod: 10,
-        compute: (data, params) => this.computeBollingerBands4SDIndicator(data, params.MA_day, params.SD_day),
+        compute: (data, params) => this.computeBollingerBands(data, params.MA_day, params.SD_day),
         render: (chart, data, colors, seriesMap) => this.renderBollingerBands4SD(chart, data, colors, seriesMap)
       },
       PVIpercentRiseFall: {
@@ -1470,7 +1349,7 @@ class MultiIndicatorSystem {
           compute: (data, params) => this.computeVolAccuDistOsc(data, params.esp),
           render: (chart, data, colors, seriesMap) => this.renderVolAccuDistOsc(chart, data, colors, seriesMap)
         },
-        HighLowOsc:{ // not finish
+        HighLowOsc:{ 
           name: 'High and Low OSCillator',
           type: 'volume',
           defaultParams: { esp: 9 },
@@ -1550,7 +1429,52 @@ class MultiIndicatorSystem {
           minPeriod: 10,
           compute: (data, params) => this.computeHistoricalVolatility_TP(data, params.HV_num),
           render: (chart, data, colors, seriesMap) => this.renderHistoricalVolatility_TP(chart, data, colors, seriesMap)
-        }
+        },
+        Z_Score_TP_Return: {
+          name: 'Z-Score (True Range Return)',
+          type: 'volatility',
+          defaultParams: {Z_num: 10},
+          paramLabels: {Z_num: 'Z Period'},
+          minPeriod: 10,
+          compute: (data, params) => this.computeZ_Score_TP_Return(data, params.Z_num),
+          render: (chart, data, colors, seriesMap) => this.renderZ_Score_TP_Return(chart, data, colors, seriesMap)
+        },
+        Z_Score_Close_Return: {
+          name: 'Z-Score (Close Return)',
+          type: 'volatility',
+          defaultParams: {Z_num: 10},
+          paramLabels: {Z_num: 'Z Period'},
+          minPeriod: 10,
+          compute: (data, params) => this.computeZ_Score_Close_Return(data, params.Z_num),
+          render: (chart, data, colors, seriesMap) => this.renderZ_Score_Close_Return(chart, data, colors, seriesMap)
+        },
+          Z_Score_EMA:{
+            name: 'Z-Score (EMA)',
+            type: 'volatility',
+            defaultParams: {Z_num: 10, esp: 9},
+            paramLabels: {Z_num: 'Z Period', esp: 'EMA Period'},
+            minPeriod: 10,
+            compute: (data, params) => this.computeZ_Score_EMA(data, params.Z_num, params.esp),
+            render: (chart, data, colors, seriesMap) => this.renderZ_Score_EMA(chart, data, colors, seriesMap)
+          },
+        Z_Score_Typical: {
+          name: 'Z-Score (Typical)',
+          type: 'volatility',
+          defaultParams: {Z_num: 10},
+          paramLabels: {Z_num: 'Z Period'},
+          minPeriod: 10,
+          compute: (data, params) => this.computeZ_Score_typical(data, params.Z_num),
+          render: (chart, data, colors, seriesMap) => this.renderZ_Score_typical(chart, data, colors, seriesMap)
+        },
+        Z_Score_Close: {
+          name: 'Z-Score (Close)',
+          type: 'volatility',
+          defaultParams: {Z_num: 10},
+          paramLabels: {Z_num: 'Z Period'},
+          minPeriod: 10,
+          compute: (data, params) => this.computeZ_Score_close(data, params.Z_num),
+          render: (chart, data, colors, seriesMap) => this.renderZ_Score_close(chart, data, colors, seriesMap)
+        },
 
     // last definition
     };
@@ -5093,19 +5017,31 @@ class MultiIndicatorSystem {
   // RWI (Random Walk Index) — uses ATR-smoothed True Range and rolling high/low
   // Prefer window.computeRandomWalkIndex from your Wang file if loaded
   computeRandomWalkingIndex(data, RWI_n = 10, esp = 9) {
-    const high = data.map(d => d.high);
-    const low = data.map(d => d.low);
-    const close = data.map(d => d.close);
-    const fn = (typeof window !== 'undefined' && window.computeRandomWalkIndex)
-      ? window.computeRandomWalkIndex
-      : computeRandomWalkIndex;
-    const result = fn(RWI_n, esp, high, low, close);
-    // Chart expects null for missing; your function uses NaN
-    const toNull = (v) => (v != null && Number.isFinite(v) ? v : null);
-    return {
-      RWI_high: result.RWI_high.map(toNull),
-      RWI_low: result.RWI_low.map(toNull)
-    };
+    const highs = data.map(d => d.high);
+    const lows = data.map(d => d.low);
+    const closes = data.map(d => d.close);
+    const len = closes.length;
+    const RWI_high = new Array(closes.length).fill(null);
+    const RWI_low = new Array(closes.length).fill(null);
+    if (len === 0 || typeof window.RandomWalkIndex !== 'function') return { RWI_high, RWI_low };
+    const out = window.RandomWalkIndex(highs, lows, closes, RWI_n, esp);
+    const s1 = out.RWI_high || [];
+    const s2 = out.RWI_low || [];
+    for (let i = 0; i < len; i++) {
+      const v1 = s1[i]; RWI_high[i] = (v1 != null && Number.isFinite(v1)) ? v1 : null;
+      const v2 = s2[i]; RWI_low[i] = (v2 != null && Number.isFinite(v2)) ? v2 : null;
+    }
+    return { RWI_high, RWI_low };
+    // const fn = (typeof window !== 'undefined' && window.computeRandomWalkIndex)
+    //   ? window.computeRandomWalkIndex
+    //   : computeRandomWalkIndex;
+    // const result = fn(RWI_n, esp, high, low, close);
+    // // Chart expects null for missing; your function uses NaN
+    // const toNull = (v) => (v != null && Number.isFinite(v) ? v : null);
+    // return {
+    //   RWI_high: result.RWI_high.map(toNull),
+    //   RWI_low: result.RWI_low.map(toNull)
+    // };
   }
 
   // REX Oscillator: TVB = 2*close-(high+low), REX = EMA(TVB, esp)
@@ -5113,14 +5049,28 @@ class MultiIndicatorSystem {
     const high = data.map(d => d.high);
     const low = data.map(d => d.low);
     const close = data.map(d => d.close);
-    const result = (typeof window !== 'undefined' && window.REXOscillator)
-      ? window.REXOscillator(high, low, close, esp)
-      : computeREXOSC(high, low, close, esp);
-    const toNull = (v) => (v != null && Number.isFinite(v) ? v : null);
-    return {
-      REX: result.REX.map(toNull),
-      TVB: result.TVB.map(toNull)
-    };
+    const len = close.length;
+    const REX = new Array(len).fill(null);
+    const TVB = new Array(len).fill(null);
+    if (len === 0 || typeof window.REXOscillator !== 'function') return { REX: [], TVB: [] };
+    const out = window.REXOscillator(high, low, close, esp);
+    const s1 = out.REX || [];
+    const s2 = out.TVB || [];
+    for (let i = 0; i < len; i++) {
+      const v1 = s1[i]; REX[i] = (v1 != null && Number.isFinite(v1)) ? v1 : null;
+      const v2 = s2[i]; TVB[i] = (v2 != null && Number.isFinite(v2)) ? v2 : null;
+    }
+    return { REX, TVB };
+
+
+    // const result = (typeof window !== 'undefined' && window.REXOscillator)
+    //   ? window.REXOscillator(high, low, close, esp)
+    //   : computeREXOSC(high, low, close, esp);
+    // const toNull = (v) => (v != null && Number.isFinite(v) ? v : null);
+    // return {
+    //   REX: result.REX.map(toNull),
+    //   TVB: result.TVB.map(toNull)
+    // };
   }
 
   // VR Indicator Computation — Prof Wang VolRatio: day=計算區間, esp=平滑天數
@@ -6797,6 +6747,21 @@ computeJurikMovingAverage(data, length = 10) {
   return { JurikMA };
 }
 
+computeZeroLagEMA(data, day = 20) {
+  const highs = data.map(d => d.high);
+  const lows = data.map(d => d.low);
+  const closes = data.map(d => d.close);
+  const len = closes.length;
+  const ZeroLagEMA = new Array(len).fill(null);
+  if (len === 0 || typeof window.ZeroLagEMA !== 'function') return { ZeroLagEMA };
+  const out = window.ZeroLagEMA(highs, lows, closes, day);
+  const s1 = out.ZeroLag_EMA || [];
+  for (let i = 0; i < len; i++) {
+    const v1 = s1[i]; ZeroLagEMA[i] = (v1 != null && Number.isFinite(v1)) ? v1 : null;
+  }
+  return { ZeroLagEMA };
+}
+
 computeAdaptiveMACD(data, esp = 5){
   const highs = data.map(d => d.high);
   const lows = data.map(d => d.low);
@@ -6879,7 +6844,175 @@ computeHistoricalVolatility_TP(data, HV_num = 10) {
   return { HV };
 }
 
+computeZ_Score_TP_Return(data, Z_num = 10) { 
+  const highs = data.map(d => d.high);
+  const lows = data.map(d => d.low);
+  const closes = data.map(d => d.close);
+  const len = closes.length;
+  const Z_Score = new Array(len).fill(null);
+  if (len === 0 || typeof window.Z_Score_TP_Return !== 'function') return { Z_Score };
+  const out = window.Z_Score_TP_Return(highs, lows, closes, Z_num);
+  const s1 = out.Z_Score || [];
+  for (let i = 0; i <len; i++) {
+    const v1 = s1[i]; Z_Score[i] = (v1 != null && Number.isFinite(v1)) ? v1 : null;
+  }
+  return { Z_Score };
+}
+
+computeZ_Score_Close_Return(data, Z_num = 10) { 
+  const closes = data.map(d => d.close);
+  const len = closes.length;
+  const Z_score = new Array(len).fill(null);
+  if (len === 0 || typeof window.Z_Score_Close_Return !== 'function') return { Z_score };
+  const out = window.Z_Score_Close_Return(closes, Z_num);
+  const s1 = out.Z_Score || [];
+  for (let i = 0; i <len; i++) {
+    const v1 = s1[i]; Z_score[i] = (v1 != null && Number.isFinite(v1)) ? v1 : null;
+  }
+  return { Z_score };
+}
+computeZ_Score_EMA(data, Z_num = 10, esp = 9) { 
+  const highs = data.map(d => d.high);
+  const lows = data.map(d => d.low);
+  const closes = data.map(d => d.close);
+  const len = closes.length;
+  const Z_Score = new Array(len).fill(null);
+  if (len === 0 || typeof window.Z_Score_EMA !== 'function') return { Z_Score };
+  const out = window.Z_Score_EMA(highs, lows, closes, Z_num, esp);
+  const s1 = out.Z_Score || [];
+  for (let i = 0; i <len; i++) {
+    const v1 = s1[i]; Z_Score[i] = (v1 != null && Number.isFinite(v1)) ? v1 : null;
+  }
+  return { Z_Score };
+}
+computeZ_Score_typical(data, Z_num = 10) { 
+  const highs = data.map(d => d.high);
+  const lows = data.map(d => d.low);
+  const closes = data.map(d => d.close);
+  const len = closes.length;
+  const Z_score = new Array(len).fill(null);
+  if (len === 0 || typeof window.Z_Score_Typical !== 'function') return { Z_score };
+  const out = window.Z_Score_Typical(highs, lows, closes, Z_num);
+  const s1 = out.Z_Score || [];
+  for (let i = 0; i <len; i++) {
+    const v1 = s1[i]; Z_score[i] = (v1 != null && Number.isFinite(v1)) ? v1 : null;
+  }
+  return { Z_score };
+}
+
+computeZ_Score_close(data, Z_num = 10) { 
+  const closes = data.map(d => d.close);
+  const len = closes.length;
+  const Z_score = new Array(len).fill(null);
+  if (len === 0 || typeof window.Z_Score_Close !== 'function') return { Z_score };
+  const out = window.Z_Score_Close(closes, Z_num);
+  const s1 = out.Z_Score || [];
+  for (let i = 0; i <len; i++) {
+    const v1 = s1[i]; Z_score[i] = (v1 != null && Number.isFinite(v1)) ? v1 : null;
+  }
+  return { Z_score };
+}
+
+computeBollingerBands(data, MA_day = 10, SD_day = 20) {
+  const closes = data.map(d => d.close);
+  const len = closes.length;
+  const upperBand = new Array(len).fill(null);
+  const MA = new Array(len).fill(null);
+  const lowerBand = new Array(len).fill(null);
+  if (len === 0 || typeof window.BollingerBands !== 'function') return { upperBand, MA, lowerBand };
+  const out = window.BollingerBands(closes, MA_day, SD_day);
+  const s1 = out.upperBand || [];
+  const s2 = out.MA || [];
+  const s3 = out.lowerBand || [];
+  for (let i = 0; i < len; i++) {
+    const v1 = s1[i]; upperBand[i] = (v1 != null && Number.isFinite(v1)) ? v1 : null;
+    const v2 = s2[i]; MA[i] = (v2 != null && Number.isFinite(v2)) ? v2 : null;
+    const v3 = s3[i]; lowerBand[i] = (v3 != null && Number.isFinite(v3)) ? v3 : null;
+  }
+  return { upperBand, MA, lowerBand };
+}
+
 // ===================================LAST COMPUTED INDICATORS:===============================
+
+renderZ_Score_close(chart, data, colors, seriesMap){
+  if(!data || !data.Z_score) return;
+  if(!seriesMap.has('Z_score')) {
+    seriesMap.set('Z_score', chart.addLineSeries({
+      color: colors.LINE1,
+      lineWidth: 2,
+      title: 'Z_Score',
+      crosshairMarkerVisible: false,
+      priceLineVisible: false,
+    }));
+  }
+
+  const Z_Score_data = this.seriesWithLeadInPadding(data.Z_score, (v) => (v == null || isNaN(v)) ? null : v);
+  seriesMap.get('Z_score').setData(Z_Score_data);
+}
+
+renderZ_Score_typical(chart, data, colors, seriesMap){
+  if(!data || !data.Z_score) return;
+  if(!seriesMap.has('Z_score')) {
+    seriesMap.set('Z_score', chart.addLineSeries({
+      color: colors.LINE1,
+      lineWidth: 2,
+      title: 'Z_Score',
+      crosshairMarkerVisible: false,
+      priceLineVisible: false,
+    }));
+  }
+
+  const Z_Score_data = this.seriesWithLeadInPadding(data.Z_score, (v) => (v == null || isNaN(v)) ? null : v);
+  seriesMap.get('Z_score').setData(Z_Score_data);
+}
+
+renderZ_Score_EMA(chart, data, colors, seriesMap){
+  if(!data || !data.Z_Score) return;
+  if(!seriesMap.has('Z_Score')) {
+    seriesMap.set('Z_Score', chart.addLineSeries({
+      color: colors.LINE1,
+      lineWidth: 2,
+      title: 'Z_Score',
+      crosshairMarkerVisible: false,
+      priceLineVisible: false,
+    }));
+  }
+
+  const Z_Score_data = this.seriesWithLeadInPadding(data.Z_Score, (v) => (v == null || isNaN(v)) ? null : v);
+  seriesMap.get('Z_Score').setData(Z_Score_data);
+}
+
+renderZ_Score_Close_Return(chart, data, colors, seriesMap){
+  if(!data || !data.Z_score) return;
+  if(!seriesMap.has('Z_score')) {
+    seriesMap.set('Z_score', chart.addLineSeries({
+      color: colors.LINE1,
+      lineWidth: 2,
+      title: 'Z_score',
+      crosshairMarkerVisible: false,
+      priceLineVisible: false,
+    }));
+  }
+
+  const Z_Score_data = this.seriesWithLeadInPadding(data.Z_score, (v) => (v == null || isNaN(v)) ? null : v);
+  seriesMap.get('Z_score').setData(Z_Score_data);
+}
+
+renderZ_Score_TP_Return(chart, data, colors, seriesMap){
+  if(!data || !data.Z_Score) return;
+  if(!seriesMap.has('Z_Score')) {
+    seriesMap.set('Z_Score', chart.addLineSeries({
+      color: colors.LINE1,
+      lineWidth: 2,
+      title: 'Z_Score',
+      crosshairMarkerVisible: false,
+      priceLineVisible: false,
+    }));
+  }
+
+  const Z_Score_data = this.seriesWithLeadInPadding(data.Z_Score, (v) => (v == null || isNaN(v)) ? null : v);
+  seriesMap.get('Z_Score').setData(Z_Score_data);
+}
 
 renderHistoricalVolatility_TP(chart, data, colors, seriesMap){
   if(!data || !data.HV) return;
@@ -6980,6 +7113,22 @@ renderAdaptiveMACD(chart, data, colors, seriesMap){
   const Signal_data = this.seriesWithLeadInPadding(data.Signal, (v) => (v == null || isNaN(v)) ? null : v);
   seriesMap.get('Adaptive_MACD').setData(Adaptive_MACD_data);
   seriesMap.get('Signal').setData(Signal_data);
+}
+
+renderZeroLagEMA(chart, data, colors, seriesMap){
+  if(!data || !data.ZeroLagEMA) return;
+  if(!seriesMap.has('ZeroLagEMA')) {
+    seriesMap.set('ZeroLagEMA', chart.addLineSeries({
+      color: colors.LINE1,
+      lineWidth: 2,
+      title: 'Zero Lag EMA',
+      crosshairMarkerVisible: false,
+      priceLineVisible: false,
+    }));
+  }
+
+  const ZeroLagEMA_data = this.seriesWithLeadInPadding(data.ZeroLagEMA, (v) => (v == null || isNaN(v)) ? null : v);
+  seriesMap.get('ZeroLagEMA').setData(ZeroLagEMA_data);
 }
 
 renderJurikMovingAverage(chart, data, colors, seriesMap){
@@ -8561,10 +8710,10 @@ renderPVIpercentRiseFall(chart, data, colors, seriesMap) {
 
 
 renderBollingerBands4SD(chart, data, colors, seriesMap) {
-  if (!data || !data.line1 || !data.line2 || !data.line3) return;
+  if (!data || !data.upperBand || !data.MA || !data.lowerBand) return;
 
-  if (!seriesMap.has('line1')) {
-    seriesMap.set('line1', chart.addLineSeries({ 
+  if (!seriesMap.has('upperBand')) {
+    seriesMap.set('upperBand', chart.addLineSeries({ 
       color: colors.LINE1, 
       lineWidth: 2, 
       title: '',
@@ -8572,8 +8721,8 @@ renderBollingerBands4SD(chart, data, colors, seriesMap) {
       priceLineVisible: false
     }));
   }
-  if (!seriesMap.has('line2')) {
-    seriesMap.set('line2', chart.addLineSeries({ 
+  if (!seriesMap.has('MA')) {
+    seriesMap.set('MA', chart.addLineSeries({ 
       color: colors.LINE2, 
       lineWidth: 2, 
       title: '',
@@ -8581,8 +8730,8 @@ renderBollingerBands4SD(chart, data, colors, seriesMap) {
       priceLineVisible: false
     }));
   }
-  if (!seriesMap.has('line3')) {
-    seriesMap.set('line3', chart.addLineSeries({ 
+  if (!seriesMap.has('lowerBand')) {
+    seriesMap.set('lowerBand', chart.addLineSeries({ 
       color: colors.LINE3, 
       lineWidth: 2, 
       title: '',
@@ -8591,13 +8740,13 @@ renderBollingerBands4SD(chart, data, colors, seriesMap) {
     }));
   }
 
-  const line1Data = this.seriesWithLeadInPadding(data.line1, (v) => (v == null || isNaN(v) ? null : v));
-  const line2Data = this.seriesWithLeadInPadding(data.line2, (v) => (v == null || isNaN(v) ? null : v));
-  const line3Data = this.seriesWithLeadInPadding(data.line3, (v) => (v == null || isNaN(v) ? null : v));
+  const line1Data = this.seriesWithLeadInPadding(data.upperBand, (v) => (v == null || isNaN(v) ? null : v));
+  const line2Data = this.seriesWithLeadInPadding(data.MA, (v) => (v == null || isNaN(v) ? null : v));
+  const line3Data = this.seriesWithLeadInPadding(data.lowerBand, (v) => (v == null || isNaN(v) ? null : v));
 
-  seriesMap.get('line1').setData(line1Data);
-  seriesMap.get('line2').setData(line2Data);
-  seriesMap.get('line3').setData(line3Data);
+  seriesMap.get('upperBand').setData(line1Data);
+  seriesMap.get('MA').setData(line2Data);
+  seriesMap.get('lowerBand').setData(line3Data);
 } 
   // Rendering methods
   renderMACD(chart, data, colors, seriesMap) {
@@ -9806,11 +9955,8 @@ renderBollingerBands4SD(chart, data, colors, seriesMap) {
 
   renderRandomWalkingIndex(chart, data, colors, seriesMap) {
     if (!data || (!data.RWI_high && !data.RWI_low)) return;
-    const rwiHigh = data.RWI_high || [];
-    const rwiLow = data.RWI_low || [];
-
-    if (!seriesMap.has('rwi_high')) {
-      seriesMap.set('rwi_high', chart.addLineSeries({
+    if (!seriesMap.has('RWI_high')) {
+      seriesMap.set('RWI_high', chart.addLineSeries({
         color: colors.LINE1,
         lineWidth: 2,
         title: 'RWI High',
@@ -9818,8 +9964,8 @@ renderBollingerBands4SD(chart, data, colors, seriesMap) {
         priceLineVisible: false
       }));
     }
-    if (!seriesMap.has('rwi_low')) {
-      seriesMap.set('rwi_low', chart.addLineSeries({
+    if (!seriesMap.has('RWI_low')) {
+      seriesMap.set('RWI_low', chart.addLineSeries({
         color: colors.LINE2,
         lineWidth: 2,
         title: 'RWI Low',
@@ -9828,19 +9974,16 @@ renderBollingerBands4SD(chart, data, colors, seriesMap) {
       }));
     }
 
-    const highData = this.seriesWithLeadInPadding(rwiHigh, (v) => (v != null && !isNaN(v) && Number.isFinite(v) ? v : null));
-    const lowData = this.seriesWithLeadInPadding(rwiLow, (v) => (v != null && !isNaN(v) && Number.isFinite(v) ? v : null));
-    seriesMap.get('rwi_high').setData(highData);
-    seriesMap.get('rwi_low').setData(lowData);
+    const highData = this.seriesWithLeadInPadding(data.RWI_high, (v) => (v != null && !isNaN(v) && Number.isFinite(v) ? v : null));
+    const lowData = this.seriesWithLeadInPadding(data.RWI_low, (v) => (v != null && !isNaN(v) && Number.isFinite(v) ? v : null));
+    seriesMap.get('RWI_high').setData(highData);
+    seriesMap.get('RWI_low').setData(lowData);
   }
 
   renderREXOscillator(chart, data, colors, seriesMap) {
     if (!data || (!data.REX && !data.TVB)) return;
-    const rex = data.REX || [];
-    const tvb = data.TVB || [];
-
-    if (!seriesMap.has('rex')) {
-      seriesMap.set('rex', chart.addLineSeries({
+    if (!seriesMap.has('REX')) {
+      seriesMap.set('REX', chart.addLineSeries({
         color: colors.LINE1,
         lineWidth: 2,
         title: 'REX',
@@ -9848,8 +9991,8 @@ renderBollingerBands4SD(chart, data, colors, seriesMap) {
         priceLineVisible: false
       }));
     }
-    if (!seriesMap.has('tvb')) {
-      seriesMap.set('tvb', chart.addLineSeries({
+    if (!seriesMap.has('TVB')) {
+      seriesMap.set('TVB', chart.addLineSeries({
         color: colors.LINE2,
         lineWidth: 2,
         title: 'TVB',
@@ -9858,10 +10001,10 @@ renderBollingerBands4SD(chart, data, colors, seriesMap) {
       }));
     }
 
-    const rexData = this.seriesWithLeadInPadding(rex, (v) => (v != null && !isNaN(v) && Number.isFinite(v) ? v : null));
-    const tvbData = this.seriesWithLeadInPadding(tvb, (v) => (v != null && !isNaN(v) && Number.isFinite(v) ? v : null));
-    seriesMap.get('rex').setData(rexData);
-    seriesMap.get('tvb').setData(tvbData);
+    const rexData = this.seriesWithLeadInPadding(data.REX, (v) => (v != null && !isNaN(v) && Number.isFinite(v) ? v : null));
+    const tvbData = this.seriesWithLeadInPadding(data.TVB, (v) => (v != null && !isNaN(v) && Number.isFinite(v) ? v : null));
+    seriesMap.get('REX').setData(rexData);
+    seriesMap.get('TVB').setData(tvbData);
   }
 
   renderVR(chart, data, colors, seriesMap) {

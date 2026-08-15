@@ -861,15 +861,15 @@ window.StochasticOSC = StochasticOSC;
 //===designed by Prof Wang, 2025-Oct-29===modified on 2026-April-07==
 //Williams %R 威廉指標(William’s Overbought/Oversold Index)。
 //WilliamR=(Hn-Ct)/(Hn-Ln)*100.
-function WilliamR(STK_high, STK_low, STK_close, WR_day) {
+function WilliamR(STK_close, WR_day) {
   //STK_close=STK_close,  WR_day=10,15,... 天數
   const WilliamR=[];
   for(let i=1; i<STK_close.length-WR_day+1; i++) { // i=1 to 2000-10+1=1991
-    let Max_high=0;
+    let Max_high=0; 
     let Min_low=9999;   // initial value can not be zero
-    for(let j=i; j<=WR_day+i-1; j++) {
-      if (STK_high[j]>Max_high) { Max_high=STK_high[j]; }
-      if (STK_low[j]<Min_low) { Min_low=STK_low[j]; }
+    for(j=i; j<=WR_day+i-1; j++) {
+      if (STK_high[j]>Max_high); Max_high=STK_high[j];
+      if (STK_low[j]<Min_low); Min_low=STK_low[j];  
     }
     if(Max_high==Min_low) {
       WilliamR[WR_day+i-1]=100; }
@@ -1066,7 +1066,7 @@ function VolAccuDistOsc(STK_high, STK_low, STK_close, STK_vol, esp) {  //原名�
     if (STK_high[i]-STK_low[i]==0) {
       VolAccuDistOsc[i]=0;  }
     else {
-      VolAccuDistOsc[i]=(2*STK_close[i]-STK_low[i]-STK_high[i])/(STK_high[i]-STK_low[i])*STK_vol[i];
+      VolAccuDistOsc[i]=(2*STK_close[i]-STK_low[i]-STK_high[i])/(STK_high[i]-STK_low[i])*STK_vol;
     }
     if(i==1) {  //i=1,初值=VolAccuDistOsc(1)。
       eVolAccuDistOsc[i]=VolAccuDistOsc[i]; }
@@ -1088,11 +1088,11 @@ window.VolAccuDistOsc = VolAccuDistOsc;
 function HighLowOsc(STK_high, STK_low, STK_close, esp) {  //原名稱:HLO
   // Menu Name=High Low Oscillator  === esp=9, 平滑化因子
   const HLO=[], eHLO=[];   //自創新指標，eHLO[]為平滑化後的數值。
-  let TR;     //True Range, TR
+  const TR=0;     //True Range, TR
   HLO[1]=50;      //HLO(1)初值=50,適當否？
   eHLO[1]=50;     //eHLO(1)初值=50,適當否？
   for(let i=2; i<STK_close.length; i++) {  //i=2 to 2000
-    TR=Math.max(STK_high[i]-STK_low[i], STK_high[i]-STK_close[i-1], Math.abs(STK_low[i]-STK_close[i-1]));
+    TR=max(STK_high[i]-STK_low[i], STK_high[i]-STK_close[i-1], Math.abs(STK_low[i]-STK_close[i-1]));
     HLO[i]=(STK_high[i]-STK_close[i-1])/TR*100;
     eHLO[i]=(esp-1)/(esp+1)*eHLO[i-1]+2/(esp+1)*HLO[i];  //自創新指標
     //eHLO[]是HLO[]的平滑化，即：(n-1)/(n+1)*昨+(2/(n+1)*今
@@ -6590,7 +6590,7 @@ function KingMA(values, ma_day) {
      sum=sum-values[i-ma_day]+values[i];   //先減前10天的值,再加今天的值
      MA[i]=sum/ma_day;
   }
-  return MA;  // plain array - every one of this file's ~28 callers indexes the result directly (MA[i]), not MA.MA[i]
+  return { MA };
   //Drawing the MA[] figure in the K_Line area.
   //if ma_day=10, then MA[]=10,11,...,2000
 }
@@ -8555,10 +8555,10 @@ function LaguerreRSI(STK_close, Gamma_value, esp) {
   const LaguerreRSI=[];     //Laguerre RSI=2 to 2000
   const eLaguerreRSI=[];    //自創, =2 to 2000
   for(let i=2; i<=STK_close.length; i++) {   //i=2 to 2000 
-    L0=(1-Gamma)*STK_close[i]+Gamma*L0prev;  //Laguerre filter的第一個變數L0
-    L1=-Gamma*L0+L0prev+Gamma*L1prev;        //Laguerre filter的第二個變數L1
-    L2=-Gamma*L1+L1prev+Gamma*L2prev;        //Laguerre filter的第三個變數L2
-    L3=-Gamma*L2+L2prev+Gamma*L3prev;        //Laguerre filter的第四個變數L3
+    L0=(1-gamma)*STK_close[i]+gamma*L0prev;  //Laguerre filter的第一個變數L0
+    L1=-gamma*L0+L0prev+gamma*L1prev;        //Laguerre filter的第二個變數L1
+    L2=-gamma*L1+L1prev+gamma*L2prev;        //Laguerre filter的第三個變數L2
+    L3=-gamma*L2+L2prev+gamma*L3prev;        //Laguerre filter的第四個變數L3
     // 計算上漲/下跌動能。下列二式簡潔扼要！
     cum_Up=Math.max(L0-L1,0)+Math.max(L1-L2,0)+Math.max(L2-L3,0);
     cum_Down=Math.max(L1-L0,0)+Math.max(L2-L1,0)+Math.max(L3-L2,0);
@@ -8712,7 +8712,7 @@ function AdaptiveRSI(STK_high, STK_low, STK_close, esp) {
     for(let j=i-RSI_Period+1; j<=i; j++) { //j=48-10+1=39 to 48
       if(dif[j] > 0) {
         sum_Up = sum_Up + dif[j]; }   //收盤價漲幅之和
-      else {
+      else {s
         sum_Dn=sum_Dn+Math.abs(dif[j]);   //收盤價跌幅之和
       }
     }
@@ -9342,7 +9342,7 @@ function HistoricalVolatility_Close(STK_high, STK_low, STK_close, HV_num) {
 window.HistoricalVolatility_Close = HistoricalVolatility_Close;
 //----------------------------------------------------------------------
 
-//===designed by Prof Wang, 2026-August-04==================================
+//===designed by Prof Wang, 2026-August-04=============(完全自行創新)========
 //Historical Volatility(HV, 歷史波動率)是衡量金融資產在過去一段期間價格波動程度的指標。
 // 它是根據**對數報酬率(Logarithmic Return)**的標準差計算而得，通常再換算成年化百分比。
 // 本程式碼創新使用Typical Price替代Close價格計算歷史波動率。
@@ -9381,6 +9381,8 @@ function HistoricalVolatility_TP(STK_high, STK_low, STK_close, HV_num) {
   // if HV_num=20, then HV[]=21 to 2000.
 }
 window.HistoricalVolatility_TP = HistoricalVolatility_TP;
+//----------------------------------------------------------------------
+
 //===designed by Prof Wang, 2026-Aug-12==================================
 //Z-Score(此程式用Close計算標準化分數)。
 //Z-Score通常不是直接對單一價格做標準化，而是利用一段期間的歷史價格，
@@ -9588,10 +9590,8 @@ function Z_Score_TP_Return(STK_high, STK_low, STK_close, Z_num) {
 window.Z_Score_TP_Return = Z_Score_TP_Return;
 //----------------------------------------------------------------------
 
-//----------------------------------------------------------------------
 
 
-
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -9601,7 +9601,7 @@ window.Z_Score_TP_Return = Z_Score_TP_Return;
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
-
+//----------------------------------------------------------------------
 
 
 
@@ -10072,7 +10072,7 @@ function slidingWindowRSI(closes, period) {
     if (D < 0 && Math.abs(D) < 1e-12) D = 0;
     rsi[i] = (U + D === 0) ? 100 : U / (U + D) * 100;
   }
-  return {rsi};
+  return rsi;
 }
 window.slidingWindowRSI = slidingWindowRSI;
 //----------------------------------------------------------------------
