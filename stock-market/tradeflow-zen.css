@@ -4,8 +4,8 @@
  * layout/positioning only: it never touches what stock-app.prod.js,
  * multi-indicator-system.js, order-panel.js, portfolio.js, price-alerts.js or
  * drawing-tools.js render *into* these elements - only where those same
- * elements (#watchlist, #chart, #order-panel, #bottom-drawer,
- * #indicators-section, etc., all unmodified) sit on screen. Loaded after
+ * elements (#watchlist, #chart, #order-panel, #bottom-drawer, etc., all
+ * unmodified) sit on screen. Loaded after
  * tradeflow-theme.css so its color variables (--tf-*) are available and its
  * !important Tailwind remaps can still be beaten where this file needs to.
  */
@@ -232,7 +232,10 @@ body.zen-body {
    ═══════════════════════════════════════════════════════════════════════ */
 #viz-area {
   height: 100%;
-  padding: 84px 24px 136px;
+  /* Left: clear the fixed watchlist rail (16px in, 40px wide) with a 12px gap -
+     otherwise it covers the chart's left edge: the toolbar's first button, the
+     OHLC row and the start of every indicator pane's legend. */
+  padding: 84px 24px 136px 68px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -298,54 +301,11 @@ body.zen-body {
   visibility: visible;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   Indicator drawer - a bottom sheet, closed by default (kept laid-out via
-   visibility:hidden rather than display:none so indicator charts inside
-   #indicators-container measure a real, non-zero size from the moment
-   MultiIndicatorSystem creates them - this app has a documented history of
-   0x0-container chart bugs, so this sidesteps that whole class of problem).
-
-   IMPORTANT: left/right are pinned to the exact same 24px inset #viz-area
-   uses for the chart card, so this drawer's width always equals #chart's
-   width exactly (not just approximately). That's required, not cosmetic -
-   MultiIndicatorSystem.syncIndicatorChartWidths() force-sets every
-   indicator panel's pixel width to match #chart.clientWidth on every
-   resize (stock-app.prod.js wires that to a ResizeObserver on #chart), so
-   if this drawer were narrower than the chart, every panel would be forced
-   wider than its own container and clip. Matching widths by construction
-   sidesteps that entirely instead of fighting it with JS overrides. */
-#indicators-section {
-  position: fixed !important;
-  left: 24px;
-  right: 24px;
-  bottom: 148px;
-  width: auto !important;
-  height: 380px !important;
-  max-height: 55vh;
-  z-index: 45;
-  display: flex !important;
-  flex-direction: column;
-  border-radius: 18px !important;
-  border: 1px solid var(--tf-border) !important;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transform: translateY(16px);
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
-}
-#indicators-section.zen-open {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-  transform: translateY(0);
-}
-#indicators-section > div:first-child {
-  border-radius: 18px 18px 0 0;
-}
+/* Indicators are native panes inside the chart card (added from the
+   indicator picker - the sliders button or Ctrl/Cmd+I). */
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Shared backdrop for the watchlist + indicator overlays
+   Backdrop for the watchlist slide-over
    ═══════════════════════════════════════════════════════════════════════ */
 #zen-backdrop {
   position: fixed;
@@ -484,4 +444,5 @@ body.zen-body {
   #zen-status-chip .zen-chip-stat:not(:last-child) { display: none; }
   #sidebar { width: 82vw !important; }
   #watchlist-rail { display: none !important; }
+  #viz-area { padding-left: 24px; }
 }

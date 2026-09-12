@@ -11,12 +11,9 @@
  * candles). Defining them for real is what makes the main chart genuinely
  * light, not just the chrome around it.
  *
- * Known, disclosed limitation: each indicator sub-panel (ADX/Williams %R/
- * DEMA/etc.) is its own lightweight-charts instance created in
- * multi-indicator-system.js with hardcoded dark hex colors (not wired to any
- * CSS variable, unlike the main chart) - shared by all four pages, so it
- * isn't touched here. Their header/chrome is restyled light to match; the
- * inner chart canvas itself stays dark.
+ * Indicator panes are native panes of the main chart, so they take the
+ * same light --tf-* colours; the legend/picker/settings use the --tfi-*
+ * palette below.
  */
 
 :root {
@@ -176,7 +173,7 @@ body.td-body {
    Chart stage
    ═══════════════════════════════════════════════════════════════════════ */
 #viz-area { height: 100%; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
-#main-chart-panel { flex: 3 1 0%; min-height: 220px; display: flex; flex-direction: column; background: var(--tf-bg); }
+#main-chart-panel { flex: 1 1 auto; min-height: 220px; display: flex; flex-direction: column; background: var(--tf-bg); }
 
 #chart-toolbar {
   display: flex; align-items: center; gap: 4px; padding: 4px 8px;
@@ -224,30 +221,23 @@ body.td-body {
 .td-change-pill.pos { background: rgba(8, 153, 129, 0.12); color: var(--tf-up); }
 .td-change-pill.neg { background: rgba(242, 54, 69, 0.12); color: var(--tf-down); }
 
-#main-splitter { height: 5px; flex-shrink: 0; cursor: ns-resize; background: var(--tf-bg); position: relative; }
-#main-splitter::after {
-  content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: 32px; height: 2px; border-radius: 2px; background: var(--tf-border);
-}
-#main-splitter:hover::after { background: #c8ccd6; }
-
 /* ═══════════════════════════════════════════════════════════════════════
-   Stacked indicator sub-panels - chrome restyled light; the inner chart
-   canvas itself keeps its existing hardcoded dark colors (see file header
-   comment) since those live in multi-indicator-system.js, shared by all
-   four pages, and aren't exposed as CSS variables the way the main chart's
-   are.
+   Indicator legend, picker and settings (src/css/indicators.css), light
    ═══════════════════════════════════════════════════════════════════════ */
-#indicators-section { flex: 3 1 0%; min-height: 180px; display: flex; flex-direction: column; overflow: hidden; background: var(--td-panel); border-top: 1px solid var(--tf-border); }
-#indicators-section > div:first-child { background: var(--td-panel) !important; border-bottom: 1px solid var(--tf-border); }
-#indicators-container { overflow-y: auto !important; overflow-x: hidden !important; min-height: 0 !important; display: flex !important; flex-direction: column !important; width: 100% !important; box-sizing: border-box; }
-.indicator-panel { border-color: var(--tf-border) !important; }
-.indicator-header { background: var(--td-panel) !important; border-bottom: 1px solid var(--tf-border) !important; color: var(--tf-text); }
-.indicator-panel.minimized .indicator-header:hover { background: var(--td-hover) !important; }
-.btn-minimize, .btn-remove-indicator, .icon-btn { color: var(--td-text-muted) !important; opacity: 0; transition: opacity 0.12s ease, background-color 0.12s ease, color 0.12s ease; }
-.indicator-header:hover .btn-minimize, .indicator-header:hover .btn-remove-indicator, .indicator-header:hover .icon-btn { opacity: 1; }
-.btn-minimize:hover { background: var(--td-hover) !important; color: var(--tf-text) !important; }
-.btn-remove-indicator:hover { background: rgba(242, 54, 69, 0.12) !important; color: var(--tf-down) !important; }
+:root {
+  --tfi-fg: #131722;
+  --tfi-muted: #787d8d;
+  --tfi-panel: #ffffff;
+  --tfi-raised: #f0f3fa;
+  --tfi-border: #e0e3eb;
+  --tfi-accent: #2962ff;
+  --tfi-accent-soft: rgba(41, 98, 255, 0.12);
+  --tfi-row-bg: rgba(255, 255, 255, 0.9);
+  --tfi-legend-bg: rgba(255, 255, 255, 0.75);
+  --tfi-danger: #f23645;
+}
+.tfi-backdrop { background: rgba(19, 23, 34, 0.35); }
+.indicators-btn-count:not(:empty) { padding: 0 5px; border-radius: 8px; background: var(--td-hover); color: var(--td-accent); font-size: 10px; }
 
 /* ═══════════════════════════════════════════════════════════════════════
    Right sidebar - watchlist table (top) + asset summary card (bottom)

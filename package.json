@@ -7,7 +7,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "node test/run-indicator-tests.js"
+    "test": "node test/run-indicator-tests.js && node test/run-registry-tests.js"
   },
   "repository": {
     "type": "git",

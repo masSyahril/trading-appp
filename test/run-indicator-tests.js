@@ -165,7 +165,7 @@ function main() {
       const { totalPoints, finitePoints, tailHasData, seriesCount, longestSeriesLen } = analyze(series);
 
       if (seriesCount === 0) {
-        outcome = { status: 'SKIP', reason: 'compute() returned no array fields to check' };
+        outcome = { status: 'FAIL', reason: 'compute() returned no array fields - render has nothing to draw (a helper probably changed its return shape)' };
       } else if (finitePoints === 0) {
         outcome = { status: 'FAIL', reason: `all ${totalPoints} points across ${seriesCount} series are null/NaN - indicator would render completely blank` };
       } else if (candles.length - minPeriod > tailWindowMargin(minPeriod) && !tailHasData) {

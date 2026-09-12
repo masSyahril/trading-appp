@@ -1,0 +1,216 @@
+/*
+ * Indicator system v2 - legend rows on the chart panes, the indicator picker
+ * and the settings dialog. Colours come from the --tfi-* variables so each
+ * page's theme can set them (see terminal-vector.css, tradeflow-dashboard.css).
+ */
+:root {
+  --tfi-fg: #cbd5e1;
+  --tfi-muted: #94a3b8;
+  --tfi-panel: #0f172a;
+  --tfi-raised: #1e293b;
+  --tfi-border: #334155;
+  --tfi-accent: #3b82f6;
+  --tfi-accent-soft: rgba(59, 130, 246, 0.16);
+  --tfi-row-bg: rgba(15, 23, 42, 0.78);
+  --tfi-legend-bg: rgba(15, 23, 42, 0.55);  /* behind pane legend rows, over the lines */
+  --tfi-danger: #f87171;
+  --tfi-mono: ui-monospace, SFMono-Regular, Consolas, "Roboto Mono", monospace;
+  /* Legend rows: text, action buttons and their icons */
+  --tfi-legend-font: 13px;
+  --tfi-legend-btn: 24px;
+  --tfi-legend-icon: 16px;
+}
+
+[hidden].tfi-backdrop { display: none !important; }
+
+/* ─── Legend ─────────────────────────────────────────────────────────── */
+.tfi-legend-layer { position: absolute; inset: 0; z-index: 12; pointer-events: none; overflow: hidden; }
+.tfi-pane-legend {
+  position: absolute;
+  left: 6px;
+  top: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  pointer-events: none;
+  font: var(--tfi-legend-font)/1.35 var(--tfi-mono);
+}
+.tfi-main-legend { position: static; }
+.tfi-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  max-width: 100%;
+  padding: 1px 4px;
+  border-radius: 4px;
+  color: var(--tfi-fg);
+  pointer-events: auto;
+}
+.tfi-legend-layer .tfi-row { background: var(--tfi-legend-bg); }
+.tfi-row:hover { background: var(--tfi-row-bg); }
+.tfi-name { font-family: inherit; color: var(--tfi-fg); white-space: nowrap; cursor: pointer; user-select: none; }
+.tfi-values { display: inline-flex; flex-wrap: wrap; gap: 0 8px; }
+.tfi-value { white-space: nowrap; }
+.tfi-vtitle { color: var(--tfi-muted); margin-right: 3px; }
+/* Summary numbers (stats) after the line values */
+.tfi-value:not(.tfi-stat) + .tfi-stat { padding-left: 8px; border-left: 1px solid var(--tfi-border); }
+/* Actions are always shown, not only on hover */
+.tfi-actions { display: inline-flex; align-items: center; gap: 1px; }
+.tfi-actions button {
+  width: var(--tfi-legend-btn);
+  height: var(--tfi-legend-btn);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--tfi-muted);
+  cursor: pointer;
+}
+.tfi-actions svg { width: var(--tfi-legend-icon); height: var(--tfi-legend-icon); }
+.tfi-actions button:not(:disabled):hover { background: var(--tfi-raised); color: var(--tfi-fg); }
+.tfi-actions button[data-act="remove"]:hover { color: var(--tfi-danger); }
+/* Pane up/down stay fully visible on the top/bottom pane - they just don't react */
+.tfi-actions button:disabled { cursor: default; }
+.tfi-row.tfi-hidden .tfi-name { opacity: 0.45; text-decoration: line-through; }
+.tfi-row.tfi-error .tfi-name { color: var(--tfi-danger); }
+
+/* ─── Dialogs (picker + settings) ────────────────────────────────────── */
+.tfi-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 8vh 16px 16px;
+  background: rgba(2, 6, 23, 0.6);
+}
+.tfi-dialog {
+  width: 460px;
+  max-width: 100%;
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--tfi-border);
+  border-radius: 10px;
+  background: var(--tfi-panel);
+  color: var(--tfi-fg);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.tfi-dialog-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--tfi-border); }
+.tfi-dialog-head strong { flex: 1; font-size: 13px; }
+.tfi-dialog-foot { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-top: 1px solid var(--tfi-border); font-size: 11px; }
+.tfi-muted { color: var(--tfi-muted); }
+.tfi-small { font-size: 11px; }
+.tfi-dialog kbd { padding: 0 4px; border: 1px solid var(--tfi-border); border-radius: 3px; font: 10px var(--tfi-mono); }
+.tfi-icon-btn {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--tfi-muted);
+  cursor: pointer;
+  font: inherit;
+}
+.tfi-icon-btn:hover { background: var(--tfi-raised); color: var(--tfi-fg); }
+.tfi-search {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--tfi-border);
+  border-radius: 6px;
+  background: var(--tfi-raised);
+  color: var(--tfi-fg);
+  font: inherit;
+  outline: none;
+}
+.tfi-search:focus { border-color: var(--tfi-accent); }
+
+/* Picker */
+.tfi-picker-list { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 8px 10px; scrollbar-width: thin; scrollbar-color: var(--tfi-border) transparent; }
+.tfi-pick-cat { padding: 10px 6px 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tfi-muted); }
+.tfi-pick-cat span { font-weight: 400; letter-spacing: 0; }
+.tfi-pick {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--tfi-fg);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.tfi-pick:hover, .tfi-pick:focus-visible { background: var(--tfi-raised); outline: none; }
+.tfi-pick-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tfi-pick-in { margin-left: 6px; font-size: 10px; color: var(--tfi-muted); }
+.tfi-pick-count { font-size: 10px; color: var(--tfi-accent); white-space: nowrap; }
+.tfi-badge { padding: 1px 6px; border: 1px solid var(--tfi-border); border-radius: 4px; font-size: 9px; letter-spacing: 0.04em; color: var(--tfi-muted); }
+.tfi-badge-chart { color: var(--tfi-accent); border-color: currentColor; }
+.tfi-pick.tfi-added { animation: tfi-added 0.7s ease-out; }
+@keyframes tfi-added { from { background: var(--tfi-accent-soft); } to { background: transparent; } }
+.tfi-empty { padding: 28px 12px; text-align: center; color: var(--tfi-muted); }
+
+/* Settings */
+.tfi-settings-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 14px 6px; }
+.tfi-settings section { padding: 12px 0; border-bottom: 1px solid var(--tfi-border); }
+.tfi-settings section:last-child { border-bottom: 0; }
+.tfi-settings h4 { margin: 0 0 8px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tfi-muted); }
+.tfi-settings p { margin: 6px 0 0; font-size: 11px; }
+.tfi-field { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 6px 0; }
+.tfi-field input, .tfi-field select, .tfi-style-row select {
+  padding: 5px 8px;
+  border: 1px solid var(--tfi-border);
+  border-radius: 5px;
+  background: var(--tfi-raised);
+  color: var(--tfi-fg);
+  font: inherit;
+  outline: none;
+}
+.tfi-field input:focus, .tfi-field select:focus { border-color: var(--tfi-accent); }
+.tfi-field input[type="number"] { width: 96px; text-align: right; font-family: var(--tfi-mono); }
+.tfi-field input[type="text"] { width: 120px; }
+.tfi-field select { max-width: 260px; }
+.tfi-field input:disabled { opacity: 0.55; }
+.tfi-style-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.tfi-check { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.tfi-check span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tfi-style-row input[type="color"] { width: 34px; height: 26px; padding: 0 2px; border: 1px solid var(--tfi-border); border-radius: 5px; background: var(--tfi-raised); cursor: pointer; }
+.tfi-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--tfi-border);
+  border-radius: 6px;
+  background: var(--tfi-raised);
+  color: var(--tfi-fg);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.tfi-btn:hover { border-color: var(--tfi-muted); }
+.tfi-btn-primary { background: var(--tfi-accent); border-color: var(--tfi-accent); color: #fff; font-weight: 600; }
+
+/* ─── Touch + small screens ──────────────────────────────────────────── */
+@media (hover: none) {
+  .tfi-actions button { width: 32px; height: 32px; }
+  .tfi-name { padding: 5px 2px; }
+  .tfi-pick { padding: 11px 10px; }
+}
+@media (max-width: 640px) {
+  .tfi-backdrop { padding: 0; align-items: stretch; }
+  .tfi-dialog { width: 100%; max-height: none; height: 100%; border: 0; border-radius: 0; }
+  .tfi-pick { padding: 11px 10px; }
+}

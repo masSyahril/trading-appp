@@ -1,5 +1,14 @@
 # How to Add a New Indicator to the Main Chart Overlay
 
+> **Superseded (indicator system v2).** The Overlay dropdown, `OVERLAY_DEFS`,
+> `getOverlayData()` and `addOverlayToChart()` are gone from
+> `stock-app.prod.js`. Price-chart indicators are now declarative entries in
+> [`src/js/indicators/defs/overlays.js`](../src/js/indicators/defs/overlays.js),
+> added from the one **Indicators** picker - see
+> [HOW-TO-CREATE-NEW-INDICATORS.md § New system](HOW-TO-CREATE-NEW-INDICATORS.md#new-system-one-registry-entry).
+> The rest of this page describes the old code and is kept for reference until
+> the guides are merged.
+
 This guide covers the **overlay system** behind the "Overlay" dropdown on the
 K-line chart — checkboxes grouped into **Moving Averages / Bands / Other /
 Pivots**, each with an optional period input, drawing lines directly on top
@@ -27,8 +36,16 @@ The pieces you touch, in the order you edit them:
 | 4 | `addOverlayToChart()` (~line 469) / `refreshOverlays()` (~line 561) | Only needed for a **new shape** of multi-line overlay — most multi-line indicators reuse an existing `type` |
 
 The checkbox list, color dots, period inputs, localStorage persistence, and
-group headers (`setupOverlayDropdown()`, ~line 632) are all generated purely
+group headers (`setupOverlayDropdown()`, ~line 685) are all generated purely
 from `OVERLAY_DEFS` — you never touch that UI code for a new indicator.
+
+The menu is built to take any number of entries: only the list scrolls
+(the search box and Clear All stay visible), the search box matches each
+entry's `label`, `id` and `group`, group headers collapse (remembered in
+`stock_overlay_collapsed_v1`) and show how many are on, and the **Active**
+chip filters to the overlays currently switched on. So a new entry's `group`
+decides which section it lands in, and a clear `label` is what makes it
+findable by search.
 
 ---
 
@@ -80,7 +97,7 @@ existing fits.
 | `colorLong` / `colorShort` | no | Used by `'cks'`/`'fcb'` types for the two-line long/short or high/low coloring |
 | `colorUpper` / `colorLower` | no | Used by `'wvc'` to color the band edges differently from the middle line |
 | `multi` | no | Documentation only — the `type` string is what actually drives rendering, not this flag |
-| `pivotLines` | only for `'pivot'` type | Array of `{ key, role }` — `key` matches a property on the compute function's return object, `role` is `'resistance'` / `'support'` / `'pivot'` (drives red/green/neutral coloring) |
+| `pivotLines` | only for `'pivot'` type | Array of `{ key, role }` — `key` matches a property on the compute function's return object, `role` is `'resistance'` / `'support'` / `'pivot'` (drives red/green/neutral coloring). Optional per line: `color` (overrides the role color), `dashed` (`true`/`false`, overrides the default of solid for `role:'pivot'` and keys ending in `1`), `lastValue: false` (no price label or title on the axis - for ribbons like Guppy MA) |
 
 ---
 
@@ -289,6 +306,22 @@ Adding a **6th** pivot variant (say, Pivot Camarilla with 8 lines) only ever
 needs Steps 1–3 above — zero changes to the render code, because it's fully
 data-driven off `pivotLines`. This is the preferred pattern any time you'd
 otherwise be tempted to hand-write a 4th, 5th, 6th "multi-line" `if` block.
+
+### Any multi-line Wang function: `computeWangLinesData`
+
+For a Wang function with other inputs or a parameter, use
+`computeWangLinesData(fn, data, inputs, args)` instead of `computePivotData`
+— `inputs` are the candle fields passed first, `args` the parameters after.
+PIVG, MIKE, Prime Number Bands, Bollinger New and Guppy MA all work this way:
+
+```js
+// OVERLAY_DEFS
+{ id:'MIKE', group:'Pivots', label:'MIKE', color:'#94a3b8', multi:true, defaultParam:10, paramLabel:'day',
+  pivotLines:[{key:'SR',role:'resistance'}, /* ... */ {key:'SS',role:'support'}] },
+
+// getOverlayData
+case 'MIKE': return { type:'pivot', ...computeWangLinesData(window.MIKE, d, ['high','low','close'], [Math.round(p)]) };
+```
 
 ---
 

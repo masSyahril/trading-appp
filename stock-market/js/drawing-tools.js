@@ -77,11 +77,24 @@
   function getSeries() {
     return window.TradeFlowChart.getCandleSeries();
   }
+  // Time coordinates start at the plot area's left edge, which moves right
+  // while any indicator pane shows a left price scale (all panes share the
+  // left axis column). The canvas starts at the chart's edge.
+  function plotLeft() {
+    try {
+      const row = chart.panes()[0].getHTMLElement();
+      const plot = row && row.children.length === 3 ? row.children[1] : null;
+      return plot ? plot.getBoundingClientRect().left - canvas.getBoundingClientRect().left : 0;
+    } catch (e) { return 0; }
+  }
   function timeToX(time) {
-    try { return chart.timeScale().timeToCoordinate(time); } catch (e) { return null; }
+    try {
+      const x = chart.timeScale().timeToCoordinate(time);
+      return x == null ? null : x + plotLeft();
+    } catch (e) { return null; }
   }
   function xToTime(x) {
-    try { return chart.timeScale().coordinateToTime(x); } catch (e) { return null; }
+    try { return chart.timeScale().coordinateToTime(x - plotLeft()); } catch (e) { return null; }
   }
   function priceToY(price) {
     const s = getSeries();
@@ -97,11 +110,14 @@
   // ─── Canvas sizing ────────────────────────────────────────────────────────
   function resizeCanvas() {
     const rect = canvas.parentElement.getBoundingClientRect();
+    // Cover only the price pane - indicator panes sit below it inside the same chart element.
+    const paneHeight = window.TradeFlowChart.getMainPaneHeight ? window.TradeFlowChart.getMainPaneHeight() : null;
+    const height = paneHeight > 0 ? Math.min(rect.height, paneHeight) : rect.height;
     const dpr = window.devicePixelRatio || 1;
     canvas.width = Math.max(1, Math.round(rect.width * dpr));
-    canvas.height = Math.max(1, Math.round(rect.height * dpr));
+    canvas.height = Math.max(1, Math.round(height * dpr));
     canvas.style.width = rect.width + 'px';
-    canvas.style.height = rect.height + 'px';
+    canvas.style.height = height + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
@@ -178,6 +194,7 @@
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+    if (y < 0 || y > rect.height) return null; // below the price pane: an indicator pane
     const time = xToTime(x);
     const price = yToPrice(y);
     if (time == null || price == null) return null;

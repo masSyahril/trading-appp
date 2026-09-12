@@ -1,8 +1,110 @@
 # How to Create New Indicators
 
+## New system: one registry entry
+
+Every indicator - on the price chart or in its own pane - is one entry in the
+registry (`src/js/indicators/`). Panes are native panes of the main chart
+(lightweight-charts v5); the legend, settings dialog, colours, saving and the
+**Indicators** picker all come from the entry, so there's nothing else to wire.
+
+The entries live in `src/js/indicators/defs/`:
+
+| File | What's in it |
+|------|--------------|
+| `overlays.js` | price-chart indicators (moving averages, bands, pivots) |
+| `wang.js` | Prof. Wang's pane functions, one table row each (see section 0) |
+| `trend.js`, `momentum.js`, `oscillators.js`, `volume.js`, `volatility.js` | the classic pane indicators; their `math` calls the compute method in `multi-indicator-system.js` |
+| `legacy.js` | fallback: a definition added only to `multi-indicator-system.js` still shows up as a pane indicator, and `npm test` lists it as "still legacy" |
+
+```js
+TFIndicators.registry.register({
+  id: 'SMA',                       // unique, stable (saved setups refer to it)
+  name: 'Simple Moving Average', shortName: 'SMA',
+  category: 'Moving averages',     // picker group (see registry.CATEGORY_ORDER)
+  placement: 'chart',              // default home: 'chart' (price pane) or 'pane'
+  params:  [{ key: 'period', label: 'Length', default: 20, min: 1 }],
+  outputs: [{ key: 'value', color: '#34d399' }],   // one series per output
+  compute: (candles, p) => ({ value: sma(candles.map(c => c.close), p.period) }),
+});
+```
+
+- `compute` returns one array per output: one value per candle, or fewer - a
+  shorter array is right-aligned (its last value is the latest candle's).
+  `null` / `NaN` leave a gap, and a bare array counts as `{ value: array }`.
+  For a Prof. Wang function use `TFIndicators.util.call('FnName', ...)` and
+  `util.aligned(candles, out.X, shift)` - `shift 1` for his 1-based functions
+  (`src[i+1]` belongs to bar i), `0` for the others.
+- Output options: `type` (`'line'` | `'histogram'` | `'area'`), `from` (the
+  result field to draw when it isn't `key`), `title` (legend label),
+  `lineWidth`, `lineStyle` (`'solid'` | `'dashed'` | `'dotted'`),
+  `lineType: 'step'`, `scale: 'left'` (a second price scale on the pane's left;
+  `leftScale: { borderColor, scaleMargins }` on the entry sets its options),
+  `lastValue: false` (no price-axis label / legend value), `axisTitle: true`
+  (put the key on the axis label), `priceFormat`, and for histograms
+  `signColors: { up, down }` or `colorKey: 'Field'` (per-bar colours, looked
+  up in `colorMap` if given).
+- `levels: [{ value: 70 }, { value: 30 }]` draws fixed horizontal lines and
+  keeps them in view.
+- `stats: [{ label: 'Acc', value: (result) => result.Acc_RR, digits: 2, suffix: '%' }]`
+  shows summary numbers from compute()'s result after the legend values.
+- `minBars`: draw nothing on fewer candles.
+- Pane files use the shorthands `TFIndicators.outputs.line(key, color, title, extra)`
+  / `.hist(key, extra)` and the colours in `TFIndicators.palette` (`UP`, `DOWN`,
+  `LINE1` ...).
+- `npm test` runs every entry (`test/run-registry-tests.js`). An entry that
+  replaced a `multi-indicator-system.js` definition must draw exactly what the
+  old one drew, point by point.
+
+The rest of this guide describes the older `multi-indicator-system.js`
+definitions. The crypto-trading page still uses them for its panels, and the
+classic pane files call their compute methods for the math - but a new
+indicator for the stock pages only needs a registry entry.
+
+---
+
 **Want a short version?** See **[SIMPLE-INDICATOR-PLAN.md](SIMPLE-INDICATOR-PLAN.md)** — 3 steps, one file, copy-paste example.
 
 This guide explains how to add new technical indicators to the TradeLite trading app in full detail. Indicators are defined and rendered in the **multi-indicator system** and can use shared compute functions from `technical-indicators.js` or custom logic.
+
+---
+
+## 0. Quick path: a Prof. Wang function drawn in a small window
+
+If the function already exists in `technical-indicators.prods__Wang__2026.js`
+(exposed as `window.X`) and its comment says *"drawing ... in the small
+windows"*, you don't need a compute/render pair. Add **one row** to `TABLE`
+in `src/js/indicators/defs/wang.js`:
+
+```javascript
+TRIX: { name: 'TRIX', type: 'momentum', fn: 'TRIX', inputs: ['close'], params: [['esp', 9]], lines: ['TRIX', 'eTRIX'] },
+```
+
+| Field | Meaning |
+|-------|---------|
+| key (`TRIX`) | Unique indicator key (also saved in layouts) |
+| `name` | Name in the indicator picker - use the function's `Menu Name` |
+| `type` | Picker category: `trend`, `momentum`, `oscillator`, `volume`, `volatility` |
+| `fn` | The `window.*` function to call |
+| `inputs` | Candle fields passed first, in the function's argument order: `open`, `high`, `low`, `close`, `volume` |
+| `params` | The remaining arguments in order, as `[name, default]` - add `true` as a 3rd item for a fractional one (e.g. `['va', 0.7, true]`); the others are rounded because they're day counts |
+| `lines` | Returned arrays to draw as lines (`titles: { key: 'Legend name' }` renames any) |
+| `histogram` | Optional returned array drawn as bars, colored by sign - or by a returned `'Green'/'Red'/'Blue'` array named in `colorKey` |
+| `withClose` | Also draw the close price (for price-scale indicators the comment says to draw with `STK_close`) |
+| `volumeScale` / `precision` | Axis format for values in the millions (K/M/B) / very small values |
+| `minPeriod` | Optional; defaults to the largest day-count param |
+
+That's all - the picker entry, parameter inputs, legend and the regression
+test (`npm test`) pick it up automatically. Run `npm test` after adding one:
+it fails if the function throws, or its output is blank everywhere or at the
+latest bars, and it warns about a single line with no values - which is how
+most bugs in new Wang functions show up. The crypto-trading page reads its own
+copy of this table (`WANG_PANEL_INDICATORS` in `multi-indicator-system.js`);
+add the row there as well if it should appear on that page. If the comment
+says *"K_Line area"*, it's a price-chart indicator instead: give it an entry
+in `src/js/indicators/defs/overlays.js`.
+
+When the table can't express an indicator, write a registry entry (see the
+top of this guide).
 
 ---
 

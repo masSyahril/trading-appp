@@ -70,6 +70,9 @@
     if (!series) return null;
     const rect = chartEl.getBoundingClientRect();
     const y = e.clientY - rect.top;
+    // Only the price pane has prices; indicator panes sit below it in the same element.
+    const paneHeight = window.TradeFlowChart.getMainPaneHeight ? window.TradeFlowChart.getMainPaneHeight() : null;
+    if (paneHeight > 0 && y > paneHeight) return null;
     try { return series.coordinateToPrice(y); } catch (err) { return null; }
   }
 

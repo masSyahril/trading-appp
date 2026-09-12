@@ -30,12 +30,15 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- Lightweight Charts -->
-    <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="https://unpkg.com/lightweight-charts@5.2.1/dist/lightweight-charts.standalone.production.js"></script>
+    <!-- v5 shim: old addLineSeries()-style calls + null padding (temporary, see src/js/utils/lwc-compat.js) -->
+    <script src="../src/js/utils/lwc-compat.js"></script>
 
     <!-- Indicator Styles (unmodified - the indicator panels themselves keep
          their existing internal look; only their container's position on
          screen changes, via tradeflow-zen.css below) -->
     <link rel="stylesheet" href="../src/css/multi-indicator-styles.css">
+    <link rel="stylesheet" href="../src/css/indicators.css">
 
     <script>
         tailwind.config = {
@@ -46,18 +49,6 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .indicator-panel { transition: all 0.3s ease-in-out; }
-
-        #indicators-container {
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-            min-height: 0 !important;
-            display: flex !important;
-            flex-direction: column !important;
-            width: 100% !important;
-            box-sizing: border-box;
-            scrollbar-gutter: stable;
-        }
 
         /* Price alert toasts */
         #alert-toast-container {
@@ -264,7 +255,7 @@
                         <div class="w-px h-4 bg-slate-700 mx-1"></div>
                         <button id="chart-style-btn" class="toolbar-btn px-2 py-1 text-xs text-slate-300 hover:text-white hover:bg-slate-800 rounded transition-colors flex items-center gap-1" title="Chart Style">Candles <span style="font-size:9px;line-height:1">▾</span></button>
                         <div class="w-px h-4 bg-slate-700 mx-1"></div>
-                        <button id="overlay-toggle-btn" class="toolbar-btn px-2 py-1 text-xs text-slate-300 hover:text-white hover:bg-slate-800 rounded transition-colors flex items-center gap-1" title="Chart Overlay Indicators">Overlay <span style="font-size:9px;line-height:1">▾</span></button>
+                        <button id="indicators-btn" class="toolbar-btn px-2 py-1 text-xs text-slate-300 hover:text-white hover:bg-slate-800 rounded transition-colors flex items-center gap-1" title="Add indicators (price chart or panes) - Ctrl/Cmd+I"><i data-lucide="activity" class="w-3.5 h-3.5"></i> Indicators <span class="indicators-btn-count text-[10px] text-emerald-400"></span></button>
                         <div class="w-px h-4 bg-slate-700 mx-1"></div>
                         <div class="flex items-center gap-1">
                             <button id="btn-pan-left" class="toolbar-btn px-1.5 py-1 text-xs text-slate-300 hover:text-white hover:bg-slate-800 rounded transition-colors" title="Pan Left">←</button>
@@ -278,36 +269,13 @@
                     <div id="chart" class="w-full relative flex-1 min-h-0">
                         <div id="chart-overlay-legend" class="absolute left-1.5 top-1.5 z-10 pointer-events-none flex flex-col gap-0.5 rounded">
                             <div id="ohlc-legend" class="font-mono text-[11px] leading-tight flex flex-wrap items-center gap-x-2 gap-y-0.5"></div>
-                            <div id="indicator-tooltip-row" class="font-mono text-[11px] leading-tight flex flex-wrap items-center gap-x-3 gap-y-0.5"></div>
                         </div>
-                        <div id="main-chart-xline" class="crosshair-sync-line"></div>
                         <canvas id="drawing-overlay" class="absolute inset-0 z-[5]" style="pointer-events:none;"></canvas>
+                        <!-- Indicator panes are native panes of this chart, below the price pane -->
                     </div>
                 </div>
             </div>
         </main>
-
-        <!-- ═══ INDICATOR DRAWER (floating popover, closed by default) ═══ -->
-        <div id="indicators-section">
-            <div class="bg-slate-800 flex items-center px-3 py-1.5 justify-between shrink-0 select-none gap-2">
-                <span id="indicator-count" class="text-xs font-bold text-slate-200 uppercase tracking-wider">Indicators (3)</span>
-                <div class="flex items-center gap-1.5">
-                    <button id="view-toggle-btn" class="flex items-center gap-1 text-xs bg-slate-900 border border-slate-600 text-slate-300 hover:text-white hover:border-slate-500 px-2 py-0.5 rounded transition-colors" title="Switch between stacked and tabbed indicator layout">
-                        <i data-lucide="layout-list" class="w-3 h-3"></i> <span id="view-toggle-label">Stacked</span>
-                    </button>
-                    <button id="add-indicator-btn" class="flex items-center gap-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-0.5 rounded transition-colors">
-                        <i data-lucide="plus" class="w-3 h-3"></i> Add
-                    </button>
-                    <button id="zen-indicators-close" type="button" class="flex items-center justify-center w-6 h-6 text-slate-400 hover:text-white hover:bg-slate-700 rounded transition-colors" title="Close">
-                        <i data-lucide="x" class="w-4 h-4"></i>
-                    </button>
-                </div>
-            </div>
-            <div id="indicators-tabbar" hidden></div>
-            <div id="indicators-container" class="flex flex-col flex-1 overflow-y-auto w-full">
-                <!-- Dynamic Indicators injected here -->
-            </div>
-        </div>
 
         <!-- ═══ EXECUTION DOCK (horizontal floating order ticket) ═══ -->
         <aside id="order-panel" class="text-sm">
@@ -472,7 +440,6 @@
                     { name: 'DEMA', src: '../src/js/core/Wang_design_DEMA_2026-03-14.js', description: 'Prof. Wang DEMA (window.computeDEMA)' },
                     { name: 'technical-indicators-wang', src: '../src/js/core/technical-indicators-wang.js', description: 'Prof. Wang Indicators' },
                     { name: 'multi-indicator-system', src: '../src/js/core/multi-indicator-system.js', description: 'Multi-Panel System' },
-                    { name: 'stock-app', src: 'stock-app.prod.js', description: 'Stock Platform' },
                     { name: 'RWI', src:'../src/js/core/Wang_design_new_indicators__RandomWalkIndex _2026-01-20.js', descrption:'RWI indicator'},
                     { name: 'MAoneMAtwo', src:'../src/js/core/Wang_design__MAoneMAtwor_2026-04-06.js', descrption:'MAoneMAtwo indicator'},
                     { name: 'Alligator', src:'../src/js/core/Wang_design_new_indicators__Alligator_2026-01-29.js', description:'Prof. Wang Alligator (window.computeAlligator)'},
@@ -480,6 +447,20 @@
                     { name: 'Bollinger4SD', src:'../src/js/core/Wang_design_new_indicators__Bollinger4SD_2026-02-28_.js', description:'Prof. Wang Bollinger4SD (window.computeBollinger4SD)'},
                     { name: 'VolumeRSI', src:'../src/js/core/Wang_design_new_indicators__VolumeRSI_2026-03-08.js', description:'Prof. Wang VolumeRSI (window.computeVolumeRSI)'},
                     { name: 'technical-indicators-wang-prods', src:'../src/js/core/technical-indicators.prods__Wang__2026.js', descrption:'Prof. Wang Indicators (prod bundle)' },
+                    { name: 'tfi-registry', src: '../src/js/indicators/registry.js', description: 'Indicator registry' },
+                    { name: 'tfi-overlays', src: '../src/js/indicators/defs/overlays.js', description: 'Price-chart indicators' },
+                    { name: 'tfi-wang', src: '../src/js/indicators/defs/wang.js', description: 'Prof. Wang pane indicators' },
+                    { name: 'tfi-trend', src: '../src/js/indicators/defs/trend.js', description: 'Trend pane indicators' },
+                    { name: 'tfi-momentum', src: '../src/js/indicators/defs/momentum.js', description: 'Momentum pane indicators' },
+                    { name: 'tfi-oscillators', src: '../src/js/indicators/defs/oscillators.js', description: 'Oscillator pane indicators' },
+                    { name: 'tfi-volume', src: '../src/js/indicators/defs/volume.js', description: 'Volume pane indicators' },
+                    { name: 'tfi-volatility', src: '../src/js/indicators/defs/volatility.js', description: 'Volatility pane indicators' },
+                    { name: 'tfi-legacy', src: '../src/js/indicators/defs/legacy.js', description: 'Unconverted pane indicators' },
+                    { name: 'tfi-legend', src: '../src/js/indicators/legend.js', description: 'Indicator legend' },
+                    { name: 'tfi-picker', src: '../src/js/indicators/picker.js', description: 'Indicator picker' },
+                    { name: 'tfi-settings', src: '../src/js/indicators/settings.js', description: 'Indicator settings' },
+                    { name: 'tfi-manager', src: '../src/js/indicators/manager.js', description: 'Indicator manager' },
+                    { name: 'stock-app', src: 'stock-app.prod.js', description: 'Stock Platform' },
                     { name: 'drawing-tools', src: 'js/drawing-tools.js', description: 'Chart Drawing Tools' },
                     { name: 'price-alerts', src: 'js/price-alerts.js', description: 'Interactive Price Alerts' },
                     { name: 'portfolio', src: 'js/portfolio.js', description: 'Positions, Orders & Account Portfolio' },
@@ -580,22 +561,19 @@
             syncLabel();
         })();
 
-        // ─── Zen-specific chrome: watchlist slide-over, indicator drawer,
-        // account status chip, price ticker, bottom-sheet mini-summary. Pure
-        // additions on top of the unmodified app scripts above - reads their
-        // public surface (window.TradeFlowChart / window.TradeFlowPortfolio)
-        // and already-rendered DOM, never reaches into their internals. ───
+        // ─── Zen-specific chrome: watchlist slide-over, the indicator picker
+        // shortcut, account status chip, price ticker, bottom-sheet
+        // mini-summary. Reads the app's public surface (window.TradeFlowChart /
+        // window.TradeFlowPortfolio) and already-rendered DOM. ───
         function initZenChrome() {
             const backdrop = document.getElementById('zen-backdrop');
             const sidebar = document.getElementById('sidebar');
             const rail = document.getElementById('watchlist-rail');
-            const indicatorsSection = document.getElementById('indicators-section');
             let sidebarOpen = false;
-            let indicatorsOpen = false;
             let sidebarHoverTimer = null;
 
             function syncBackdrop() {
-                if (backdrop) backdrop.classList.toggle('zen-open', sidebarOpen || indicatorsOpen);
+                if (backdrop) backdrop.classList.toggle('zen-open', sidebarOpen);
             }
             function openSidebar() {
                 sidebarOpen = true;
@@ -607,16 +585,8 @@
                 sidebar?.classList.remove('zen-open');
                 syncBackdrop();
             }
-            function openIndicators() {
-                indicatorsOpen = true;
-                indicatorsSection?.classList.add('zen-open');
-                syncBackdrop();
-            }
-            function closeIndicators() {
-                indicatorsOpen = false;
-                indicatorsSection?.classList.remove('zen-open');
-                syncBackdrop();
-            }
+            // Indicators live in panes of the chart; this opens the picker to add one.
+            const openIndicators = () => window.TradeFlowChart?.openIndicatorPicker?.();
 
             document.getElementById('zen-watchlist-toggle')?.addEventListener('click', () => {
                 sidebarOpen ? closeSidebar() : openSidebar();
@@ -627,21 +597,18 @@
                 elm?.addEventListener('mouseleave', () => { sidebarHoverTimer = setTimeout(closeSidebar, 350); });
             });
 
-            document.getElementById('zen-indicators-toggle')?.addEventListener('click', () => {
-                indicatorsOpen ? closeIndicators() : openIndicators();
-            });
-            document.getElementById('zen-indicators-close')?.addEventListener('click', closeIndicators);
+            document.getElementById('zen-indicators-toggle')?.addEventListener('click', openIndicators);
 
-            backdrop?.addEventListener('click', () => { closeSidebar(); closeIndicators(); });
+            backdrop?.addEventListener('click', closeSidebar);
             window.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') { closeSidebar(); closeIndicators(); }
+                if (e.key === 'Escape') closeSidebar();
                 if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
                     e.preventDefault();
                     document.getElementById('symbol-input')?.focus();
                 }
                 if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'i') {
                     e.preventDefault();
-                    indicatorsOpen ? closeIndicators() : openIndicators();
+                    openIndicators();
                 }
             });
 

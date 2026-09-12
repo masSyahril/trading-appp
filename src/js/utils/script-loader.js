@@ -393,17 +393,18 @@ class ScriptLoader {
       const progress = (loadedCount / totalScripts) * 100;
       this.updateProgress(progress, script.description || script.name);
       
-      // Small delay for smooth animation
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Yield so the progress bar can paint. (This used to wait 200ms per
+      // script purely for the animation - ~4s of load time across a page.)
+      await new Promise(resolve => setTimeout(resolve, 0));
     }
-    
+
     // Show completion
     this.updateProgress(100, 'All components loaded!');
-    
-    // Wait a bit then hide
+
+    // Brief beat on "loaded", then hide
     setTimeout(() => {
       this.hide();
-    }, 1000);
+    }, 250);
   }
   
   loadScript(src) {

@@ -210,15 +210,6 @@ main,
   color: var(--tf-down);
 }
 
-#indicators-section {
-  background: var(--tf-bg) !important;
-  border-color: var(--tf-border) !important;
-}
-
-#indicators-section .bg-slate-800 {
-  background: var(--tf-bg-panel) !important;
-}
-
 .text-emerald-400,
 .text-green-500 {
   color: var(--tf-up) !important;
