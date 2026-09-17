@@ -427,7 +427,7 @@
     
     watchlist.forEach((sym) => {
       const item = document.createElement("li");
-      item.className = `p-3 border-b border-slate-800 hover:bg-slate-800 cursor-pointer group ${sym === currentSymbol ? 'bg-slate-800' : ''}`;
+      item.className = `p-3 border-b border-slate-800 hover:bg-slate-800 cursor-pointer group relative ${sym === currentSymbol ? 'bg-slate-800' : ''}`;
       item.dataset.sym = sym;
 
       const lp = lastPrice[sym];
@@ -460,11 +460,41 @@
         </div>
       `;
 
+      // Each page's CSS lays the row out differently (grid, flex, block) with
+      // !important padding, so the button floats over the row's right edge
+      // instead of taking space. It borrows the row's hover background to hide
+      // the change % under it, and ignores clicks while hidden so a tap on a
+      // touch screen selects the row rather than deleting it.
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className =
+        "absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded bg-inherit text-base leading-none text-slate-500 hover:text-red-500 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus:opacity-100 focus:pointer-events-auto transition-opacity z-10";
+      remove.setAttribute("aria-label", `Remove ${sym} from watchlist`);
+      remove.title = "Remove from watchlist";
+      remove.textContent = "×";
+      remove.addEventListener("click", (e) => {
+        e.stopPropagation();
+        removeFromWatchlist(sym);
+      });
+      item.appendChild(remove);
+
       item.addEventListener("click", () => focusSymbol(sym));
       el.watchlist.appendChild(item);
     });
 
     renderWatchlistRail();
+  }
+
+  function removeFromWatchlist(sym) {
+    watchlist = watchlist.filter((s) => s !== sym);
+    saveLS(STOCK_LS_KEYS.watchlist, watchlist);
+    delete lastFlashedPrice[sym];
+    // Charting a symbol that's no longer listed would leave nothing highlighted,
+    // so move to the first remaining one (or keep the chart if the list is empty).
+    if (sym === currentSymbol && watchlist.length) {
+      focusSymbol(watchlist[0]);
+    }
+    renderWatchlist();
   }
 
   // Collapsed-sidebar icon bar: one clickable badge per watchlist symbol, so

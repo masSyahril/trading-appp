@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="auth.register.pageTitle">Create Account - TradeLite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="auth-theme.css">
+</head>
+<body class="tl-auth-body">
+  <div style="position:fixed; top:16px; right:16px; z-index:60;" data-tl-lang-switcher></div>
+  <a class="tl-auth-brand" href="../../index.html">📊 <span>TradeLite</span></a>
+
+  <div class="tl-auth-card">
+    <h1 class="tl-auth-title" data-i18n="auth.register.title">Create your account</h1>
+    <p class="tl-auth-subtitle" data-i18n="auth.register.subtitle">Paper trading, watchlists and alerts - saved to your account.</p>
+
+    <div id="alert-box"></div>
+
+    <form id="register-form" novalidate>
+      <div class="tl-field">
+        <label for="display_name" data-i18n="auth.register.nameLabel">Name</label>
+        <input class="tl-input" type="text" id="display_name" name="display_name" autocomplete="name" maxlength="100" required>
+      </div>
+      <div class="tl-field">
+        <label for="email" data-i18n="auth.register.emailLabel">Email</label>
+        <input class="tl-input" type="email" id="email" name="email" autocomplete="email" required>
+      </div>
+      <div class="tl-field">
+        <label for="password" data-i18n="auth.register.passwordLabel">Password</label>
+        <input class="tl-input" type="password" id="password" name="password" autocomplete="new-password" required>
+        <div class="tl-hint" data-i18n="auth.register.passwordHint">At least 8 characters, with a letter and a number.</div>
+      </div>
+      <button class="tl-btn tl-btn-primary" type="submit" id="submit-btn" data-i18n="auth.register.submit">Create account</button>
+    </form>
+
+    <p class="tl-auth-footer">
+      <span data-i18n="auth.register.haveAccount">Already have an account?</span> <a href="login.html" data-i18n="auth.register.signInLink">Sign in</a>
+    </p>
+  </div>
+
+  <a class="tl-back-link" href="../../index.html" data-i18n="auth.backToTradeLite">&larr; Back to TradeLite</a>
+
+  <script src="../../i18n/i18n.js"></script>
+  <script src="../../i18n/lang-switcher.js"></script>
+  <script src="auth-client.js"></script>
+  <script>
+    function t(key, vars) {
+      return window.TLI18n ? window.TLI18n.t(key, vars) : key;
+    }
+
+    const form = document.getElementById('register-form');
+    const alertBox = document.getElementById('alert-box');
+    const submitBtn = document.getElementById('submit-btn');
+
+    function showAlert(kind, message) {
+      alertBox.innerHTML = `<div class="tl-alert tl-alert-${kind}">${message}</div>`;
+    }
+
+    TLAuth.me().then((res) => {
+      if (res.authenticated) window.location.href = '../../index.html';
+    }).catch(() => {});
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      alertBox.innerHTML = '';
+      const displayName = document.getElementById('display_name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<span class="tl-spinner"></span>${t('auth.register.submitting')}`;
+      try {
+        await TLAuth.register(email, password, displayName);
+        showAlert('success', t('auth.register.successMessage'));
+        setTimeout(() => { window.location.href = '../../index.html'; }, 1500);
+      } catch (err) {
+        showAlert('error', err.message || 'Could not create your account.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = t('auth.register.submit');
+      }
+    });
+  </script>
+</body>
+</html>

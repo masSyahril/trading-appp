@@ -1,0 +1,206 @@
+{
+  "common": {
+    "loading": "Loading..."
+  },
+  "nav": {
+    "mainLabel": "Main navigation",
+    "footerLabel": "Footer navigation",
+    "platforms": "Platforms",
+    "about": "About",
+    "recoveryTools": "Recovery Tools"
+  },
+  "hub": {
+    "hero": {
+      "title": "Choose Your Trading Platform",
+      "subtitle": "Access dedicated trading environments for cryptocurrencies and traditional stock markets. Each platform is optimized for its respective market with specialized tools and real-time data feeds."
+    },
+    "stats": {
+      "ariaLabel": "Platform statistics",
+      "cryptoAssets": "Crypto Assets",
+      "stockSymbols": "Stock Symbols",
+      "marketData": "Market Data",
+      "cryptoTradingHours": "Crypto Trading",
+      "unlimited": "Unlimited",
+      "live": "Live",
+      "marketOpen": "Open",
+      "marketAfterHours": "After Hours",
+      "marketClosed": "Closed"
+    },
+    "platformsSection": {
+      "ariaLabel": "Trading platforms"
+    },
+    "crypto": {
+      "ariaLabel": "Access Crypto Trading Platform",
+      "title": "Crypto Trading",
+      "subtitle": "Bitcoin, Ethereum & Digital Assets",
+      "description": "Trade cryptocurrencies with real-time data from Binance. Features advanced charting, technical indicators, and 24/7 market access for digital asset trading.",
+      "features": [
+        "Bitcoin, Ethereum, BNB, Solana, Cardano, XRP",
+        "Live Binance WebSocket price feeds",
+        "Multiple timeframes (1m, 5m, 15m, 1h, 4h, 1d)",
+        "MACD technical indicator with histogram",
+        "Real-time position tracking & P&L",
+        "Market order simulation system",
+        "24/7 crypto market availability"
+      ],
+      "cta": "Launch Crypto Platform",
+      "shortName": "Crypto Trading"
+    },
+    "stock": {
+      "ariaLabel": "Access Stock Market Platform",
+      "title": "Stock Market",
+      "subtitle": "Traditional Stocks & Securities",
+      "description": "Trade stocks with comprehensive market data, company information, and powerful analysis tools for traditional securities and equity markets.",
+      "features": [
+        "US stocks via Stooq data provider",
+        "Daily historical data & charts",
+        "MACD technical indicator analysis",
+        "Market hours tracking (9:30-4:00 EST)",
+        "After-hours trading simulation",
+        "Position tracking & portfolio management",
+        "Company watchlist & order history"
+      ],
+      "cta": "Launch Stock Platform",
+      "shortName": "Stock Market"
+    },
+    "footer": {
+      "text": "TradeLite Trading Platform - Demo application for educational purposes. Not financial advice.",
+      "companyData": "Company Data",
+      "recoveryTools": "Recovery Tools",
+      "about": "About",
+      "disclaimer": "Disclaimer"
+    },
+    "about": {
+      "body": "TradeLite Trading Platform Hub\n\nA comprehensive trading platform featuring:\n• Real-time cryptocurrency trading with Binance integration\n• Traditional stock market analysis tools\n• Educational trading simulation\n• Recovery tools for Bitcoin data\n\nVersion: 2.0\nBuilt with modern web technologies for optimal performance.\n\n⚠️ This is a demo application for educational purposes only.\nNot intended for actual financial trading or investment advice."
+    },
+    "disclaimer": {
+      "body": "IMPORTANT DISCLAIMER\n\nThis application is for educational and demonstration purposes only.\n\n• Not financial advice or investment recommendations\n• Demo trading environment with simulated data\n• Real market data used for educational purposes\n• No actual trades are executed\n• Past performance does not guarantee future results\n\nAlways consult with qualified financial advisors before making investment decisions.\n\nBy using this platform, you acknowledge these limitations and use it at your own risk."
+    },
+    "platformError": {
+      "title": "Unable to access {platform} Platform",
+      "errorPrefix": "Error: {message}",
+      "solutionsTitle": "Possible solutions:",
+      "solution1": "Check if your web server is running (XAMPP/Apache)",
+      "solution2": "Verify the platform files are in the correct directory",
+      "solution3": "Check browser console for detailed error information",
+      "solution4": "Try refreshing the page",
+      "footer": "If the problem persists, please check the platform setup."
+    }
+  },
+  "authWidget": {
+    "signIn": "Sign In",
+    "register": "Register",
+    "accountSettings": "Account settings",
+    "verifyEmailAddress": "Verify email address",
+    "logOut": "Log out",
+    "loggingOut": "Logging out...",
+    "sending": "Sending...",
+    "sent": "Sent! Check your email",
+    "sendFailed": "Could not send - try again"
+  },
+  "auth": {
+    "backToTradeLite": "← Back to TradeLite",
+    "login": {
+      "pageTitle": "Sign In - TradeLite",
+      "title": "Sign in",
+      "subtitle": "Welcome back. Enter your details to continue.",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "submit": "Sign in",
+      "submitting": "Signing in...",
+      "forgotPassword": "Forgot your password?",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Register"
+    },
+    "register": {
+      "pageTitle": "Create Account - TradeLite",
+      "title": "Create your account",
+      "subtitle": "Paper trading, watchlists and alerts - saved to your account.",
+      "nameLabel": "Name",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "passwordHint": "At least 8 characters, with a letter and a number.",
+      "submit": "Create account",
+      "submitting": "Creating account...",
+      "haveAccount": "Already have an account?",
+      "signInLink": "Sign in",
+      "successMessage": "Account created! Check your email for a verification link. Redirecting…"
+    },
+    "forgotPassword": {
+      "pageTitle": "Forgot Password - TradeLite",
+      "title": "Reset your password",
+      "subtitle": "Enter your account email and we'll send a reset link.",
+      "emailLabel": "Email",
+      "submit": "Send reset link",
+      "submitting": "Sending...",
+      "rememberedIt": "Remembered it?",
+      "signInLink": "Sign in",
+      "genericSuccess": "If that email is registered, a reset link has been sent.",
+      "genericError": "Something went wrong. Please try again."
+    },
+    "resetPassword": {
+      "pageTitle": "Set a New Password - TradeLite",
+      "title": "Set a new password",
+      "subtitle": "Choose a new password for your account.",
+      "newPasswordLabel": "New password",
+      "passwordHint": "At least 8 characters, with a letter and a number.",
+      "submit": "Update password",
+      "submitting": "Updating...",
+      "backToSignIn": "Back to sign in",
+      "missingToken": "This link is missing its reset token. Request a new one from the \"Forgot your password?\" page.",
+      "redirecting": "Redirecting to sign in…",
+      "genericError": "Could not update your password."
+    },
+    "verifyEmail": {
+      "pageTitle": "Verify Email - TradeLite",
+      "title": "Verifying your email…",
+      "statusWaiting": "One moment.",
+      "missingToken": "This link is missing its verification token.",
+      "genericError": "This link is invalid or has expired.",
+      "goToTradeLite": "Go to TradeLite",
+      "signIn": "Sign in"
+    },
+    "account": {
+      "pageTitle": "Account Settings - TradeLite",
+      "title": "Account settings",
+      "subtitle": "Manage your profile, password and signed-in devices.",
+      "profileTitle": "Profile",
+      "displayNameLabel": "Display name",
+      "saveNameBtn": "Save name",
+      "savingBtn": "Saving...",
+      "resendBtn": "Resend verification email",
+      "resendingBtn": "Sending...",
+      "resendSentBtn": "Sent! Check your email",
+      "resendError": "Could not send verification email.",
+      "verifiedBadge": "Verified",
+      "unverifiedBadge": "Not verified",
+      "nameUpdated": "Display name updated.",
+      "nameUpdateError": "Could not update your name.",
+      "passwordTitle": "Change password",
+      "passwordSubtitle": "You'll stay signed in on this device, but every other signed-in device will be logged out.",
+      "currentPasswordLabel": "Current password",
+      "newPasswordLabel": "New password",
+      "confirmPasswordLabel": "Confirm new password",
+      "updatePasswordBtn": "Update password",
+      "updatingBtn": "Updating...",
+      "passwordMismatch": "New password and confirmation do not match.",
+      "passwordUpdated": "Password updated. Other devices have been logged out.",
+      "passwordUpdateError": "Could not update your password.",
+      "sessionsTitle": "Signed-in devices",
+      "sessionsSubtitle": "Every device currently signed in to your account.",
+      "revokeAllBtn": "Log out other devices",
+      "revokeAllLoadingBtn": "Logging out...",
+      "revokeAllSuccess": "Logged out of {count} other device(s).",
+      "revokeAllError": "Could not log out other devices.",
+      "loadingSessions": "Loading sessions...",
+      "noSessions": "No active sessions.",
+      "thisDevice": "This device",
+      "logoutDeviceBtn": "Log out",
+      "loggingOutDeviceBtn": "Logging out...",
+      "logoutDeviceError": "Could not log out that device.",
+      "loadSessionsError": "Could not load sessions.",
+      "unknownIp": "Unknown IP",
+      "sessionMetaLine": "{ip} · last active {time}"
+    }
+  }
+}

@@ -1324,42 +1324,64 @@
   function placeMarketOrder() {
     const side = orderSide === "buy" ? "BUY" : "SELL";
     const qty = parseFloat(el.orderQty?.value);
-    
+
     if (!qty || qty <= 0 || !isFinite(qty)) {
       alert("Enter a valid quantity");
       return;
     }
 
-    const price = lastPrice[currentSymbol];
-    if (!price) {
+    const localPrice = lastPrice[currentSymbol];
+    if (!localPrice) {
       alert("No price data available. Please wait for connection.");
       return;
     }
 
-    // Create order
-    const order = {
-      id: `CRYPTO-${Date.now()}`,
-      ts: Date.now(),
-      symbol: currentSymbol,
-      side,
-      qty,
-      price,
-      status: "Filled",
-    };
+    const symbol = currentSymbol;
+    el.orderQty.value = ""; // clear immediately either way
 
+    // Signed-in users: get a server-verified fill price + resulting
+    // position instead of trusting this browser's own WebSocket feed for
+    // the number that actually gets recorded (see docs/SETUP_AUTH.md,
+    // "Crypto price authority"). pages/auth/crypto-order-authority.js
+    // installs this hook only for a signed-in session; it's left undefined
+    // otherwise, so a logged-out user's local-only flow below is untouched.
+    if (typeof window.cryptoApp?.requestServerFill === "function") {
+      const clientId = `CRYPTO-${Date.now()}`;
+      window.cryptoApp.requestServerFill({ clientId, symbol, side: side.toLowerCase(), qty })
+        .then((fill) => applyFill(clientId, symbol, side, qty, fill.price, fill.position))
+        .catch((err) => {
+          console.warn("crypto-app: server fill failed, falling back to local price", err);
+          applyFill(`CRYPTO-${Date.now()}`, symbol, side, qty, localPrice, null);
+        });
+      return;
+    }
+
+    applyFill(`CRYPTO-${Date.now()}`, symbol, side, qty, localPrice, null);
+  }
+
+  /**
+   * Records a fill (server-confirmed or local-only fallback) and refreshes
+   * the UI. When `serverPosition` is provided (server-authoritative path),
+   * it replaces this symbol's position wholesale instead of recomputing it
+   * locally, so a signed-in user's numbers always match what the server
+   * decided - the same "server wins" principle as stock-market/js/
+   * portfolio.js's applyServerState/addServerPosition.
+   */
+  function applyFill(id, symbol, side, qty, price, serverPosition) {
+    const order = { id, ts: Date.now(), symbol, side, qty, price, status: "Filled" };
     orders.unshift(order);
 
-    // Update position
-    updatePosition(currentSymbol, side, qty, price);
+    if (serverPosition) {
+      positions[symbol] = { qty: serverPosition.qty, avg: serverPosition.avg, realized: serverPosition.realized };
+    } else {
+      updatePosition(symbol, side, qty, price);
+    }
 
     saveLS(CRYPTO_LS_KEYS.orders, orders);
     saveLS(CRYPTO_LS_KEYS.positions, positions);
-    
+
     renderOrders();
     renderPositions();
-    
-    // Clear quantity input
-    el.orderQty.value = "";
   }
 
   function updatePosition(symbol, side, qty, price) {

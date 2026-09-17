@@ -194,8 +194,12 @@
             <a href="../" class="crypto-touch-target p-2 hover:bg-slate-800 rounded-full flex items-center justify-center shrink-0" title="Hub">
                 <i data-lucide="home" class="w-5 h-5 text-slate-300"></i>
             </a>
+            <div data-tl-auth-widget data-api-base="../api" data-auth-base="../pages/auth" data-home="../"></div>
         </div>
     </header>
+    <script src="../pages/auth/crypto-sync.js"></script>
+    <script src="../pages/auth/crypto-order-authority.js"></script>
+    <script src="../pages/auth/auth-widget.js" defer></script>
 
     <div class="flex flex-1 min-h-0 overflow-hidden relative">
         <aside id="sidebar" class="absolute lg:static inset-y-0 left-0 w-[220px] bg-slate-900 border-r border-slate-700 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-40 flex flex-col">
@@ -372,13 +376,11 @@
                     { name: 'utils', src: '../src/js/core/utils.js', description: 'Core Utilities' },
                     { name: 'indicators', src: '../src/js/utils/indicators.js', description: 'Chart Indicators' },
                     { name: 'technical-indicators', src: '../src/js/core/technical-indicators.js', description: 'Technical Analysis' },
+                    // Keep: computeHullMA here is correct; the prod bundle's HullMA is not (docs/PROF-WANG-BUG-REPORT-2026-09-12.md)
                     { name: 'HullMA', src: '../src/js/core/Wang_design__HullMA%20_2026-01-18.js', description: 'Prof. Wang Hull MA (window.computeHullMA)' },
-                    { name: 'DEMA', src: '../src/js/core/Wang_design_DEMA_2026-03-14.js', description: 'Prof. Wang DEMA (window.computeDEMA)' },
                     { name: 'technical-indicators-wang', src: '../src/js/core/technical-indicators-wang.js', description: 'Prof. Wang Indicators' },
-                    { name: 'technical-indicators-wang-prods', src:'../src/js/core/technical-indicators.prods__Wang__2026-04-30.js', description:'Prof. Wang Indicators (prod bundle)' },
+                    { name: 'technical-indicators-wang-prods', src:'../src/js/core/technical-indicators.prods__Wang__2026.js', description:'Prof. Wang Indicators (prod bundle)' },
                     { name: 'multi-indicator-system', src: '../src/js/core/multi-indicator-system.js', description: 'Multi-Panel System' },
-                    { name: 'RWI', src: '../src/js/core/Wang_design_new_indicators__RandomWalkIndex _2026-01-20.js', description: 'RWI indicator' },
-                    { name: 'MAoneMAtwo', src: '../src/js/core/Wang_design__MAoneMAtwor_2026-04-06.js', description: 'MAoneMAtwo indicator' },
                     { name: 'crypto-app', src: 'crypto-app.prod.js', description: 'Crypto Platform' },
                 ]);
                 lucide.createIcons();

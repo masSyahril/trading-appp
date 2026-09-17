@@ -409,29 +409,28 @@ window.BIAS = BIAS;
 //----------------------------------------------------------------------
 
 //===designed by Prof Wang, 2025-Oct-26==modified on 2026-April-07==
-//MBIAS移動平均乖離差, MBIAS=MA1-MA2, (楊本p-122)
+//MBIAS移動平均乖離差, MBIAS=MA1-MA2=短期MA1-長期MA2, (楊本p-122)
 //本人改名為MABIAS。自創eMABIAS。esp為平滑係數，通常取值為10或20。
 function MABIAS(STK_close, day1, day2, esp) {
-  //esp=9,10,...
+  // Menu Name: MABIAS        //esp=9,10,...
   const MABIAS=[], eMABIAS=[];
   let tepm;
-  if(day1<day2){  //確保day1>day2
-    tepm=day2; 
-    day2=day1; 
-    day1=tepm; }
-  const MA1 = KingMA(STK_close, day1); //day1較大
-  const MA2 = KingMA(STK_close, day2);
- for(let i=day1; i<STK_close.length; i++){
-   MABIAS[i]=MA2[i]-MA1[i];   //短期MA2減去長期MA1
-   if(i==day1) {
+  if(day1>day2){  //確保day1<day2
+    tepm=day2; day2=day1; day1=tepm; 
+  }
+  const MA1 = KingMA(STK_close, day1);  //day1較小,短期MA1
+  const MA2 = KingMA(STK_close, day2);  //day2較大,長期MA2
+ for(let i=day2; i<=STK_close.length; i++){  //i=day2 to 2000
+   MABIAS[i]=MA1[i]-MA2[i];   //短期MA1減去長期MA2
+   if(i===day2) {  //初值,自創eMABIAS
      eMABIAS[i]=MABIAS[i]; }  //初值,自創eMABIAS
    else {
      eMABIAS[i]=(esp-1)/(esp+1)*eMABIAS[i-1]+(2/(esp+1))*MABIAS[i];
    }
  }
   return {MABIAS, eMABIAS};
-  //drawing the MABIAS and eMABIAS figures in the small windows.
-  //if day1=10, then MABIAS[],eMABIAS[]=10,11,...,2000.
+  //drawing these figures in the small windows.
+  //if day2=20, then MABIAS[],eMABIAS[]=20 to2000.
 }
 window.MABIAS = MABIAS; //將MABIAS函數放在windows物件中，方便在其他地方調用。
 //----------------------------------------------------------------------
@@ -1156,6 +1155,7 @@ function VolRatio(STK_close, STK_vol, day, esp) {   //原名=VR
   // UpVol=STK_vol(1);
   // DnVol=STK_vol(1);
   VolRatio[day]=100;       //初值三個均設為第一天的成交量，此時初值VR=100。VR(20)=100
+  eVolRatio[day]=100;      //eVR初值 = VR初值 = 100 (fix 2026-09-17: eVolRatio[day] was never set, so eVR was all NaN)
   //第一輪先算第一個VR,假設day=20,則j=2 to 21,算出第一個VR(21)
   for(let j=2; j<=(day+1); j++) {          // j=2 to 21 (first round)
     if (STK_close[j]>=STK_close[j-1]) {   //上漲
@@ -1330,8 +1330,8 @@ window.VariantRateMA2DaysAgo = VariantRateMA2DaysAgo;
 function IntradayMomentum(STK_open, STK_close, day1, day2) {  //原名: IMI
   // Menu Name: Intraday Momentum  , day1=10, day2=20, ...
   const IMI1=[], IMI2=[];
-  let Iup, Idn = 0;
-  for (let i=1; i<day1; i++) {     //例: i=1 to 10
+  let Iup = 0, Idn = 0;  //fix 2026-09-17: was "let Iup, Idn = 0;" (Iup undefined, IMI1 all NaN)
+  for (let i=1; i<=day1; i++) {     //例: i=1 to 10  (fix 2026-09-17: was i<day1, missed day 10)
     if(STK_close[i]>STK_open[i]) {
       Iup=Iup+(STK_close[i]-STK_open[i]); }
     else if(STK_open[i]>STK_close[i]) {
@@ -1354,7 +1354,7 @@ function IntradayMomentum(STK_open, STK_close, day1, day2) {  //原名: IMI
   //相同程式邏輯，計算IMI2
   Iup=0;
   Idn=0;
-  for(let i=1; i<day2; i++) {     //例: let i=1 to 20
+  for(let i=1; i<=day2; i++) {     //例: let i=1 to 20  (fix 2026-09-17: was i<day2, missed day 20)
     if(STK_close[i]>STK_open[i]) {
       Iup=Iup+(STK_close[i]-STK_open[i]); }
     else if(STK_open[i]>STK_close[i]) {
@@ -1772,7 +1772,7 @@ function EOM_EMV(STK_high, STK_low, STK_close, STK_vol, esp) {
     else { 
       EOM_EMV[i]=MID/VPU*100;
     }
-    if(i===1){             //指數平滑移動平均
+    if(i===2){             //指數平滑移動平均 (fix 2026-09-17: was i===1, never true since the loop starts at 2)
       eEOM_EMV[2]=EOM_EMV[2]; }    //eEOM_EMV初值
     else {
       eEOM_EMV[i]=(esp-1)/(esp+1)*eEOM_EMV[i-1]+2/(esp+1)*EOM_EMV[i];
@@ -9595,8 +9595,6 @@ function Z_Score_TP_Return(STK_high, STK_low, STK_close, Z_num) {
 window.Z_Score_TP_Return = Z_Score_TP_Return;
 //----------------------------------------------------------------------
 
-
-
 //===designed by Prof Wang,===2026-September-01===完全自行創新===越南旅次===
 //BIAS2乖離率，BIAS2=(C-EMA)/EMA*100. 原BIAS=(C-MA)/MA*100
 // esp is the parameter for the exponential moving average,
@@ -9819,9 +9817,9 @@ window.VariantRateEMA_ThreeDaysAgo = VariantRateEMA_ThreeDaysAgo;
 //----------------------------------------------------------------------
 
 //===designed by Prof Wang, 2026-September-08======完全自行創新===越南旅次===
-//EMA_KDliztion(Typical Price),將EMA做KD化(完全自行創新新)
+//EMA_KDlization(Typical Price),將EMA做KD化(完全自行創新新)
 // 本程式碼創新使用Typical Price替代Close價格計算EMA。
-function EMA_KDliztion_TP(STK_high, STK_low, STK_close, EMA_num, KD_num) {
+function EMA_KDlization_TP(STK_high, STK_low, STK_close, EMA_num, KD_num) {
   // Menu Name: EMA_KD(TP)  //EMA_num=10,20,... KD_num=9,10,11,...,20
   // 本人改以Typical Price替代Close,新創=TP=(High+Low+4*Close)/6
   const TP=[];   //TP[]=TypicalPrice=[]; //=1 to 2000,以TypicalPrice取代Close
@@ -9863,14 +9861,14 @@ function EMA_KDliztion_TP(STK_high, STK_low, STK_close, EMA_num, KD_num) {
   // drawing these figures in the small windows.
   // if KD_num=9, then EMA_KD_K[], EMA_KD_D[]=9 to 2000.
 }
-window.EMA_KDliztion_TP = EMA_KDliztion_TP;
+window.EMA_KDlization_TP = EMA_KDlization_TP;
 //----------------------------------------------------------------------
 
 //===designed by Prof Wang, 2026-September-08======完全自行創新===越南旅次===
-// BIAS_KDliztion(Typical Price),將BIAS做KD化(完全自行創新新)
+// BIAS_KDlization(Typical Price),將BIAS做KD化(完全自行創新新)
 // 本程式碼創新使用Typical Price替代Close價格計算BIAS。
 // 本人改以Typical Price=TP=(H+L+4C)/6,取代Close,新BIAS=(TP-EMA)/EMA*100
-function BIAS_KDliztion_TP(STK_high, STK_low, STK_close, esp, KD_num) {
+function BIAS_KDlization_TP(STK_high, STK_low, STK_close, esp, KD_num) {
   // Menu Name: BIAS_KD(TP)  //esp=9,10,... //KD_num=9,10,11,...
   const TP=[];   //TP[]=TypicalPrice=[]; //=1 to 2000,以TypicalPrice取代Close
   const EMA=[];  //EMA[]=EMA_TP=[]; //=1 to 2000
@@ -9916,14 +9914,14 @@ function BIAS_KDliztion_TP(STK_high, STK_low, STK_close, esp, KD_num) {
   // if KD_num=9, then BIAS_KD_K[], BIAS_KD_D[]=9 to 2000.
   // if KD_num=9, then BIAS_KD_K[9]=50, BIAS_KD_D[9]=50.
 }
-window.BIAS_KDliztion_TP = BIAS_KDliztion_TP;
+window.BIAS_KDlization_TP = BIAS_KDlization_TP;
 //----------------------------------------------------------------------
 
 //===Designed by Prof Wang, 2026-September-10======完全自行創新===越南旅次===
-// MTM_KDliztion(Typical Price),將MTM做KD化(完全自行創新新)
+// MTM_KDlization(Typical Price),將MTM做KD化(完全自行創新新)
 // 本程式碼創新使用Typical Price替代Close價格計算MTM。
 // 本人改以Typical Price=TP=(H+L+4C)/6,取代Close,新MTM=(TP-EMA)/EMA*100
-function MTM_KDliztion_TP(STK_high, STK_low, STK_close, MTM_num, KD_num) {
+function MTM_KDlization_TP(STK_high, STK_low, STK_close, MTM_num, KD_num) {
   // Menu Name: MTM_KD(TP)  //MTM_num=5,10,... //KD_num=9,10,11,...
   const TP=[];   //TypicalPrice=TP[]; //=1 to 2000,以TypicalPrice取代Close
   const MTM=[];  //=MTM_num+1=6 to 2000   
@@ -9962,14 +9960,14 @@ function MTM_KDliztion_TP(STK_high, STK_low, STK_close, MTM_num, KD_num) {
   // if MTM_num=5,KD_num=9, then MTM_KD_K[], MTM_KD_D[]=14 to 2000.
   // if MTM_num=5,KD_num=9, then MTM_KD_K[14]=50, MTM_KD_D[14]=50.
 }
-window.MTM_KDliztion_TP = MTM_KDliztion_TP;
+window.MTM_KDlization_TP = MTM_KDlization_TP;
 //----------------------------------------------------------------------
 
 //===Designed by Prof Wang, 2026-September-10======完全自行創新===越南旅次===
-// ROC_KDliztion(Typical Price),將ROC做KD化(完全自行創新新)
+// ROC_KDlization(Typical Price),將ROC做KD化(完全自行創新新)
 // 本程式碼創新使用Typical Price替代Close價格計算ROC。
 // 本人改以Typical Price=TP=(H+L+4C)/6,取代Close,新ROC=(TP-TP_n)/TP_n*100
-function ROC_KDliztion_TP(STK_high, STK_low, STK_close, ROC_num, KD_num) {
+function ROC_KDlization_TP(STK_high, STK_low, STK_close, ROC_num, KD_num) {
   // Menu Name: ROC_KD(TP)  //ROC_num=5,10,... //KD_num=9,10,11,...
   const TP=[];   //TypicalPrice=TP[]; //=1 to 2000,以TypicalPrice取代Close
   const ROC=[];  //=ROC_num+1=6 to 2000   
@@ -10008,12 +10006,12 @@ function ROC_KDliztion_TP(STK_high, STK_low, STK_close, ROC_num, KD_num) {
   // if ROC_num=5,KD_num=9, then ROC_KD_K[], ROC_KD_D[]=14 to 2000.
   // if ROC_num=5,KD_num=9, then ROC_KD_K[14]=50, ROC_KD_D[14]=50.
 }
-window.ROC_KDliztion_TP = ROC_KDliztion_TP;
+window.ROC_KDlization_TP = ROC_KDlization_TP;
 //----------------------------------------------------------------------
 
 //===Designed by Prof Wang, 2026-September-11======完全自行創新===越南旅次===
-// MA_Vol_KDliztion(Typical Price),將MA_Vol做KD化(完全自行創新新)
-function MAVol_KDliztion(STK_vol, MA_day, KD_num) {
+// MA_Vol_KDlization(Typical Price),將MA_Vol做KD化(完全自行創新新)
+function MAVol_KDlization(STK_vol, MA_day, KD_num) {
   // Menu Name: MAVol_KD  //MA_day=5,10,...移動平均天數 //KD_num=9,10,11,...
   const MAVol = [];  //MAVol[]=5 to 2000, if MA_day=5
   let sum = 0;
@@ -10054,7 +10052,7 @@ function MAVol_KDliztion(STK_vol, MA_day, KD_num) {
   // if MA_day=5,KD_num=9, then MAVol_KD_K[], MAVol_KD_D[]=13 to 2000.
   // if MA_day=5,KD_num=9, then MAVol_KD_K[13]=50, MAVol_KD_D[13]=50.
 }
-window.MAVol_KDliztion = MAVol_KDliztion; 
+window.MAVol_KDlization = MAVol_KDlization; 
 //----------------------------------------------------------------------
 function NewEMA(values, ma_day, esp) { 
   // Menu Name: NewEMA   //ma_day=5,10,20 etc. values is an array of closing prices
@@ -10087,8 +10085,8 @@ function NewEMA(values, ma_day, esp) {
 window.NewEMA = NewEMA;
 //----------------------------------------------------------------------
 //===Designed by Prof Wang, 2026-September-11======完全自行創新===越南旅次===
-// MA_Vol_KDliztion(Typical Price),將MA_Vol做KD化(完全自行創新新)
-function BBI3_KDliztion(STK_close, day1, day2, day3, KD_num) {
+// MA_Vol_KDlization(Typical Price),將MA_Vol做KD化(完全自行創新新)
+function BBI3_KDlization(STK_close, day1, day2, day3, KD_num) {
   // Menu Name: BBI3_KD    //KD_num=9,10,11,...
   //day1, day2, day3 are the days of three MAs, such as 5,10,20.
   const BBI3=[];
@@ -10131,12 +10129,12 @@ function BBI3_KDliztion(STK_close, day1, day2, day3, KD_num) {
   // if max_day=20,KD_num=9, then BBI3_KD_K[], BBI3_KD_D[]=27 to 2000.
   // if max_day=20,KD_num=9, then BBI3_KD_K[27]=50, BBI3_KD_D[27]=50.
 }
-window.BBI3_KDliztion = BBI3_KDliztion; 
+window.BBI3_KDlization = BBI3_KDlization; 
 //----------------------------------------------------------------------
 
 //===Designed by Prof Wang, 2026-September-12======完全自行創新===========
-// BBI4_KDliztion(Typical Price),將BBI4做KD化(完全自行創新新)
-function BBI4_KDliztion(STK_close, day1, day2, day3, day4, KD_num) {
+// BBI4_KDlization(Typical Price),將BBI4做KD化(完全自行創新新)
+function BBI4_KDlization(STK_close, day1, day2, day3, day4, KD_num) {
   // Menu Name: BBI4_KD    //KD_num=9,10,11,...
   //day1, day2, day3, day4 are the days of four MAs, such as 5,10,20,25.
   const BBI4=[];
@@ -10179,13 +10177,13 @@ function BBI4_KDliztion(STK_close, day1, day2, day3, day4, KD_num) {
   // if max_day=20,KD_num=9, then BBI4_KD_K[], BBI4_KD_D[]=27 to 2000.
   // if max_day=20,KD_num=9, then BBI4_KD_K[27]=50, BBI4_KD_D[27]=50.
 }
-window.BBI4_KDliztion = BBI4_KDliztion; 
+window.BBI4_KDlization = BBI4_KDlization; 
 
 //----------------------------------------------------------------------
 
 //===Designed by Prof Wang, 2026-September-12======完全自行創新===========
-// BBI5_KDliztion(Typical Price),將BBI5做KD化(完全自行創新新)
-function BBI5_KDliztion(STK_close, day1, day2, day3, day4, day5, KD_num) {
+// BBI5_KDlization(Typical Price),將BBI5做KD化(完全自行創新新)
+function BBI5_KDlization(STK_close, day1, day2, day3, day4, day5, KD_num) {
   // Menu Name: BBI5_KD    //KD_num=9,10,11,...
   //day1, day2, day3, day4, day5 are the days of five MAs, such as 5,10,20,25,30.
   const BBI5=[];
@@ -10229,7 +10227,524 @@ function BBI5_KDliztion(STK_close, day1, day2, day3, day4, day5, KD_num) {
   // if max_day=20,KD_num=9, then BBI5_KD_K[], BBI5_KD_D[]=27 to 2000.
   // if max_day=20,KD_num=9, then BBI5_KD_K[27]=50, BBI5_KD_D[27]=50.
 }
-window.BBI5_KDliztion = BBI5_KDliztion; 
+window.BBI5_KDlization = BBI5_KDlization; 
+//----------------------------------------------------------------------
+
+//===Designed by Prof Wang, 2026-September-14======完全自行創新==============
+//Typical Price=TP=(H+L+4C)/6,取代DI=(H+L+C)/3,完全自行創新
+//i=1, TP[],EMA1[],EMA2[],MACD[],DIF[],Bar[]就有數值
+function King_MACD(STK_high, STK_low, STK_close, N1, N2, N3) {
+  // Menu Name: King_MACD    //N1=12, N2=26, N3=9   
+  if(N1>N2) {    //N1=12,N2=26,N3=9  //ensure N1<N2
+    let temp=N1; N1=N2; N2=temp; 
+  }
+  const TP = [];    //TP[]=(H+L+4*C)/6, i=1 to 2000
+  const EMA1 = [];  //EMA1[]=EMA(TP,N1), i=1 to 2000
+  const EMA2 = [];  //EMA2[]=EMA(TP,N2), i=1 to 2000
+  const DIF = [];   //DIF[]=EMA1[]-EMA2[], i=1 to 2000
+  for (let i=1; i<=STK_close.length; i++) {  //i=1 to 2000
+    TP[i]=(STK_high[i]+STK_low[i]+4*STK_close[i])/6;
+    if(i==1) {
+      EMA1[i]=TP[i]; EMA2[i]=TP[i]; DIF[i]=0; } 
+    else {
+      EMA1[i]=(N1-1)/(N1+1)*EMA1[i-1]+(2/(N1+1))*TP[i];
+      EMA2[i]=(N2-1)/(N2+1)*EMA2[i-1]+(2/(N2+1))*TP[i];
+      DIF[i]=EMA1[i]-EMA2[i];
+    }
+  }
+  const MACD = [];  //i=1 to 2000
+  const Bar = [];   //i=1 to 2000, Bar[i]=2*(DIF[i]-MACD[i])
+  for (let i=1; i<=STK_close.length; i++) {  //i=1 to 2000
+    if(i==1) { 
+      MACD[i]=DIF[i]; }  //MACD[1]=DIF[1]=0, then Bar[1]=0
+    else {
+      MACD[i]=(N3-1)/(N3+1)*MACD[i-1]+(2/(N3+1))*DIF[i];
+    }
+    Bar[i]=2*(DIF[i]-MACD[i]);  //Positive=Red, Negative=Green
+    //Bar[]紅色與綠色表示(Red and green indicate),一般乘上2倍。
+  }
+  return { DIF, MACD, Bar };
+  // drawing these figures in the small windows.
+  // these indicators Matrix=1 to 2000.
+}
+window.King_MACD = King_MACD; 
+//----------------------------------------------------------------------
+
+//===Designed by Prof Wang, 2026-September-14======完全自行創新==============
+//TwoMAbias雙移動平均乖離差, TwoMAbias=MA1-MA2=短期MA1-長期MA2, (楊本p-122)
+//本人改名為TwoMAbias。自創eTwoMAbias。esp為平滑係數，通常取值為9,10,...
+//將TwoMAbias做KD化(完全自行創新新)
+function TwoMAbias_KDlization(STK_close, day1, day2, esp, KD_num) {
+  // Menu Name: TwoMAbias_KD   //day1=10, day2=20,...//esp=9,10,...//KD_num=9,10,11,...
+  const TwoMAbias=[], eTwoMAbias=[];  //if day2=20, TwoMAbias[],eTwoMAbias[]=20 to 2000
+  if(day1>day2){  //確保 day1<day2
+    let temp=day2; day2=day1; day1=temp; 
+  }
+  const MA1 = KingMA(STK_close, day1);  //day1=10較小,短期MA1
+  const MA2 = KingMA(STK_close, day2);  //day2=20較大,長期MA2
+  for(let i=day2; i<=STK_close.length; i++){  //i=day2 to 2000
+    TwoMAbias[i]=MA1[i]-MA2[i];   //短期MA1減去長期MA2
+    if(i===day2) {
+      eTwoMAbias[i]=TwoMAbias[i]; }  //初值,自創eTwoMAbias
+    else {
+      eTwoMAbias[i]=(esp-1)/(esp+1)*eTwoMAbias[i-1]+(2/(esp+1))*TwoMAbias[i];
+    }
+  }
+  //Calculate TwoMAbias_KD_K[i] and TwoMAbias_KD_D[i], =27 to 2000, if KD_num=9,max_day=20
+  //RSV=100*(TwoMAbias[i]-min_TwoMAbias)/(max_TwoMAbias-min_TwoMAbias)
+  let max_day=day2;      //max_day=20, if day2=20
+  const TwoMAbias_KD_K=[];  //TwoMAbias_KD_K[]=27 to 2000, if KD_num=9,max_day=20=day2
+  const TwoMAbias_KD_D=[];  //TwoMAbias_KD_D[]=27 to 2000, if KD_num=9,max_day=20=day2
+  TwoMAbias_KD_K[max_day+KD_num-2]=50;  //初值TwoMAbias_KD_K[27]=50, if KD_num=9,max_day=20
+  TwoMAbias_KD_D[max_day+KD_num-2]=50;  //初值TwoMAbias_KD_D[27]=50, if KD_num=9,max_day=20
+  let RSV=0;         //RSV=100*(TwoMAbias[i]-min_TwoMAbias)/(max_TwoMAbias-min_TwoMAbias)
+  let max=0;  //max_TwoMAbias=Max(TwoMAbias[20-->28]), 已設TwoMAbias[20]為最大
+  let min=0;  //min_TwoMAbias=Min(TwoMAbias[20-->28]), 已設TwoMAbias[20]為最小
+  for(let i=max_day+KD_num-1; i<=STK_close.length; i++) {  //i=28 to 2000
+    max=TwoMAbias[i-KD_num+1];  //=20, max=Max(TwoMAbias[20-->28])
+    min=TwoMAbias[i-KD_num+1];  //=20, min=Min(TwoMAbias[20-->28])
+    for(let j=i-KD_num+2; j<=i; j++) {  //j=21 to 28, if KD_num=9
+      if(TwoMAbias[j]>max) { max=TwoMAbias[j]; }  //max=Max(TwoMAbias[21-->28])
+      if(TwoMAbias[j]<min) { min=TwoMAbias[j]; }  //min=Min(TwoMAbias[21-->28])
+    }
+    if(max===min) { RSV=50; }  //避免分母為0,RSV=50
+    else {
+      RSV=(TwoMAbias[i]-min)/(max-min)*100; //here TwoMAbias[]=[28]
+    }
+    TwoMAbias_KD_K[i]=(2/3)*TwoMAbias_KD_K[i-1]+(1/3)*RSV;            //first time i=28
+    TwoMAbias_KD_D[i]=(2/3)*TwoMAbias_KD_D[i-1]+(1/3)*TwoMAbias_KD_K[i]; //first time i=28
+    //可考慮再對TwoMAbias_KD_K[],TwoMAbias_KD_D[]做一次平滑化
+  }
+  return { TwoMAbias_KD_K, TwoMAbias_KD_D};
+  //drawing these figures in the small windows.
+  //if day2=20, KD_num=9 then TwoMAbias_KD_K[],TwoMAbias_KD_D[]=27 to 2000. 
+}
+window.TwoMAbias_KDlization = TwoMAbias_KDlization;
+//----------------------------------------------------------------------
+
+//===Designed by Prof Wang, 2026-September-14======完全自行創新==============
+//TwoMAbias雙移動平均乖離差, TwoMAbias=MA1-MA2=短期MA1-長期MA2, (楊本p-122)
+//本人改名為TwoMAbias。自創eTwoMAbias。esp為平滑係數，通常取值為9,10,...
+//將eTwoMAbias做KD化(完全自行創新新)。 2026-09-14已經將TwoMAbias_KD化完成。
+function eTwoMAbias_KDlization(STK_close, day1, day2, esp, KD_num) {
+  // Menu Name: eTwoMAbias_KD   //day1=10, day2=20,...//esp=9,10,...//KD_num=9,10,11,...
+  const TwoMAbias=[], eTwoMAbias=[];  //if day2=20, TwoMAbias[],eTwoMAbias[]=20 to 2000
+  if(day1>day2){  //確保 day1<day2
+    let temp=day2; day2=day1; day1=temp; 
+  }
+  const MA1 = KingMA(STK_close, day1);  //day1=10較小,短期MA1
+  const MA2 = KingMA(STK_close, day2);  //day2=20較大,長期MA2
+  for(let i=day2; i<=STK_close.length; i++){  //i=day2 to 2000
+    TwoMAbias[i]=MA1[i]-MA2[i];   //短期MA1減去長期MA2
+    if(i===day2) {
+      eTwoMAbias[i]=TwoMAbias[i]; }  //初值,自創eTwoMAbias
+    else {
+      eTwoMAbias[i]=(esp-1)/(esp+1)*eTwoMAbias[i-1]+(2/(esp+1))*TwoMAbias[i];
+    }
+  }
+  //Calculate eTwoMAbias_KD_K[i] and eTwoMAbias_KD_D[i], =27 to 2000, if KD_num=9,max_day=20
+  //RSV=100*(eTwoMAbias[i]-min_eTwoMAbias)/(max_eTwoMAbias-min_eTwoMAbias)
+  let max_day=day2;       //max_day=20, if day2=20
+  const eTwoMAbias_KD_K=[];  //eTwoMAbias_KD_K[]=27 to 2000, if KD_num=9,max_day=20=day2
+  const eTwoMAbias_KD_D=[];  //eTwoMAbias_KD_D[]=27 to 2000, if KD_num=9,max_day=20=day2
+  eTwoMAbias_KD_K[max_day+KD_num-2]=50;  //初值eTwoMAbias_KD_K[27]=50, if KD_num=9,max_day=20
+  eTwoMAbias_KD_D[max_day+KD_num-2]=50;  //初值eTwoMAbias_KD_D[27]=50, if KD_num=9,max_day=20
+  let RSV=0;       //RSV=100*(eTwoMAbias[i]-min_eTwoMAbias)/(max_eTwoMAbias-min_eTwoMAbias)
+  let max=0;  //max=Max(eTwoMAbias[20-->28]), 已設eTwoMAbias[20]為最大
+  let min=0;  //min_eTwoMAbias=Min(eTwoMAbias[20-->28]), 已設eTwoMAbias[20]為最小
+  for(let i=max_day+KD_num-1; i<=STK_close.length; i++) {  //i=28 to 2000
+    max=eTwoMAbias[i-KD_num+1];  //=20, max=Max(eTwoMAbias[20-->28])
+    min=eTwoMAbias[i-KD_num+1];  //=20, min=Min(eTwoMAbias[20-->28])
+    for(let j=i-KD_num+2; j<=i; j++) {  //j=21 to 28, if KD_num=9
+      if(eTwoMAbias[j]>max) { max=eTwoMAbias[j]; }  //max=Max(eTwoMAbias[21-->28])
+      if(eTwoMAbias[j]<min) { min=eTwoMAbias[j]; }  //min=Min(eTwoMAbias[21-->28])
+    }
+    if(max===min) { RSV=50; }  //避免分母為0,RSV=50
+    else {
+      RSV=(eTwoMAbias[i]-min)/(max-min)*100; //here eTwoMAbias[]=[28]
+    }
+    eTwoMAbias_KD_K[i]=(2/3)*eTwoMAbias_KD_K[i-1]+(1/3)*RSV;             //first time i=28
+    eTwoMAbias_KD_D[i]=(2/3)*eTwoMAbias_KD_D[i-1]+(1/3)*eTwoMAbias_KD_K[i]; //first time i=28
+    //可考慮再對eTwoMAbias_KD_K[],eTwoMAbias_KD_D[]做一次平滑化
+  }
+  return { eTwoMAbias_KD_K, eTwoMAbias_KD_D};
+  //drawing these figures in the small windows.
+  //if day2=20, TwoMAbias[],eTwoMAbias[]=20 to 2000.
+  //if day2=20, KD_num=9 then eTwoMAbias_KD_K[],eTwoMAbias_KD_D[]=27 to 2000. 
+}
+window.eTwoMAbias_KDlization = eTwoMAbias_KDlization;
+//----------------------------------------------------------------------
+
+//===Designed by Prof Wang,===2026-Sept-15======完全自行創新==============
+//TwoMABiasRate雙移動平均乖離率,TwoMABiasRate=(MA1-MA2)/MA2*100%。短期MA1,長期MA2
+//自創：TwoMABiasRate移雙動平均乖離率 (Two Moving Average Deviation Rate)
+//本人改名為TwoMABiasRate。自創eTwoMABiasRate 。esp為平滑係數。
+//將TwoMABiasRate做KD化(完全自行創新)。取名：雙移動平均乖離率隨機指標TwoMABiasRateKD。
+function TwoMABiasRate_KDlization(STK_close, day1, day2, esp, KD_num) {
+  //Menu Name: TwoMABiasRate_KD     //esp=9,10,...//KD_num=9,10,11,...
+  const TwoMABiasRate=[], eTwoMABiasRate=[];  //=20 to 2000, if day2=20
+  if(day1>day2){  //確保day1<day2
+    let temp=day2; day2=day1; day1=temp; 
+  }
+  const MA1 = KingMA(STK_close, day1); //day1較小,短期MA1
+  const MA2 = KingMA(STK_close, day2); //day2較大,長期MA2
+  for(let i=day2; i<=STK_close.length; i++){  //i=20 to 2000
+    TwoMABiasRate[i]=(MA1[i]-MA2[i])/MA2[i]*100; //短期MA1,長期MA2
+    if(i===day2) {
+      eTwoMABiasRate[i]=TwoMABiasRate[i]; }  //初值,自創eTwoMABiasRate
+    else {
+      eTwoMABiasRate[i]=(esp-1)/(esp+1)*eTwoMABiasRate[i-1]+(2/(esp+1))*TwoMABiasRate[i];
+    }
+  }
+  //Calculate TwoMABiasRate_KD_K[i] and TwoMABiasRate_KD_D[i], =27 to 2000, if KD_num=9,max_day=20
+  //RSV=100*(TwoMABiasRate[i]-min)/(max-min)
+  let max_day=day2;      //max_day=20, if day2=20
+  const TwoMABiasRate_KD_K=[];  //TwoMABiasRate_KD_K[]=27 to 2000, if KD_num=9,max_day=20=day2
+  const TwoMABiasRate_KD_D=[];  //TwoMABiasRate_KD_D[]=27 to 2000, if KD_num=9,max_day=20=day2
+  TwoMABiasRate_KD_K[max_day+KD_num-2]=50;  //TwoMABiasRate_KD_K[27]=50, if KD_num=9,max_day=20
+  TwoMABiasRate_KD_D[max_day+KD_num-2]=50;  //TwoMABiasRate_KD_D[27]=50, if KD_num=9,max_day=20
+  let RSV=0;       //RSV=100*(TwoMABiasRate[i]-min)/(max-min)
+  let max=0;  //max=Max(TwoMABiasRate[20-->28]), 已設TwoMABiasRate[20]為最大
+  let min=0;  //min=Min(TwoMABiasRate[20-->28]), 已設TwoMABiasRate[20]為最小
+  for(let i=max_day+KD_num-1; i<=STK_close.length; i++) {  //i=28 to 2000
+    max=TwoMABiasRate[i-KD_num+1];  //=20, max=Max(TwoMABiasRate[20-->28])
+    min=TwoMABiasRate[i-KD_num+1];  //=20, min=Min(TwoMABiasRate[20-->28])
+    for(let j=i-KD_num+2; j<=i; j++) {  //j=21 to 28, if KD_num=9
+      if(TwoMABiasRate[j]>max) { max=TwoMABiasRate[j]; } //max=Max(TwoMABiasRate[21-->28])
+      if(TwoMABiasRate[j]<min) { min=TwoMABiasRate[j]; } //min=Min(TwoMABiasRate[21-->28])
+    }
+    if(max===min) { RSV=50; }  //避免分母為0,RSV=50
+    else {
+      RSV=(TwoMABiasRate[i]-min)/(max-min)*100; //here TwoMABiasRate[]=[28]
+    }
+    TwoMABiasRate_KD_K[i]=(2/3)*TwoMABiasRate_KD_K[i-1]+(1/3)*RSV;             //first time i=28
+    TwoMABiasRate_KD_D[i]=(2/3)*TwoMABiasRate_KD_D[i-1]+(1/3)*TwoMABiasRate_KD_K[i]; //first time i=28
+    //可考慮再對TwoMABiasRate_KD_K[],TwoMABiasRate_KD_D[]做一次平滑化
+  }
+  return {TwoMABiasRate_KD_K, TwoMABiasRate_KD_D};
+  //drawing the TwoMABiasRate_KD_K[] and TwoMABiasRate_KD_D[] figures in the small windows.
+  //if day2=20, then TwoMABiasRate[],eTwoMABiasRate[]=20 to 2000.
+  //if day2=20=max_day,KD_num=9, then TwoMABiasRate_KD_K[],TwoMABiasRate_KD_D[]=27 to 2000
+}
+window.TwoMABiasRate_KDlization = TwoMABiasRate_KDlization;
+//----------------------------------------------------------------------
+
+//===Designed by Prof Wang,===2026-Sept-15======完全自行創新==============
+//MABiasRate移動平均乖離率,MABiasRate=(MA1-MA2)/MA2*100%。短期MA1,長期MA2。
+//自創：MABiasRate移動平均乖離率 (Moving Average Deviation Rate)
+//本人改名為MABiasRate。自創eMABiasRate(指數平滑化)。esp為平滑係數。
+//將eMABiasRate做KD化(完全自行創新新)。取名：指數移動平均乖離率隨機指標eMABiasRateKD。
+function eMABiasRate_KDlization(STK_close, day1, day2, esp, KD_num) {
+  //Menu Name: eMABiasRate_KD     //esp=9,10,...//KD_num=9,10,11,...
+  const MABiasRate=[], eMABiasRate=[];  //=20 to 2000, if day2=20
+  if(day1>day2){  //確保day1<day2
+    let tepm=day2; day2=day1; day1=tepm; 
+  }
+  const MA1 = KingMA(STK_close, day1); //day1較小,短期MA1
+  const MA2 = KingMA(STK_close, day2); //day2較大,長期MA2
+  for(let i=day2; i<=STK_close.length; i++){  //i=20 to 2000
+    MABiasRate[i]=(MA1[i]-MA2[i])/MA2[i]*100; //短期MA1,長期MA2
+    if(i===day2) {
+      eMABiasRate[i]=MABiasRate[i]; }  //初值,自創eMABiasRate
+    else {
+      eMABiasRate[i]=(esp-1)/(esp+1)*eMABiasRate[i-1]+(2/(esp+1))*MABiasRate[i];
+    }
+  }
+  //Calculate eMABiasRate_KD_K[i] and eMABiasRate_KD_D[i], =27 to 2000, if KD_num=9,max_day=20
+  //RSV=100*(eMABiasRate[i]-min_eMABiasRate)/(max_eMABiasRate-min_eMABiasRate)
+  let max_day=day2;      //max_day=20, if day2=20
+  const eMABiasRate_KD_K=[];  //eMABiasRate_KD_K[]=27 to 2000, if KD_num=9,max_day=20=day2
+  const eMABiasRate_KD_D=[];  //eMABiasRate_KD_D[]=27 to 2000, if KD_num=9,max_day=20=day2
+  eMABiasRate_KD_K[max_day+KD_num-2]=50;  //eMABiasRate_KD_K[27]=50, if KD_num=9,max_day=20
+  eMABiasRate_KD_D[max_day+KD_num-2]=50;  //eMABiasRate_KD_D[27]=50, if KD_num=9,max_day=20
+  let RSV=0;       //RSV=100*(eMABiasRate[i]-min_eMABiasRate)/(max_eMABiasRate-min_eMABiasRate)
+  let max_eMABiasRate=0;  //max_eMABiasRate=Max(eMABiasRate[20-->28]), 已設eMABiasRate[20]為最大
+  let min_eMABiasRate=0;  //min_eMABiasRate=Min(eMABiasRate[20-->28]), 已設eMABiasRate[20]為最小
+  for(let i=max_day+KD_num-1; i<=STK_close.length; i++) {  //i=28 to 2000
+    max_eMABiasRate=eMABiasRate[i-KD_num+1];  //=20, max_eMABiasRate=Max(eMABiasRate[20-->28])
+    min_eMABiasRate=eMABiasRate[i-KD_num+1];  //=20, min_eMABiasRate=Min(eMABiasRate[20-->28])
+    for(let j=i-KD_num+2; j<=i; j++) {  //j=21 to 28, if KD_num=9
+      if(eMABiasRate[j]>max_eMABiasRate) { max_eMABiasRate=eMABiasRate[j]; } //max_eMABiasRate=Max(eMABiasRate[21-->28])
+      if(eMABiasRate[j]<min_eMABiasRate) { min_eMABiasRate=eMABiasRate[j]; } //min_eMABiasRate=Min(eMABiasRate[21-->28])
+    }
+    if(max_eMABiasRate===min_eMABiasRate) { RSV=50; }  //避免分母為0,RSV=50
+    else {
+      RSV=(eMABiasRate[i]-min_eMABiasRate)/(max_eMABiasRate-min_eMABiasRate)*100; //here eMABiasRate[]=[28]
+    }
+    eMABiasRate_KD_K[i]=(2/3)*eMABiasRate_KD_K[i-1]+(1/3)*RSV;                 //first time i=28
+    eMABiasRate_KD_D[i]=(2/3)*eMABiasRate_KD_D[i-1]+(1/3)*eMABiasRate_KD_K[i]; //first time i=28
+    //可考慮再對eMABiasRate_KD_K[],eMABiasRate_KD_D[]做一次平滑化
+  }
+  return {eMABiasRate_KD_K, eMABiasRate_KD_D};
+  //drawing the eMABiasRate_KD_K[] and eMABiasRate_KD_D[] figures in the small windows.
+  //if day2=20, then MABiasRate[], eMABiasRate[]=20 to 2000.
+  //if day2=20=max_day,KD_num=9, then eMABiasRate_KD_K[],eMABiasRate_KD_D[]=27 to 2000
+}
+window.eMABiasRate_KDlization = eMABiasRate_KDlization;
+//----------------------------------------------------------------------
+
+//===Designed by Prof Wang,===2026-Sept-15======完全自行創新==============
+//TwoEMABiasRate雙指數移動平均乖離率,TwoEMABiasRate=(EMA1-EMA2)/EMA2*100%。短期EMA1,長期EMA2。
+//自創：TwoEMABiasRate移動平均乖離率 (Moving Average Deviation Rate)
+//本人改名為TwoEMABiasRate。自創eTwoEMABiasRate(指數平滑化)。esp為平滑係數。
+//將TwoEMABiasRate做KD化(完全自行創新新)。取名：雙指數移動平均乖離率隨機指標TwoEMABiasRateKD。
+function TwoEMABiasRate_KDlization(STK_high, STK_low, STK_close, N1, N2, esp, KD_num) {
+  //Menu Name: TwoEMABiasRate_KD     //N1=10, N2=20... esp=9,10,... //KD_num=9,10,11,...
+  if(N1>N2){  //確保N1<N2
+    let temp=N2; N2=N1; N1=temp; 
+  }
+  const TP=[];  //TP=(H+L+4C)/6, =1 to 2000
+  const EMA1=[], EMA2=[];    //EMA1=EMA(TP,N1),EMA2=EMA(TP,N2), =1 to 2000
+  const TwoEMABiasRate=[];   //雙指數移動平均乖離率, []=1 to 2000
+  const eTwoEMABiasRate=[];  //自創eTwoEMABiasRate(指數平滑化esp), []=1 to 2000
+  for(let i=1; i<=STK_close.length; i++){
+    TP[i]=(STK_high[i]+STK_low[i]+4*STK_close[i])/6;
+    if(i===1) { EMA1[i]=TP[i]; EMA2[i]=TP[i]; }  //初值,EMA1[1],EMA2[1]
+    else {
+      EMA1[i]=(N1-1)/(N1+1)*EMA1[i-1]+(2/(N1+1))*TP[i];  //EMA1
+      EMA2[i]=(N2-1)/(N2+1)*EMA2[i-1]+(2/(N2+1))*TP[i];  //EMA2
+    }
+    TwoEMABiasRate[i]=(EMA1[i]-EMA2[i])/EMA2[i]*100;     //雙指數移動平均乖離率
+    if(i===1) { eTwoEMABiasRate[i]=TwoEMABiasRate[i]; }  //初值,自創eTwoEMABiasRate[1]=0
+    else {
+      eTwoEMABiasRate[i]=(esp-1)/(esp+1)*eTwoEMABiasRate[i-1]+(2/(esp+1))*TwoEMABiasRate[i];
+    }
+  }
+  const TwoEMABiasRate_KD_K=[], TwoEMABiasRate_KD_D=[]; //=9 to 2000, if KD_num=9,但初值[9]=50
+  //Calculate TwoEMABiasRate_KD_K[i] and TwoEMABiasRate_KD_D[i], =9 to 2000, if KD_num=9
+  //RSV=100*(TwoEMABiasRate[i]-min)/(max -min )
+  // let max_day=N2;      //max_day=20, if day2=20, 此程式用不到max_day
+  TwoEMABiasRate_KD_K[KD_num]=50;  //初值 TwoEMABiasRate_KD_K[9]=50, if KD_num=9
+  TwoEMABiasRate_KD_D[KD_num]=50;  //初值 TwoEMABiasRate_KD_D[9]=50, if KD_num=9
+  let RSV=0;   //RSV=100*(TwoEMABiasRate[i]-min)/(max-min)
+  let max =0;  //max =Max(TwoEMABiasRate[2-->10]), max=max_TwoEMABiasRate
+  let min =0;  //min =Min(TwoEMABiasRate[2-->10]), min=min_TwoEMABiasRate
+  for(let i=KD_num+1; i<=STK_close.length; i++) {  //i=10 to 2000
+    max=TwoEMABiasRate[i-KD_num+1]; //[]=2, max=Max(TwoEMABiasRate[2-->10])
+    min=TwoEMABiasRate[i-KD_num+1]; //[]=2, min=Min(TwoEMABiasRate[2-->10])
+    for(let j=i-KD_num+2; j<=i; j++) {                     //j=3 to 10, if KD_num=9
+      if(TwoEMABiasRate[j]>max) { max=TwoEMABiasRate[j]; } //max=Max(TwoEMABiasRate[2-->10])
+      if(TwoEMABiasRate[j]<min) { min=TwoEMABiasRate[j]; } //min=Min(TwoEMABiasRate[2-->10])
+    }
+    if(max===min) { RSV=50; }  //避免分母為0,RSV=50
+    else {
+      RSV=(TwoEMABiasRate[i]-min)/(max-min)*100; //here TwoEMABiasRate[]=[10]
+    }
+    TwoEMABiasRate_KD_K[i]=(2/3)*TwoEMABiasRate_KD_K[i-1]+(1/3)*RSV;                    //first time i=10
+    TwoEMABiasRate_KD_D[i]=(2/3)*TwoEMABiasRate_KD_D[i-1]+(1/3)*TwoEMABiasRate_KD_K[i]; //first time i=10
+    //可考慮再對TwoEMABiasRate_KD_K[],TwoEMABiasRate_KD_D[]做一次平滑化
+  }
+  return {TwoEMABiasRate_KD_K, TwoEMABiasRate_KD_D};
+  //drawing the TwoEMABiasRate_KD_K[] and TwoEMABiasRate_KD_D[] figures in the small windows.
+  //與參數無關，EMA1[], EMA2[], TwoEMABiasRate[], TwoEMABiasRate[]=1 to 2000.
+  //if KD_num=9, then TwoEMABiasRate_KD_K[],TwoEMABiasRate_KD_D[]=9 to 2000,但初值[9]=50
+}
+window.TwoEMABiasRate_KDlization = TwoEMABiasRate_KDlization;
+//----------------------------------------------------------------------
+
+//===designed by Prof Wang,===2026-April-07======完全自行創新======
+//===modified 2026-September-01===越南旅次=====2026-09-16改新名重新設計===
+//取新名：『TwoMABiasRate雙移動平均乖離率』，(Two Moving Average Deviation Rate)
+//TwoMABiasRate雙移動平均乖離率, TwoMABiasRate=(MA1-MA2)/MA2*100%
+//本人改名為TwoMABiasRate(新名),MABiasRate(舊名)。自創eTwoMABiasRate。esp為平滑係數。
+function TwoMABiasRate(STK_close, day1, day2, esp) { //MABiasRate(舊名)
+  //Menu Name: TwoMABiasRate     //esp=9,10,...
+  const TwoMABiasRate=[], eTwoMABiasRate=[];  //新名, if day2=20 then []=20 to 2000
+  if(day1>day2){  //確保day1<day2
+    let temp=day2; day2=day1; day1=temp; 
+  }
+  const MA1 = KingMA(STK_close, day1); //day1較小,短期MA1
+  const MA2 = KingMA(STK_close, day2); //day2較大,長期MA2
+ for(let i=day2; i<=STK_close.length; i++){  //i=20 to 2000
+   TwoMABiasRate[i]=(MA1[i]-MA2[i])/MA2[i]*100; //短期MA1減去長期MA2再除以長期MA2再乘100%
+   if(i===day2) {
+     eTwoMABiasRate[i]=TwoMABiasRate[i]; }  //初值,自創eTwoMABiasRate
+   else {
+     eTwoMABiasRate[i]=(esp-1)/(esp+1)*eTwoMABiasRate[i-1]+(2/(esp+1))*TwoMABiasRate[i];
+   }
+ }
+  return {TwoMABiasRate, eTwoMABiasRate};
+  //drawing the TwoMABiasRate[] and eTwoMABiasRate[] figures in the small windows.
+  //if day2=20, then TwoMABiasRate[],eTwoMABiasRate[]=20 to 2000.
+}
+window.TwoMABiasRate = TwoMABiasRate;
+//----------------------------------------------------------------------
+
+//===designed by Prof Wang, 2025-Oct-26===modified on 2026-March-17==
+//===Third time modified on 2026-Sept-17=============================
+//OSC1與OSC2振盪指標(OSC, Oscillator)。 OSC1=C-MA 。 OSC2=C/MA
+function OSC1(K_close, MA_day) {
+  //Menu Name: OSC1 (C-MA)     //MA_day=5,10,20,...
+  const OSC1=[], OSC2=[];      //OSC1=(C-MA),  OSC2=(C/MA)
+  const MA = KingMA(K_close, MA_day);
+  for(let i=MA_day; i<=K_close.length; i++) {  //i=10 to 2000
+    OSC1[i]=K_close[i]-MA[i];
+    OSC2[i]=K_close[i]/MA[i];  //OSC2-1=BIAS=(C-MA)/MA
+  }
+  //return { OSC1, OSC2 };
+  return { OSC1 };
+  //drawing these Figures in the small windows.
+  //if MA_day=10, then OSC1[], OSC2[]=10 to 2000.
+}
+window.OSC1 = OSC1;
+//----------------------------------------------------------------------
+
+//===designed by Prof Wang, 2025-Oct-26===modified on 2026-March-17==
+//===Third time modified on 2026-Sept-17=============================
+//OSC1與OSC2振盪指標(OSC, Oscillator)。 OSC1=C-MA 。 OSC2=C/MA
+function OSC2(K_close, MA_day) {
+  //Menu Name: OSC2 (C/MA)     //MA_day=5,10,20,...
+  const OSC1=[], OSC2=[];      //OSC1=(C-MA),  OSC2=(C/MA)
+  const MA = KingMA(K_close, MA_day);
+  for(let i=MA_day; i<=K_close.length; i++) {  //i=10 to 2000
+    OSC1[i]=K_close[i]-MA[i];
+    OSC2[i]=K_close[i]/MA[i];  //OSC2-1=BIAS=(C-MA)/MA
+  }
+  //return { OSC1, OSC2 };
+  return { OSC2 };
+  //drawing these Figures in the small windows.
+  //if MA_day=10, then OSC1[], OSC2[]=10 to 2000.
+}
+window.OSC2 = OSC2;
+//----------------------------------------------------------------------
+
+//===Designed by Prof Wang, 2026-September-17======完全自行創新==============
+//OSC1與OSC2振盪指標(OSC, Oscillator)KD化。 OSC1=C-MA 。 OSC2=C/MA
+function OSC1_KDlization(STK_close, MA_day, KD_num) {
+  // Menu Name: OSC1_KD(C-MA)   //MA_day=5,10,...//KD_num=9,10,11,...
+  const OSC1=[];                //OSC1=(C-MA),  OSC2=(C/MA)
+  const MA = KingMA(STK_close, MA_day);
+  for(let i=MA_day; i<=STK_close.length; i++) {  //i=10 to 2000
+    OSC1[i]=STK_close[i]-MA[i];
+    //OSC2[i]=STK_close[i]/MA[i];  //OSC2-1=BIAS=(C-MA)/MA
+  }
+  //Calculate OSC1_KD_K[i] , =17 to 2000, if KD_num=9,max_day=10
+  //RSV=100*(OSC1[i]-min)/(max-min)
+  let max_day=MA_day;       //max_day=10, if MA_day=10
+  const OSC1_KD_K=[];  //OSC1_KD_K[]=17 to 2000, if KD_num=9,max_day=10=MA_day
+  const OSC1_KD_D=[];  //OSC1_KD_D[]=17 to 2000, if KD_num=9,max_day=10=MA_day
+  OSC1_KD_K[max_day+KD_num-2]=50;  //初值OSC1_KD_K[17]=50, if KD_num=9,max_day=10
+  OSC1_KD_D[max_day+KD_num-2]=50;  //初值OSC1_KD_D[17]=50, if KD_num=9,max_day=10
+  let RSV=0;       //RSV=100*(OSC1[i]-min)/(max-min)
+  let max=0;       //max=Max(OSC1[10-->18]), 已設OSC1[10]為最大
+  let min=0;       //min=Min(OSC1[10-->18]), 已設OSC1[10]為最小
+  for(let i=max_day+KD_num-1; i<=STK_close.length; i++) {  //i=18 to 2000
+    max=OSC1[i-KD_num+1];  //=10, max=Max(OSC1[10-->18])
+    min=OSC1[i-KD_num+1];  //=10, min=Min(OSC1[10-->18])
+    for(let j=i-KD_num+2; j<=i; j++) {  //j=11 to 18, if KD_num=9
+      if(OSC1[j]>max) { max=OSC1[j]; }  //max=Max(OSC1[11-->18])
+      if(OSC1[j]<min) { min=OSC1[j]; }  //min=Min(OSC1[11-->18])
+    }
+    if(max===min) { RSV=50; }  //避免分母為0,RSV=50
+    else {
+      RSV=(OSC1[i]-min)/(max-min)*100; //here OSC1[]=[28]
+    }
+    OSC1_KD_K[i]=(2/3)*OSC1_KD_K[i-1]+(1/3)*RSV;          //first time i=18
+    OSC1_KD_D[i]=(2/3)*OSC1_KD_D[i-1]+(1/3)*OSC1_KD_K[i]; //first time i=18
+    //可考慮再對OSC1_KD_K[],OSC1_KD_D[]做一次平滑化
+  }
+  return { OSC1_KD_K, OSC1_KD_D};
+  //drawing these figures in the small windows.
+  //if MA_day=10, OSC1[], OSC1[]=10 to 2000.
+  //if MA_day=10, KD_num=9 then OSC1_KD_K[],OSC1_KD_D[]=17 to 2000. 
+  //if MA_day=10, KD_num=9, 初值OSC1_KD_K[17]=50, OSC1_KD_D[17]=50.
+}
+window.OSC1_KDlization = OSC1_KDlization;
+//----------------------------------------------------------------------
+
+//===Designed by Prof Wang, 2026-September-17======完全自行創新==============
+//OSC1與OSC2振盪指標(OSC, Oscillator)KD化。 OSC1=C-MA 。 OSC2=C/MA
+function OSC2_KDlization(STK_close, MA_day, KD_num) {
+  // Menu Name: OSC2_KD(C/MA)   //MA_day=5,10,...//KD_num=9,10,11,...
+  const OSC2=[];                //OSC1=(C-MA),  OSC2=(C/MA)
+  const MA = KingMA(STK_close, MA_day);
+  for(let i=MA_day; i<=STK_close.length; i++) {  //i=10 to 2000
+    //OSC1[i]=STK_close[i]-MA[i];
+    OSC2[i]=STK_close[i]/MA[i];  //OSC2-1=BIAS=(C-MA)/MA
+  }
+  //Calculate OSC2_KD_K[i] , =17 to 2000, if KD_num=9,max_day=10
+  //RSV=100*(OSC2[i]-min)/(max-min)
+  let max_day=MA_day;       //max_day=10, if MA_day=10
+  const OSC2_KD_K=[];  //OSC2_KD_K[]=17 to 2000, if KD_num=9,max_day=10=MA_day
+  const OSC2_KD_D=[];  //OSC2_KD_D[]=17 to 2000, if KD_num=9,max_day=10=MA_day
+  OSC2_KD_K[max_day+KD_num-2]=50;  //初值OSC2_KD_K[17]=50, if KD_num=9,max_day=10
+  OSC2_KD_D[max_day+KD_num-2]=50;  //初值OSC2_KD_D[17]=50, if KD_num=9,max_day=10
+  let RSV=0;       //RSV=100*(OSC2[i]-min)/(max-min)
+  let max=0;       //max=Max(OSC2[10-->18]), 已設OSC2[10]為最大
+  let min=0;       //min=Min(OSC2[10-->18]), 已設OSC2[10]為最小
+  for(let i=max_day+KD_num-1; i<=STK_close.length; i++) {  //i=18 to 2000
+    max=OSC2[i-KD_num+1];  //=10, max=Max(OSC2[10-->18])
+    min=OSC2[i-KD_num+1];  //=10, min=Min(OSC2[10-->18])
+    for(let j=i-KD_num+2; j<=i; j++) {  //j=11 to 18, if KD_num=9
+      if(OSC2[j]>max) { max=OSC2[j]; }  //max=Max(OSC2[11-->18])
+      if(OSC2[j]<min) { min=OSC2[j]; }  //min=Min(OSC2[11-->18])
+    }
+    if(max===min) { RSV=50; }  //避免分母為0,RSV=50
+    else {
+      RSV=(OSC2[i]-min)/(max-min)*100; //here OSC2[]=[28]
+    }
+    OSC2_KD_K[i]=(2/3)*OSC2_KD_K[i-1]+(1/3)*RSV;          //first time i=18
+    OSC2_KD_D[i]=(2/3)*OSC2_KD_D[i-1]+(1/3)*OSC2_KD_K[i]; //first time i=18
+    //可考慮再對OSC2_KD_K[],OSC2_KD_D[]做一次平滑化
+  }
+  return { OSC2_KD_K, OSC2_KD_D};
+  //drawing these figures in the small windows.
+  //if MA_day=10, OSC2[], OSC2[]=10 to 2000.
+  //if MA_day=10, KD_num=9 then OSC2_KD_K[],OSC2_KD_D[]=17 to 2000. 
+  //if MA_day=10, KD_num=9, 初值OSC2_KD_K[17]=50, OSC2_KD_D[17]=50.
+}
+window.OSC2_KDlization = OSC2_KDlization;
+//----------------------------------------------------------------------
+
+//===Designed by Prof Wang,===2026-Sept-17======完全自行創新==============
+//Flexible_KD  (renamed 2026-09-17, was Flexible_KDlization)
+//Flexible KD彈性隨機指標(Flexible Stochastic Indicator)(Typical Price)
+//係數不用原來的<2/3, 1/3>, 改用 0.1<=alpha, beta<=0.9
+function Flexible_KD(STK_high, STK_low, STK_close, KD_day, alpha, beta) {
+  // Menu Name: Flexible_KD         //KD_day=9,10,... 0.1<=alpha, beta<=0.9
+  if(alpha > 9) { alpha = 9; } else if(alpha < 1) { alpha = 1; }
+  if(beta > 9) { beta = 9; } else if(beta < 1) { beta = 1; }
+  alpha = alpha/10;   //0.1<=alpha<=0.9
+  beta = beta/10;     //0.1<=beta<=0.9
+  const TP=[];        //Typical Price, =1 to 2000
+  for(let i=1; i<=STK_high.length; i++) {  //=1 to 2000
+    TP[i] = (STK_high[i]+STK_low[i]+4*STK_close[i])/6;  //Typical Price
+  }
+  const Flexible_KD_K=[], Flexible_KD_D=[];  //=9 to 2000, if KD_day=9  (fix 2026-09-17: added const, were undeclared globals)
+  let rsv;
+  let max, min=0;
+  Flexible_KD_K[KD_day-1]=50;  //_K[8]=50初值,if KD_day=9  (fix 2026-09-17: was "Flexible_KD_K=[KD_day-1]=50;", a syntax error that stopped this whole file from loading)
+  Flexible_KD_D[KD_day-1]=50;  //_D[8]=50初值,if KD_day=9  (fix 2026-09-17: same)
+  for(let i=KD_day; i<=STK_high.length; i++) {  //=9 to 2000
+    max=TP[i-KD_day+1];  //令第一筆TP[1]為最大
+    min=TP[i-KD_day+1];  //令第一筆TP[1]為最小
+    for(let j=i-KD_day+2; j<=i; j++) {  //j=2 to 9
+      max = Math.max(max, TP[j]);
+      min = Math.min(min, TP[j]);
+    }
+    if(max === min) {
+      rsv = 100; } 
+    else {
+      rsv=(TP[i]-min)/(max-min)*100;
+    }
+    Flexible_KD_K[i]=alpha*Flexible_KD_K[i-1]+(1-alpha)*rsv;  //fix 2026-09-17: was rsv(i) - rsv is a number, not a function
+    Flexible_KD_D[i]=beta*Flexible_KD_D[i-1]+(1-beta)*Flexible_KD_K[i];
+  }
+  return { Flexible_KD_K, Flexible_KD_D };
+  //drawing these indicators in the small windows. 
+  //if KD_day=9, Flexible_KD_K[], Flexible_KD_D[]=8,9,,...,2000.
+  //if KD_day=9, Flexible_KD_K[8]=Flexible_KD_D[8]=50.
+}
+window.Flexible_KD = Flexible_KD;
+//----------------------------------------------------------------------
+
+
+
+
+
+
+
+
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -10238,6 +10753,8 @@ window.BBI5_KDliztion = BBI5_KDliztion;
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
+//----------------------------------------------------------------------
+
 
 
 

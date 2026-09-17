@@ -5,8 +5,10 @@
  * they draw, so each is one row here, turned into a registry entry below.
  *   fn          window.<fn> to call
  *   inputs      candle fields passed first, in the function's argument order
- *   params      the remaining arguments in order: [name, default, fractional?]
- *               (non-fractional ones are day counts and get rounded)
+ *   params      the remaining arguments in order: [name, default, options?]
+ *               options is `true` for a fractional value, or an object
+ *               { fractional?, label?, min?, max? } (non-fractional values are
+ *               day counts and get rounded)
  *   lines       returned arrays drawn as lines; `titles` renames any in the legend
  *   histogram   returned array drawn as bars (coloured by `colorKey`'s
  *               "Green"/"Red"/"Blue" per bar if given, else by sign)
@@ -101,22 +103,40 @@
     VariRtEMA_1DayAgo:       { name: 'VariRtEMA_OneDayAgo', type: 'momentum', fn: 'VariantRateEMA_OneDayAgo', inputs: ['high', 'low', 'close'], params: [['esp', 9]], lines: ['VarRtEMA_OneDayAgo'] },
     VariRtEMA_2DaysAgo:      { name: 'VariRtEMA_TwoDaysAgo', type: 'momentum', fn: 'VariantRateEMA_TwoDaysAgo', inputs: ['high', 'low', 'close'], params: [['esp', 9]], lines: ['VarRtEMA_TwoDaysAgo'] },
     VariRtEMA_3DaysAgo:      { name: 'VariRtEMA_ThreeDaysAgo', type: 'momentum', fn: 'VariantRateEMA_ThreeDaysAgo', inputs: ['high', 'low', 'close'], params: [['esp', 9]], lines: ['VarRtEMA_ThreeDaysAgo'] },
-    EMA_KD_TP:               { name: 'EMA_KD(TP)', type: 'oscillator', fn: 'EMA_KDliztion_TP', inputs: ['high', 'low', 'close'], params: [['EMA_num', 10], ['KD_num', 9]], lines: ['EMA_KD_K', 'EMA_KD_D'] },
-    BIAS_KD_TP:              { name: 'BIAS_KD(TP)', type: 'oscillator', fn: 'BIAS_KDliztion_TP', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['BIAS_KD_K', 'BIAS_KD_D'] },
+    EMA_KD_TP:               { name: 'EMA_KD(TP)', type: 'oscillator', fn: 'EMA_KDlization_TP', inputs: ['high', 'low', 'close'], params: [['EMA_num', 10], ['KD_num', 9]], lines: ['EMA_KD_K', 'EMA_KD_D'] },
+    BIAS_KD_TP:              { name: 'BIAS_KD(TP)', type: 'oscillator', fn: 'BIAS_KDlization_TP', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['BIAS_KD_K', 'BIAS_KD_D'] },
     // MTM (TP/TP_n*100) and ROC ((TP/TP_n-1)*100) differ by a constant 100, and the
     // KD's min-max scaling cancels it - so these two draw the same pair of lines.
-    MTM_KD_TP:               { name: 'MTM_KD(TP)', type: 'oscillator', fn: 'MTM_KDliztion_TP', inputs: ['high', 'low', 'close'], params: [['MTM_num', 5], ['KD_num', 9]], lines: ['MTM_KD_K', 'MTM_KD_D'], minPeriod: 15 },
-    ROC_KD_TP:               { name: 'ROC_KD(TP)', type: 'oscillator', fn: 'ROC_KDliztion_TP', inputs: ['high', 'low', 'close'], params: [['ROC_num', 5], ['KD_num', 9]], lines: ['ROC_KD_K', 'ROC_KD_D'], minPeriod: 15 },
-    MAVol_KD:                { name: 'MAVol_KD', type: 'volume', fn: 'MAVol_KDliztion', inputs: ['volume'], params: [['MA_day', 5], ['KD_num', 9]], lines: ['MAVol_KD_K', 'MAVol_KD_D'], minPeriod: 14 },
-    BBI3_KD:                 { name: 'BBI3_KD', type: 'oscillator', fn: 'BBI3_KDliztion', inputs: ['close'], params: [['day1', 5], ['day2', 10], ['day3', 20], ['KD_num', 9]], lines: ['BBI3_KD_K', 'BBI3_KD_D'], minPeriod: 28 },
-    BBI4_KD:                 { name: 'BBI4_KD', type: 'oscillator', fn: 'BBI4_KDliztion', inputs: ['close'], params: [['day1', 5], ['day2', 10], ['day3', 20], ['day4', 25], ['KD_num', 9]], lines: ['BBI4_KD_K', 'BBI4_KD_D'], minPeriod: 33 },
-    BBI5_KD:                 { name: 'BBI5_KD', type: 'oscillator', fn: 'BBI5_KDliztion', inputs: ['close'], params: [['day1', 5], ['day2', 10], ['day3', 20], ['day4', 25], ['day5', 30], ['KD_num', 9]], lines: ['BBI5_KD_K', 'BBI5_KD_D'], minPeriod: 38 },
+    MTM_KD_TP:               { name: 'MTM_KD(TP)', type: 'oscillator', fn: 'MTM_KDlization_TP', inputs: ['high', 'low', 'close'], params: [['MTM_num', 5], ['KD_num', 9]], lines: ['MTM_KD_K', 'MTM_KD_D'], minPeriod: 15 },
+    ROC_KD_TP:               { name: 'ROC_KD(TP)', type: 'oscillator', fn: 'ROC_KDlization_TP', inputs: ['high', 'low', 'close'], params: [['ROC_num', 5], ['KD_num', 9]], lines: ['ROC_KD_K', 'ROC_KD_D'], minPeriod: 15 },
+    MAVol_KD:                { name: 'MAVol_KD', type: 'volume', fn: 'MAVol_KDlization', inputs: ['volume'], params: [['MA_day', 5], ['KD_num', 9]], lines: ['MAVol_KD_K', 'MAVol_KD_D'], minPeriod: 14 },
+    BBI3_KD:                 { name: 'BBI3_KD', type: 'oscillator', fn: 'BBI3_KDlization', inputs: ['close'], params: [['day1', 5], ['day2', 10], ['day3', 20], ['KD_num', 9]], lines: ['BBI3_KD_K', 'BBI3_KD_D'], minPeriod: 28 },
+    BBI4_KD:                 { name: 'BBI4_KD', type: 'oscillator', fn: 'BBI4_KDlization', inputs: ['close'], params: [['day1', 5], ['day2', 10], ['day3', 20], ['day4', 25], ['KD_num', 9]], lines: ['BBI4_KD_K', 'BBI4_KD_D'], minPeriod: 33 },
+    BBI5_KD:                 { name: 'BBI5_KD', type: 'oscillator', fn: 'BBI5_KDlization', inputs: ['close'], params: [['day1', 5], ['day2', 10], ['day3', 20], ['day4', 25], ['day5', 30], ['KD_num', 9]], lines: ['BBI5_KD_K', 'BBI5_KD_D'], minPeriod: 38 },
+    // Prof. Wang's 2026-September-14 to 17 batch. The plain *_KD versions take the
+    // KD of the raw series, so their `esp` changes nothing (the e* versions use it).
+    King_MACD:               { name: 'King_MACD', type: 'oscillator', fn: 'King_MACD', inputs: ['high', 'low', 'close'], params: [['N1', 12], ['N2', 26], ['N3', 9]], lines: ['DIF', 'MACD'], histogram: 'Bar' },
+    TwoMAbias_KD:            { name: 'TwoMAbias_KD', type: 'oscillator', fn: 'TwoMAbias_KDlization', inputs: ['close'], params: [['day1', 10], ['day2', 20], ['esp', 9], ['KD_num', 9]], lines: ['TwoMAbias_KD_K', 'TwoMAbias_KD_D'], minPeriod: 28 },
+    eTwoMAbias_KD:           { name: 'eTwoMAbias_KD', type: 'oscillator', fn: 'eTwoMAbias_KDlization', inputs: ['close'], params: [['day1', 10], ['day2', 20], ['esp', 9], ['KD_num', 9]], lines: ['eTwoMAbias_KD_K', 'eTwoMAbias_KD_D'], minPeriod: 28 },
+    TwoMABiasRate_KD:        { name: 'TwoMABiasRate_KD', type: 'oscillator', fn: 'TwoMABiasRate_KDlization', inputs: ['close'], params: [['day1', 10], ['day2', 20], ['esp', 9], ['KD_num', 9]], lines: ['TwoMABiasRate_KD_K', 'TwoMABiasRate_KD_D'], minPeriod: 28 },
+    eMABiasRate_KD:          { name: 'eMABiasRate_KD', type: 'oscillator', fn: 'eMABiasRate_KDlization', inputs: ['close'], params: [['day1', 10], ['day2', 20], ['esp', 9], ['KD_num', 9]], lines: ['eMABiasRate_KD_K', 'eMABiasRate_KD_D'], minPeriod: 28 },
+    TwoEMABiasRate_KD:       { name: 'TwoEMABiasRate_KD', type: 'oscillator', fn: 'TwoEMABiasRate_KDlization', inputs: ['high', 'low', 'close'], params: [['N1', 10], ['N2', 20], ['esp', 9], ['KD_num', 9]], lines: ['TwoEMABiasRate_KD_K', 'TwoEMABiasRate_KD_D'] },
+    // The 2026-09-16 rename of MABiasRate above - same formula, new output names.
+    TwoMABiasRate:           { name: 'TwoMABiasRate', type: 'oscillator', fn: 'TwoMABiasRate', inputs: ['close'], params: [['day1', 10], ['day2', 20], ['esp', 9]], lines: ['TwoMABiasRate', 'eTwoMABiasRate'] },
+    OSC1:                    { name: 'OSC1 (C-MA)', type: 'oscillator', fn: 'OSC1', inputs: ['close'], params: [['MA_day', 10]], lines: ['OSC1'] },
+    OSC2:                    { name: 'OSC2 (C/MA)', type: 'oscillator', fn: 'OSC2', inputs: ['close'], params: [['MA_day', 10]], lines: ['OSC2'], precision: 4 },
+    OSC1_KD:                 { name: 'OSC1_KD(C-MA)', type: 'oscillator', fn: 'OSC1_KDlization', inputs: ['close'], params: [['MA_day', 10], ['KD_num', 9]], lines: ['OSC1_KD_K', 'OSC1_KD_D'], minPeriod: 18 },
+    OSC2_KD:                 { name: 'OSC2_KD(C/MA)', type: 'oscillator', fn: 'OSC2_KDlization', inputs: ['close'], params: [['MA_day', 10], ['KD_num', 9]], lines: ['OSC2_KD_K', 'OSC2_KD_D'], minPeriod: 18 },
+    // alpha/beta are passed as 1-9 and divided by 10 inside; 7 is closest to the classic KD's 2/3.
+    Flexible_KD:             { name: 'Flexible_KD', type: 'oscillator', fn: 'Flexible_KD', inputs: ['high', 'low', 'close'], params: [['KD_day', 9], ['alpha', 7, { label: 'alpha (1-9 = 0.1-0.9)', min: 1, max: 9 }], ['beta', 7, { label: 'beta (1-9 = 0.1-0.9)', min: 1, max: 9 }]], lines: ['Flexible_KD_K', 'Flexible_KD_D'] },
   };
 
   const CATEGORY = { trend: 'Trend', momentum: 'Momentum', oscillator: 'Oscillators', volume: 'Volume', volatility: 'Volatility' };
   // After the palette's LINE1-3: extras that stay readable on a dark pane.
   const LINE_COLORS = [C.LINE1, C.LINE2, C.LINE3, '#e879f9', '#4ade80', '#f87171', '#a78bfa', '#fbbf24', '#94a3b8'];
   const IMPULSE_COLORS = { Green: '#22c55e', Red: '#ef4444', Blue: '#3b82f6' };
+  // A param row's third item: `true` (fractional) or { fractional, label, min, max }.
+  const paramOpts = (p) => (p[2] === true ? { fractional: true } : p[2] || {});
 
   Object.entries(TABLE).forEach(([id, spec]) => {
     const params = spec.params || [];
@@ -148,17 +168,20 @@
       name: spec.name,
       category: CATEGORY[spec.type] || 'Other',
       placement: 'pane',
-      params: params.map(([key, value]) => [key, key, value]),
-      minBars: spec.minPeriod || Math.max(2, ...params.filter(p => !p[2]).map(p => p[1])),
+      params: params.map((p) => {
+        const o = paramOpts(p);
+        return { key: p[0], label: o.label || p[0], default: p[1], min: o.min, max: o.max };
+      }),
+      minBars: spec.minPeriod || Math.max(2, ...params.filter(p => !paramOpts(p).fractional).map(p => p[1])),
       outputs,
       compute: (candles, p) => {
         const fn = window[spec.fn];
         if (typeof fn !== 'function') return {};
         // Day counts are used as array indices inside the Wang functions, and
         // the inputs accept decimals - so round everything not marked fractional.
-        const args = params.map(([key, value, fractional]) => {
-          const v = p[key] != null ? p[key] : value;
-          return fractional ? v : Math.round(v);
+        const args = params.map((param) => {
+          const v = p[param[0]] != null ? p[param[0]] : param[1];
+          return paramOpts(param).fractional ? v : Math.round(v);
         });
         const out = fn(...spec.inputs.map(field => candles.map(d => d[field] ?? 0)), ...args) || {};
         // out[i] is bar i's value; some of these arrays run one past the last bar.

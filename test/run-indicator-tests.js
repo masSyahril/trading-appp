@@ -19,9 +19,10 @@ const path = require('path');
 // so those assignments become normal globals we can call. Loaded in the same
 // order stock-market/index.html's ScriptLoader.loadTradingScripts() list
 // uses, since later files intentionally override earlier same-named globals
-// (e.g. the "-prods" bundle is meant to win over technical-indicators-wang.js)
-// and some files (MAoneMAtwo, PVI, Bollinger4SD, ...) only exist as these
-// separate small Wang_design_* files, not inside the two big bundles.
+// (e.g. the "-prods" bundle is meant to win over technical-indicators-wang.js).
+// The one separate Wang_design_* file left holds the Hull MA: its
+// computeHullMA is correct and the bundle's HullMA is not
+// (docs/PROF-WANG-BUG-REPORT-2026-09-12.md).
 global.window = global;
 global.document = { addEventListener() {} };
 
@@ -33,15 +34,8 @@ const scriptOrder = [
   utils('indicators.js'),
   core('technical-indicators.js'),
   core('Wang_design__HullMA _2026-01-18.js'),
-  core('Wang_design_DEMA_2026-03-14.js'),
   core('technical-indicators-wang.js'),
   core('multi-indicator-system.js'),
-  core('Wang_design_new_indicators__RandomWalkIndex _2026-01-20.js'),
-  core('Wang_design__MAoneMAtwor_2026-04-06.js'),
-  core('Wang_design_new_indicators__Alligator_2026-01-29.js'),
-  core('Wang_design_new_indicators__PVI_percentRiseFall_2026-03-10.js'),
-  core('Wang_design_new_indicators__Bollinger4SD_2026-02-28_.js'),
-  core('Wang_design_new_indicators__VolumeRSI_2026-03-08.js'),
   core('technical-indicators.prods__Wang__2026.js'),
 ];
 

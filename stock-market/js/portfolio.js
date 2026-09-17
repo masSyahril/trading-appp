@@ -13,6 +13,16 @@ window.TradeFlowPortfolio = (function () {
 
   let state = loadState();
 
+  // When a signed-in user's page has pages/auth/order-authority.js active,
+  // it calls setLocalAutoTriggersEnabled(false) once it's confirmed the
+  // server's own periodic reconciliation (api/orders/check-fills.php) is
+  // the one deciding limit/stop fills and stop-loss/take-profit hits for
+  // that account - this flag stops the local polling below from ALSO
+  // deciding (and possibly disagreeing with) the same fills. Logged-out /
+  // local-only use is completely unaffected: this stays true and behaves
+  // exactly as it always has.
+  let localAutoTriggersEnabled = true;
+
   waitForSeam(init);
 
   function waitForSeam(cb) {
@@ -33,7 +43,10 @@ window.TradeFlowPortfolio = (function () {
     setupTabs();
     setupCollapse();
     window.TradeFlowChart.onSymbolChange(() => render());
-    setInterval(() => { checkWorkingOrderFills(); checkPositionStops(); render(); }, FILL_CHECK_INTERVAL_MS);
+    setInterval(() => {
+      if (localAutoTriggersEnabled) { checkWorkingOrderFills(); checkPositionStops(); }
+      render();
+    }, FILL_CHECK_INTERVAL_MS);
     render();
   }
 
@@ -312,5 +325,72 @@ window.TradeFlowPortfolio = (function () {
     }, 4000);
   }
 
-  return { submitOrder, closePosition, cancelOrder, editOrderPrice, getAccountSummary };
+  // ─── Server-authority hooks ─────────────────────────────────────────────
+  // Additive only - nothing above this point changes for a logged-out or
+  // local-only session. pages/auth/order-authority.js is the only caller
+  // of everything below, and only once it's confirmed the user is signed
+  // in (see that file for the full integration).
+
+  // A signed-in market fill: the server (api/orders/place.php) already
+  // decided entryPrice using its own live-price fetch, so this just stores
+  // the position it returned - no local price lookup involved.
+  function addServerPosition(position) {
+    state.positions.push(position);
+    save();
+    render();
+    showToast(`${position.side.toUpperCase()} filled: ${position.size} ${position.symbol} @ ${position.entryPrice.toFixed(2)}`);
+  }
+
+  // A signed-in close: the server (api/orders/close.php) already decided
+  // the exit price - same shape as the local closePositionAt, just fed a
+  // server-verified price instead of a locally-read one.
+  function closePositionAtPrice(id, price, reason) {
+    const pos = state.positions.find(p => p.id === id);
+    if (!pos) return false;
+    closePositionAt(pos, price, reason || 'Closed');
+    return true;
+  }
+
+  function getWorkingOrder(id) {
+    return state.workingOrders.find(o => o.id === id) || null;
+  }
+
+  // Used after api/orders/edit-price.php confirms a reprice server-side -
+  // mirrors editOrderPrice's own local mutation without re-prompting.
+  function updateWorkingOrderPrice(id, price) {
+    const order = state.workingOrders.find(o => o.id === id);
+    if (!order) return false;
+    order.price = price;
+    save();
+    render();
+    return true;
+  }
+
+  // Full resync after api/orders/check-fills.php reconciles limit/stop
+  // triggers and stop-loss/take-profit hits server-side - the server's
+  // portfolio shape (balance/positions/workingOrders/history, each item
+  // already field-for-field identical to this module's own state shape)
+  // just replaces local state outright, the same way a fresh
+  // api/state/bootstrap.php response does on page load.
+  function applyServerState(serverPortfolio) {
+    if (!serverPortfolio) return;
+    state = {
+      balance: serverPortfolio.balance,
+      positions: serverPortfolio.positions || [],
+      workingOrders: serverPortfolio.workingOrders || [],
+      history: serverPortfolio.history || [],
+    };
+    save();
+    render();
+  }
+
+  function setLocalAutoTriggersEnabled(enabled) {
+    localAutoTriggersEnabled = !!enabled;
+  }
+
+  return {
+    submitOrder, closePosition, cancelOrder, editOrderPrice, getAccountSummary,
+    addServerPosition, closePositionAtPrice, getWorkingOrder, updateWorkingOrderPrice,
+    applyServerState, setLocalAutoTriggersEnabled,
+  };
 })();

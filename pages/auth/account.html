@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="auth.account.pageTitle">Account Settings - TradeLite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="auth-theme.css">
+</head>
+<body class="tl-auth-body">
+  <div style="position:fixed; top:16px; right:16px; z-index:60;" data-tl-lang-switcher></div>
+  <a class="tl-auth-brand" href="../../index.html">📊 <span>TradeLite</span></a>
+
+  <div class="tl-account-wrap">
+
+    <div class="tl-auth-card">
+      <h1 class="tl-auth-title" data-i18n="auth.account.title">Account settings</h1>
+      <p class="tl-auth-subtitle" style="margin-bottom:0;" data-i18n="auth.account.subtitle">Manage your profile, password and signed-in devices.</p>
+    </div>
+
+    <div class="tl-auth-card">
+      <h2 class="tl-section-title" data-i18n="auth.account.profileTitle">Profile</h2>
+      <div class="tl-row" style="margin-bottom: 18px;">
+        <p class="tl-section-sub" id="email-line" style="margin:0;" data-i18n="common.loading">Loading...</p>
+        <button class="tl-btn tl-btn-secondary" type="button" id="resend-btn" style="display:none;" data-i18n="auth.account.resendBtn">Resend verification email</button>
+      </div>
+      <div id="page-alert"></div>
+      <form id="profile-form" novalidate>
+        <div class="tl-field">
+          <label for="display-name" data-i18n="auth.account.displayNameLabel">Display name</label>
+          <input class="tl-input" type="text" id="display-name" name="display_name" maxlength="100" required>
+        </div>
+        <button class="tl-btn tl-btn-primary" type="submit" id="profile-submit" style="width:auto;" data-i18n="auth.account.saveNameBtn">Save name</button>
+      </form>
+    </div>
+
+    <div class="tl-auth-card">
+      <h2 class="tl-section-title" data-i18n="auth.account.passwordTitle">Change password</h2>
+      <p class="tl-section-sub" data-i18n="auth.account.passwordSubtitle">You'll stay signed in on this device, but every other signed-in device will be logged out.</p>
+      <div id="password-alert"></div>
+      <form id="password-form" novalidate>
+        <div class="tl-field">
+          <label for="current-password" data-i18n="auth.account.currentPasswordLabel">Current password</label>
+          <input class="tl-input" type="password" id="current-password" autocomplete="current-password" required>
+        </div>
+        <div class="tl-field">
+          <label for="new-password" data-i18n="auth.account.newPasswordLabel">New password</label>
+          <input class="tl-input" type="password" id="new-password" autocomplete="new-password" required>
+        </div>
+        <div class="tl-field">
+          <label for="confirm-password" data-i18n="auth.account.confirmPasswordLabel">Confirm new password</label>
+          <input class="tl-input" type="password" id="confirm-password" autocomplete="new-password" required>
+        </div>
+        <button class="tl-btn tl-btn-primary" type="submit" id="password-submit" style="width:auto;" data-i18n="auth.account.updatePasswordBtn">Update password</button>
+      </form>
+    </div>
+
+    <div class="tl-auth-card">
+      <div class="tl-row" style="margin-bottom: 4px;">
+        <h2 class="tl-section-title" style="margin-bottom:0;" data-i18n="auth.account.sessionsTitle">Signed-in devices</h2>
+        <button class="tl-btn tl-btn-danger" type="button" id="revoke-all-btn" data-i18n="auth.account.revokeAllBtn">Log out other devices</button>
+      </div>
+      <p class="tl-section-sub" data-i18n="auth.account.sessionsSubtitle">Every device currently signed in to your account.</p>
+      <div id="sessions-alert"></div>
+      <div class="tl-session-list" id="sessions-list">
+        <p class="tl-empty" data-i18n="auth.account.loadingSessions">Loading sessions...</p>
+      </div>
+    </div>
+
+  </div>
+
+  <a class="tl-back-link" href="../../index.html" data-i18n="auth.backToTradeLite">&larr; Back to TradeLite</a>
+
+  <script src="../../i18n/i18n.js"></script>
+  <script src="../../i18n/lang-switcher.js"></script>
+  <script src="auth-client.js"></script>
+  <script>
+    (async function () {
+      function t(key, vars) {
+        return window.TLI18n ? window.TLI18n.t(key, vars) : key;
+      }
+
+      // This whole page is a settings form full of button/status labels
+      // that get rewritten constantly by JS - simplest to wait for
+      // translations up front rather than thread readiness through every
+      // handler below.
+      if (window.TLI18n && window.TLI18n.ready) { await window.TLI18n.ready; }
+
+      const pageAlert = document.getElementById('page-alert');
+      const emailLine = document.getElementById('email-line');
+      const resendBtn = document.getElementById('resend-btn');
+      const displayNameInput = document.getElementById('display-name');
+      const profileForm = document.getElementById('profile-form');
+      const profileSubmit = document.getElementById('profile-submit');
+
+      const passwordForm = document.getElementById('password-form');
+      const passwordSubmit = document.getElementById('password-submit');
+      const passwordAlert = document.getElementById('password-alert');
+
+      const sessionsList = document.getElementById('sessions-list');
+      const sessionsAlert = document.getElementById('sessions-alert');
+      const revokeAllBtn = document.getElementById('revoke-all-btn');
+
+      function showAlert(el, kind, message) {
+        el.innerHTML = message ? `<div class="tl-alert tl-alert-${kind}">${message}</div>` : '';
+      }
+
+      function escapeHtml(str) {
+        const d = document.createElement('div');
+        d.textContent = str == null ? '' : String(str);
+        return d.innerHTML;
+      }
+
+      function dateLocale() {
+        return window.TLI18n && window.TLI18n.getLocale() === 'zh-TW' ? 'zh-TW' : 'en-US';
+      }
+
+      function formatDate(mysqlDatetime) {
+        try {
+          // Server sends naive UTC "YYYY-MM-DD HH:MM:SS" (DB is UTC-agnostic
+          // but all timestamps are written by NOW()); treat as UTC so it
+          // renders correctly in the viewer's local time, in their language.
+          return new Date(mysqlDatetime.replace(' ', 'T') + 'Z').toLocaleString(dateLocale());
+        } catch (e) {
+          return mysqlDatetime;
+        }
+      }
+
+      function loadProfile() {
+        TLAuth.me().then((res) => {
+          if (!res.authenticated) {
+            window.location.href = 'login.html';
+            return;
+          }
+          const user = res.user;
+          displayNameInput.value = user.display_name || '';
+          const badge = user.email_verified
+            ? `<span class="tl-badge tl-badge-verified">${t('auth.account.verifiedBadge')}</span>`
+            : `<span class="tl-badge tl-badge-unverified">${t('auth.account.unverifiedBadge')}</span>`;
+          emailLine.innerHTML = `${escapeHtml(user.email)}&nbsp; ${badge}`;
+          resendBtn.style.display = user.email_verified ? 'none' : '';
+        }).catch(() => {
+          window.location.href = 'login.html';
+        });
+      }
+
+      resendBtn.addEventListener('click', async () => {
+        resendBtn.disabled = true;
+        resendBtn.textContent = t('auth.account.resendingBtn');
+        try {
+          await TLAuth.resendVerification();
+          resendBtn.textContent = t('auth.account.resendSentBtn');
+        } catch (err) {
+          showAlert(pageAlert, 'error', err.message || t('auth.account.resendError'));
+          resendBtn.disabled = false;
+          resendBtn.textContent = t('auth.account.resendBtn');
+        }
+      });
+
+      function loadSessions() {
+        TLAuth.listSessions().then((res) => {
+          renderSessions(res.sessions || []);
+        }).catch((err) => {
+          sessionsList.innerHTML = '';
+          showAlert(sessionsAlert, 'error', err.message || t('auth.account.loadSessionsError'));
+        });
+      }
+
+      function renderSessions(sessions) {
+        if (sessions.length === 0) {
+          sessionsList.innerHTML = `<p class="tl-empty">${t('auth.account.noSessions')}</p>`;
+          return;
+        }
+        sessionsList.innerHTML = sessions.map((s) => `
+          <div class="tl-session-item" data-session-id="${escapeHtml(s.id)}">
+            <div class="tl-session-info">
+              <span class="tl-session-device">
+                ${escapeHtml(s.device)}${s.is_current ? `<span class="tl-badge tl-badge-current">${t('auth.account.thisDevice')}</span>` : ''}
+              </span>
+              <span class="tl-session-meta">${escapeHtml(t('auth.account.sessionMetaLine', { ip: s.ip_address || t('auth.account.unknownIp'), time: formatDate(s.last_seen_at) }))}</span>
+            </div>
+            ${s.is_current ? '' : `<button type="button" class="tl-btn tl-btn-secondary tl-session-logout">${t('auth.account.logoutDeviceBtn')}</button>`}
+          </div>
+        `).join('');
+
+        sessionsList.querySelectorAll('.tl-session-logout').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const item = btn.closest('.tl-session-item');
+            const sessionId = item.getAttribute('data-session-id');
+            btn.disabled = true;
+            btn.textContent = t('auth.account.loggingOutDeviceBtn');
+            try {
+              await TLAuth.revokeSession(sessionId);
+              loadSessions();
+            } catch (err) {
+              showAlert(sessionsAlert, 'error', err.message || t('auth.account.logoutDeviceError'));
+              btn.disabled = false;
+              btn.textContent = t('auth.account.logoutDeviceBtn');
+            }
+          });
+        });
+      }
+
+      profileForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        showAlert(pageAlert, '', '');
+        const name = displayNameInput.value.trim();
+
+        profileSubmit.disabled = true;
+        profileSubmit.innerHTML = `<span class="tl-spinner"></span>${t('auth.account.savingBtn')}`;
+        try {
+          await TLAuth.updateProfile(name);
+          showAlert(pageAlert, 'success', t('auth.account.nameUpdated'));
+        } catch (err) {
+          showAlert(pageAlert, 'error', err.message || t('auth.account.nameUpdateError'));
+        } finally {
+          profileSubmit.disabled = false;
+          profileSubmit.textContent = t('auth.account.saveNameBtn');
+        }
+      });
+
+      passwordForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        showAlert(passwordAlert, '', '');
+        const current = document.getElementById('current-password').value;
+        const next = document.getElementById('new-password').value;
+        const confirm = document.getElementById('confirm-password').value;
+
+        if (next !== confirm) {
+          showAlert(passwordAlert, 'error', t('auth.account.passwordMismatch'));
+          return;
+        }
+
+        passwordSubmit.disabled = true;
+        passwordSubmit.innerHTML = `<span class="tl-spinner"></span>${t('auth.account.updatingBtn')}`;
+        try {
+          await TLAuth.changePassword(current, next);
+          showAlert(passwordAlert, 'success', t('auth.account.passwordUpdated'));
+          passwordForm.reset();
+          loadSessions();
+        } catch (err) {
+          showAlert(passwordAlert, 'error', err.message || t('auth.account.passwordUpdateError'));
+        } finally {
+          passwordSubmit.disabled = false;
+          passwordSubmit.textContent = t('auth.account.updatePasswordBtn');
+        }
+      });
+
+      revokeAllBtn.addEventListener('click', async () => {
+        revokeAllBtn.disabled = true;
+        revokeAllBtn.textContent = t('auth.account.revokeAllLoadingBtn');
+        try {
+          const res = await TLAuth.revokeOtherSessions();
+          showAlert(sessionsAlert, 'success', t('auth.account.revokeAllSuccess', { count: res.revoked }));
+          loadSessions();
+        } catch (err) {
+          showAlert(sessionsAlert, 'error', err.message || t('auth.account.revokeAllError'));
+        } finally {
+          revokeAllBtn.disabled = false;
+          revokeAllBtn.textContent = t('auth.account.revokeAllBtn');
+        }
+      });
+
+      // Re-render the parts this page builds itself (badges, the sessions
+      // list) when the language changes - data-i18n elements refresh on
+      // their own, but this JS-generated markup doesn't carry those
+      // attributes, so it needs an explicit nudge.
+      window.addEventListener('tl:localechange', () => {
+        loadProfile();
+        loadSessions();
+      });
+
+      loadProfile();
+      loadSessions();
+    })();
+  </script>
+</body>
+</html>

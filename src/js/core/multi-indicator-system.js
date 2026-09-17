@@ -16,8 +16,10 @@ const TIME_SCALE_BAR_SPACING = 6;
 // definitions sharing computeWangPanel()/renderWangPanel().
 //   fn          window.<fn> to call
 //   inputs      candle fields passed first, in the function's argument order
-//   params      the remaining arguments in order: [name, default, fractional?]
-//               (non-fractional ones are day counts and get rounded)
+//   params      the remaining arguments in order: [name, default, options?]
+//               options is `true` for a fractional value, or an object
+//               { fractional?, label?, min?, max? } (non-fractional values are
+//               day counts and get rounded; min/max apply on the stock pages only)
 //   lines       returned arrays drawn as lines; `titles` renames any in the legend
 //   histogram   returned array drawn as bars (colored by `colorKey`'s
 //               "Green"/"Red"/"Blue" per bar if given, else by sign)
@@ -94,7 +96,7 @@ const WANG_PANEL_INDICATORS = {
   PFE:                     { name: 'Polarized(PFE)', type: 'trend', fn: 'PolarizedFractalEfficiency', inputs: ['close'], params: [['num', 10], ['esp', 9]], lines: ['PFE', 'ePFE'] },
   IBS:                     { name: 'IBS', type: 'oscillator', fn: 'InternalBarStrength', inputs: ['high', 'low', 'close'], params: [['esp', 9]], lines: ['IBS', 'eIBS'], precision: 4 },
   // Prof. Wang's 2026-September batch.
-  BIAS2:                   { name: 'BIAS(C-EMA)/EMA', type: 'oscillator', fn: 'BIAS2', inputs: ['close'], params: [['esp', 9]], lines: ['BIAS2', 'eBIAS2'] },
+  BIAS2:                   { name: 'BIAS 2(C-EMA)/EMA', type: 'oscillator', fn: 'BIAS2', inputs: ['close'], params: [['esp', 9]], lines: ['BIAS2', 'eBIAS2'] },
   MABiasRate:              { name: 'MABiasRate', type: 'oscillator', fn: 'MABiasRate', inputs: ['close'], params: [['day1', 5], ['day2', 10], ['esp', 9]], lines: ['MABiasRate', 'eMABiasRate'] },
   EMABiasRate:             { name: 'EMABiasRate', type: 'oscillator', fn: 'EMABiasRate', inputs: ['close'], params: [['day1', 5], ['day2', 10], ['esp', 9]], lines: ['EMABiasRate', 'eEMABiasRate'] },
   VariRtMA_1DayAgo:        { name: 'VariRtMA_OneDayAgo', type: 'momentum', fn: 'VariantRateMA_OneDayAgo', inputs: ['close'], params: [['MA_day', 5]], lines: ['VarRtMA_OneDayAgo'], minPeriod: 6 },
@@ -103,17 +105,36 @@ const WANG_PANEL_INDICATORS = {
   VariRtEMA_1DayAgo:       { name: 'VariRtEMA_OneDayAgo', type: 'momentum', fn: 'VariantRateEMA_OneDayAgo', inputs: ['high', 'low', 'close'], params: [['esp', 9]], lines: ['VarRtEMA_OneDayAgo'] },
   VariRtEMA_2DaysAgo:      { name: 'VariRtEMA_TwoDaysAgo', type: 'momentum', fn: 'VariantRateEMA_TwoDaysAgo', inputs: ['high', 'low', 'close'], params: [['esp', 9]], lines: ['VarRtEMA_TwoDaysAgo'] },
   VariRtEMA_3DaysAgo:      { name: 'VariRtEMA_ThreeDaysAgo', type: 'momentum', fn: 'VariantRateEMA_ThreeDaysAgo', inputs: ['high', 'low', 'close'], params: [['esp', 9]], lines: ['VarRtEMA_ThreeDaysAgo'] },
-  EMA_KD_TP:               { name: 'EMA_KD(TP)', type: 'oscillator', fn: 'EMA_KDliztion_TP', inputs: ['high', 'low', 'close'], params: [['EMA_num', 10], ['KD_num', 9]], lines: ['EMA_KD_K', 'EMA_KD_D'] },
-  BIAS_KD_TP:              { name: 'BIAS_KD(TP)', type: 'oscillator', fn: 'BIAS_KDliztion_TP', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['BIAS_KD_K', 'BIAS_KD_D'] },
+  EMA_KD_TP:               { name: 'EMA_KD(TP)', type: 'oscillator', fn: 'EMA_KDlization_TP', inputs: ['high', 'low', 'close'], params: [['EMA_num', 10], ['KD_num', 9]], lines: ['EMA_KD_K', 'EMA_KD_D'] },
+  BIAS_KD_TP:              { name: 'BIAS_KD(TP)', type: 'oscillator', fn: 'BIAS_KDlization_TP', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['BIAS_KD_K', 'BIAS_KD_D'] },
   // MTM (TP/TP_n*100) and ROC ((TP/TP_n-1)*100) differ by a constant 100, and the
   // KD's min-max scaling cancels it - so these two draw the same pair of lines.
-  MTM_KD_TP:               { name: 'MTM_KD(TP)', type: 'oscillator', fn: 'MTM_KDliztion_TP', inputs: ['high', 'low', 'close'], params: [['MTM_num', 5], ['KD_num', 9]], lines: ['MTM_KD_K', 'MTM_KD_D'], minPeriod: 15 },
-  ROC_KD_TP:               { name: 'ROC_KD(TP)', type: 'oscillator', fn: 'ROC_KDliztion_TP', inputs: ['high', 'low', 'close'], params: [['ROC_num', 5], ['KD_num', 9]], lines: ['ROC_KD_K', 'ROC_KD_D'], minPeriod: 15 },
-  MAVol_KD:                { name: 'MAVol_KD', type: 'volume', fn: 'MAVol_KDliztion', inputs: ['volume'], params: [['MA_day', 5], ['KD_num', 9]], lines: ['MAVol_KD_K', 'MAVol_KD_D'], minPeriod: 14 },
-  BBI3_KD:                 { name: 'BBI3_KD', type: 'oscillator', fn: 'BBI3_KDliztion', inputs: ['close'], params: [['day1', 5], ['day2', 10], ['day3', 20], ['KD_num', 9]], lines: ['BBI3_KD_K', 'BBI3_KD_D'], minPeriod: 28 },
-  BBI4_KD:                 { name: 'BBI4_KD', type: 'oscillator', fn: 'BBI4_KDliztion', inputs: ['close'], params: [['day1', 5], ['day2', 10], ['day3', 20], ['day4', 25], ['KD_num', 9]], lines: ['BBI4_KD_K', 'BBI4_KD_D'], minPeriod: 33 },
-  BBI5_KD:                 { name: 'BBI5_KD', type: 'oscillator', fn: 'BBI5_KDliztion', inputs: ['close'], params: [['day1', 5], ['day2', 10], ['day3', 20], ['day4', 25], ['day5', 30], ['KD_num', 9]], lines: ['BBI5_KD_K', 'BBI5_KD_D'], minPeriod: 38 },
+  MTM_KD_TP:               { name: 'MTM_KD(TP)', type: 'oscillator', fn: 'MTM_KDlization_TP', inputs: ['high', 'low', 'close'], params: [['MTM_num', 5], ['KD_num', 9]], lines: ['MTM_KD_K', 'MTM_KD_D'], minPeriod: 15 },
+  ROC_KD_TP:               { name: 'ROC_KD(TP)', type: 'oscillator', fn: 'ROC_KDlization_TP', inputs: ['high', 'low', 'close'], params: [['ROC_num', 5], ['KD_num', 9]], lines: ['ROC_KD_K', 'ROC_KD_D'], minPeriod: 15 },
+  MAVol_KD:                { name: 'MAVol_KD', type: 'volume', fn: 'MAVol_KDlization', inputs: ['volume'], params: [['MA_day', 5], ['KD_num', 9]], lines: ['MAVol_KD_K', 'MAVol_KD_D'], minPeriod: 14 },
+  BBI3_KD:                 { name: 'BBI3_KD', type: 'oscillator', fn: 'BBI3_KDlization', inputs: ['close'], params: [['day1', 5], ['day2', 10], ['day3', 20], ['KD_num', 9]], lines: ['BBI3_KD_K', 'BBI3_KD_D'], minPeriod: 28 },
+  BBI4_KD:                 { name: 'BBI4_KD', type: 'oscillator', fn: 'BBI4_KDlization', inputs: ['close'], params: [['day1', 5], ['day2', 10], ['day3', 20], ['day4', 25], ['KD_num', 9]], lines: ['BBI4_KD_K', 'BBI4_KD_D'], minPeriod: 33 },
+  BBI5_KD:                 { name: 'BBI5_KD', type: 'oscillator', fn: 'BBI5_KDlization', inputs: ['close'], params: [['day1', 5], ['day2', 10], ['day3', 20], ['day4', 25], ['day5', 30], ['KD_num', 9]], lines: ['BBI5_KD_K', 'BBI5_KD_D'], minPeriod: 38 },
+  // Prof. Wang's 2026-September-14 to 17 batch. The plain *_KD versions take the
+  // KD of the raw series, so their `esp` changes nothing (the e* versions use it).
+  King_MACD:               { name: 'King_MACD', type: 'oscillator', fn: 'King_MACD', inputs: ['high', 'low', 'close'], params: [['N1', 12], ['N2', 26], ['N3', 9]], lines: ['DIF', 'MACD'], histogram: 'Bar' },
+  TwoMAbias_KD:            { name: 'TwoMAbias_KD', type: 'oscillator', fn: 'TwoMAbias_KDlization', inputs: ['close'], params: [['day1', 10], ['day2', 20], ['esp', 9], ['KD_num', 9]], lines: ['TwoMAbias_KD_K', 'TwoMAbias_KD_D'], minPeriod: 28 },
+  eTwoMAbias_KD:           { name: 'eTwoMAbias_KD', type: 'oscillator', fn: 'eTwoMAbias_KDlization', inputs: ['close'], params: [['day1', 10], ['day2', 20], ['esp', 9], ['KD_num', 9]], lines: ['eTwoMAbias_KD_K', 'eTwoMAbias_KD_D'], minPeriod: 28 },
+  TwoMABiasRate_KD:        { name: 'TwoMABiasRate_KD', type: 'oscillator', fn: 'TwoMABiasRate_KDlization', inputs: ['close'], params: [['day1', 10], ['day2', 20], ['esp', 9], ['KD_num', 9]], lines: ['TwoMABiasRate_KD_K', 'TwoMABiasRate_KD_D'], minPeriod: 28 },
+  eMABiasRate_KD:          { name: 'eMABiasRate_KD', type: 'oscillator', fn: 'eMABiasRate_KDlization', inputs: ['close'], params: [['day1', 10], ['day2', 20], ['esp', 9], ['KD_num', 9]], lines: ['eMABiasRate_KD_K', 'eMABiasRate_KD_D'], minPeriod: 28 },
+  TwoEMABiasRate_KD:       { name: 'TwoEMABiasRate_KD', type: 'oscillator', fn: 'TwoEMABiasRate_KDlization', inputs: ['high', 'low', 'close'], params: [['N1', 10], ['N2', 20], ['esp', 9], ['KD_num', 9]], lines: ['TwoEMABiasRate_KD_K', 'TwoEMABiasRate_KD_D'] },
+  // The 2026-09-16 rename of MABiasRate above - same formula, new output names.
+  TwoMABiasRate:           { name: 'TwoMABiasRate', type: 'oscillator', fn: 'TwoMABiasRate', inputs: ['close'], params: [['day1', 10], ['day2', 20], ['esp', 9]], lines: ['TwoMABiasRate', 'eTwoMABiasRate'] },
+  OSC1:                    { name: 'OSC1 (C-MA)', type: 'oscillator', fn: 'OSC1', inputs: ['close'], params: [['MA_day', 10]], lines: ['OSC1'] },
+  OSC2:                    { name: 'OSC2 (C/MA)', type: 'oscillator', fn: 'OSC2', inputs: ['close'], params: [['MA_day', 10]], lines: ['OSC2'], precision: 4 },
+  OSC1_KD:                 { name: 'OSC1_KD(C-MA)', type: 'oscillator', fn: 'OSC1_KDlization', inputs: ['close'], params: [['MA_day', 10], ['KD_num', 9]], lines: ['OSC1_KD_K', 'OSC1_KD_D'], minPeriod: 18 },
+  OSC2_KD:                 { name: 'OSC2_KD(C/MA)', type: 'oscillator', fn: 'OSC2_KDlization', inputs: ['close'], params: [['MA_day', 10], ['KD_num', 9]], lines: ['OSC2_KD_K', 'OSC2_KD_D'], minPeriod: 18 },
+  // alpha/beta are passed as 1-9 and divided by 10 inside; 7 is closest to the classic KD's 2/3.
+  Flexible_KD:             { name: 'Flexible_KD', type: 'oscillator', fn: 'Flexible_KD', inputs: ['high', 'low', 'close'], params: [['KD_day', 9], ['alpha', 7, { label: 'alpha (1-9 = 0.1-0.9)', min: 1, max: 9 }], ['beta', 7, { label: 'beta (1-9 = 0.1-0.9)', min: 1, max: 9 }]], lines: ['Flexible_KD_K', 'Flexible_KD_D'] },
 };
+
+// A WANG_PANEL_INDICATORS param's third item: `true` (fractional) or { fractional, label, min, max }.
+const wangParamOpts = (p) => (p[2] === true ? { fractional: true } : p[2] || {});
 
 // Colors for a Wang panel's lines: the theme's LINE1-3, then extras that stay
 // readable on the dark panel background (the theme's LINE4/LINE5 don't).
@@ -1619,8 +1640,8 @@ class MultiIndicatorSystem {
         name: spec.name,
         type: spec.type,
         defaultParams: Object.fromEntries(params.map(([name, value]) => [name, value])),
-        paramLabels: Object.fromEntries(params.map(([name]) => [name, name])),
-        minPeriod: spec.minPeriod || Math.max(2, ...params.filter(p => !p[2]).map(p => p[1])),
+        paramLabels: Object.fromEntries(params.map((p) => [p[0], wangParamOpts(p).label || p[0]])),
+        minPeriod: spec.minPeriod || Math.max(2, ...params.filter(p => !wangParamOpts(p).fractional).map(p => p[1])),
         compute: (data, p) => this.computeWangPanel(spec, data, p),
         render: (chart, data, colors, seriesMap) => this.renderWangPanel(spec, chart, data, colors, seriesMap),
       };
@@ -1636,9 +1657,9 @@ class MultiIndicatorSystem {
     if (len === 0 || typeof fn !== 'function') return out;
     // Day counts are used as array indices inside the Wang functions, and the
     // param inputs accept decimals - so round everything not marked fractional.
-    const args = (spec.params || []).map(([name, value, fractional]) => {
-      const v = params[name] != null ? params[name] : value;
-      return fractional ? v : Math.round(v);
+    const args = (spec.params || []).map((p) => {
+      const v = params[p[0]] != null ? params[p[0]] : p[1];
+      return wangParamOpts(p).fractional ? v : Math.round(v);
     });
     const raw = fn(...spec.inputs.map(field => data.map(d => d[field] ?? 0)), ...args) || {};
     keys.forEach(k => {

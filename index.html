@@ -479,107 +479,137 @@
     <header class="header">
         <div class="header-content">
             <div class="brand">TradeLite Hub</div>
-            <nav class="nav-links" role="navigation" aria-label="Main navigation">
-                <a href="#platforms" class="nav-link">Platforms</a>
-                <a href="#about" class="nav-link">About</a>
-                <a href="pages/utilities/recover_bitcoin_data.html" class="nav-link">Recovery Tools</a>
+            <nav class="nav-links" role="navigation" aria-label="Main navigation" data-i18n-aria-label="nav.mainLabel">
+                <a href="#platforms" class="nav-link" data-i18n="nav.platforms">Platforms</a>
+                <a href="#about" class="nav-link" data-i18n="nav.about">About</a>
+                <a href="pages/utilities/recover_bitcoin_data.html" class="nav-link" data-i18n="nav.recoveryTools">Recovery Tools</a>
             </nav>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div data-tl-lang-switcher></div>
+                <div data-tl-auth-widget data-api-base="api" data-auth-base="pages/auth" data-home="."></div>
+            </div>
+            <script src="i18n/i18n.js" defer></script>
+            <script src="i18n/lang-switcher.js" defer></script>
+            <script src="pages/auth/auth-widget.js" defer></script>
         </div>
     </header>
     
     <main class="container">
         <section class="hero">
-            <h1>Choose Your Trading Platform</h1>
-            <p>Access dedicated trading environments for cryptocurrencies and traditional stock markets. Each platform is optimized for its respective market with specialized tools and real-time data feeds.</p>
+            <h1 data-i18n="hub.hero.title">Choose Your Trading Platform</h1>
+            <p data-i18n="hub.hero.subtitle">Access dedicated trading environments for cryptocurrencies and traditional stock markets. Each platform is optimized for its respective market with specialized tools and real-time data feeds.</p>
         </section>
-        
-        <section class="status-bar" aria-label="Platform statistics">
+
+        <section class="status-bar" aria-label="Platform statistics" data-i18n-aria-label="hub.stats.ariaLabel">
             <div class="status-item">
                 <span class="status-value" id="crypto-count">6</span>
-                <span class="status-label">Crypto Assets</span>
+                <span class="status-label" data-i18n="hub.stats.cryptoAssets">Crypto Assets</span>
             </div>
             <div class="status-item">
-                <span class="status-value" id="stock-count">Unlimited</span>
-                <span class="status-label">Stock Symbols</span>
+                <span class="status-value" id="stock-count" data-i18n="hub.stats.unlimited">Unlimited</span>
+                <span class="status-label" data-i18n="hub.stats.stockSymbols">Stock Symbols</span>
             </div>
             <div class="status-item">
-                <span class="status-value" id="market-status">Live</span>
-                <span class="status-label">Market Data</span>
+                <span class="status-value" id="market-status" data-i18n="hub.stats.live">Live</span>
+                <span class="status-label" data-i18n="hub.stats.marketData">Market Data</span>
             </div>
             <div class="status-item">
                 <span class="status-value">24/7</span>
-                <span class="status-label">Crypto Trading</span>
+                <span class="status-label" data-i18n="hub.stats.cryptoTradingHours">Crypto Trading</span>
             </div>
         </section>
-        
-        <section class="platforms" id="platforms" aria-label="Trading platforms">
-            <a href="crypto-trading/" class="platform-card crypto-card" aria-label="Access Crypto Trading Platform">
+
+        <section class="platforms" id="platforms" aria-label="Trading platforms" data-i18n-aria-label="hub.platformsSection.ariaLabel">
+            <a href="crypto-trading/" class="platform-card crypto-card" aria-label="Access Crypto Trading Platform" data-i18n-aria-label="hub.crypto.ariaLabel">
                 <span class="platform-icon" aria-hidden="true">₿</span>
-                <h2 class="platform-title">Crypto Trading</h2>
-                <p class="platform-subtitle">Bitcoin, Ethereum & Digital Assets</p>
-                <p class="platform-description">
-                    Trade cryptocurrencies with real-time data from Binance. Features advanced charting, 
+                <h2 class="platform-title" data-i18n="hub.crypto.title">Crypto Trading</h2>
+                <p class="platform-subtitle" data-i18n="hub.crypto.subtitle">Bitcoin, Ethereum & Digital Assets</p>
+                <p class="platform-description" data-i18n="hub.crypto.description">
+                    Trade cryptocurrencies with real-time data from Binance. Features advanced charting,
                     technical indicators, and 24/7 market access for digital asset trading.
                 </p>
                 <ul class="platform-features">
-                    <li>Bitcoin, Ethereum, BNB, Solana, Cardano, XRP</li>
-                    <li>Live Binance WebSocket price feeds</li>
-                    <li>Multiple timeframes (1m, 5m, 15m, 1h, 4h, 1d)</li>
-                    <li>MACD technical indicator with histogram</li>
-                    <li>Real-time position tracking & P&L</li>
-                    <li>Market order simulation system</li>
-                    <li>24/7 crypto market availability</li>
+                    <li data-i18n="hub.crypto.features.0">Bitcoin, Ethereum, BNB, Solana, Cardano, XRP</li>
+                    <li data-i18n="hub.crypto.features.1">Live Binance WebSocket price feeds</li>
+                    <li data-i18n="hub.crypto.features.2">Multiple timeframes (1m, 5m, 15m, 1h, 4h, 1d)</li>
+                    <li data-i18n="hub.crypto.features.3">MACD technical indicator with histogram</li>
+                    <li data-i18n="hub.crypto.features.4">Real-time position tracking & P&L</li>
+                    <li data-i18n="hub.crypto.features.5">Market order simulation system</li>
+                    <li data-i18n="hub.crypto.features.6">24/7 crypto market availability</li>
                 </ul>
-                <div class="platform-cta">Launch Crypto Platform</div>
+                <div class="platform-cta" data-i18n="hub.crypto.cta">Launch Crypto Platform</div>
             </a>
-            
-            <a href="stock-market/" class="platform-card stock-card" aria-label="Access Stock Market Platform">
+
+            <a href="stock-market/" class="platform-card stock-card" aria-label="Access Stock Market Platform" data-i18n-aria-label="hub.stock.ariaLabel">
                 <span class="platform-icon" aria-hidden="true">📈</span>
-                <h2 class="platform-title">Stock Market</h2>
-                <p class="platform-subtitle">Traditional Stocks & Securities</p>
-                <p class="platform-description">
-                    Trade stocks with comprehensive market data, company information, and 
+                <h2 class="platform-title" data-i18n="hub.stock.title">Stock Market</h2>
+                <p class="platform-subtitle" data-i18n="hub.stock.subtitle">Traditional Stocks & Securities</p>
+                <p class="platform-description" data-i18n="hub.stock.description">
+                    Trade stocks with comprehensive market data, company information, and
                     powerful analysis tools for traditional securities and equity markets.
                 </p>
                 <ul class="platform-features">
-                    <li>US stocks via Stooq data provider</li>
-                    <li>Daily historical data & charts</li>
-                    <li>MACD technical indicator analysis</li>
-                    <li>Market hours tracking (9:30-4:00 EST)</li>
-                    <li>After-hours trading simulation</li>
-                    <li>Position tracking & portfolio management</li>
-                    <li>Company watchlist & order history</li>
+                    <li data-i18n="hub.stock.features.0">US stocks via Stooq data provider</li>
+                    <li data-i18n="hub.stock.features.1">Daily historical data & charts</li>
+                    <li data-i18n="hub.stock.features.2">MACD technical indicator analysis</li>
+                    <li data-i18n="hub.stock.features.3">Market hours tracking (9:30-4:00 EST)</li>
+                    <li data-i18n="hub.stock.features.4">After-hours trading simulation</li>
+                    <li data-i18n="hub.stock.features.5">Position tracking & portfolio management</li>
+                    <li data-i18n="hub.stock.features.6">Company watchlist & order history</li>
                 </ul>
-                <div class="platform-cta">Launch Stock Platform</div>
+                <div class="platform-cta" data-i18n="hub.stock.cta">Launch Stock Platform</div>
             </a>
         </section>
     </main>
-    
+
     <footer class="footer" id="about">
         <div class="footer-content">
-            <p class="footer-text">TradeLite Trading Platform - Demo application for educational purposes. Not financial advice.</p>
-            <nav class="footer-links" role="navigation" aria-label="Footer navigation">
-                <a href="stock-market/companies.html" class="footer-link">Company Data</a>
-                <a href="pages/utilities/recover_bitcoin_data.html" class="footer-link">Recovery Tools</a>
-                <a href="#" class="footer-link" onclick="showAbout()">About</a>
-                <a href="#" class="footer-link" onclick="showDisclaimer()">Disclaimer</a>
+            <p class="footer-text" data-i18n="hub.footer.text">TradeLite Trading Platform - Demo application for educational purposes. Not financial advice.</p>
+            <nav class="footer-links" role="navigation" aria-label="Footer navigation" data-i18n-aria-label="nav.footerLabel">
+                <a href="stock-market/companies.html" class="footer-link" data-i18n="hub.footer.companyData">Company Data</a>
+                <a href="pages/utilities/recover_bitcoin_data.html" class="footer-link" data-i18n="hub.footer.recoveryTools">Recovery Tools</a>
+                <a href="#" class="footer-link" onclick="showAbout()" data-i18n="hub.footer.about">About</a>
+                <a href="#" class="footer-link" onclick="showDisclaimer()" data-i18n="hub.footer.disclaimer">Disclaimer</a>
             </nav>
         </div>
     </footer>
 
     <script>
+        // Small alias so this script reads correctly with or without i18n.js
+        // present (falls back to the raw key, never throws).
+        function t(key, vars) {
+            return window.TLI18n ? window.TLI18n.t(key, vars) : key;
+        }
+
         // Enhanced JavaScript with better error handling and performance
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize animations and interactions
             initializeAnimations();
             initializePlatformCards();
-            initializeStatusCounters();
-            
+
+            // initializeStatusCounters() calls t() (market status, "Unlimited")
+            // - wait for translations first so it never briefly shows a raw
+            // key before self-correcting on the next 30s tick.
+            if (window.TLI18n && window.TLI18n.ready) {
+                window.TLI18n.ready.then(initializeStatusCounters);
+            } else {
+                initializeStatusCounters();
+            }
+
             // Add keyboard navigation support
             addKeyboardNavigation();
             
             // Check platform availability
             checkPlatformStatus();
+        });
+
+        // Re-render the bits of this page i18n.js's own data-i18n pass can't
+        // reach on its own - text set by JS at runtime (market status,
+        // "Unlimited") rather than sitting in the HTML from the start.
+        window.addEventListener('tl:localechange', function () {
+            updateMarketStatusIndicator();
+            const stockCountEl = document.getElementById('stock-count');
+            if (stockCountEl) stockCountEl.textContent = t('hub.stats.unlimited');
         });
         
         function initializeAnimations() {
@@ -633,7 +663,7 @@
                     const originalText = cta ? cta.textContent : '';
                     
                     if (cta) {
-                        cta.innerHTML = '<div class="loading-spinner" style="display: inline-block;"></div> Loading...';
+                        cta.innerHTML = '<div class="loading-spinner" style="display: inline-block;"></div> ' + t('common.loading');
                         cta.style.pointerEvents = 'none';
                     }
                     
@@ -678,7 +708,7 @@
             // Stock count is unlimited, no need to animate
             const stockCountEl = document.getElementById('stock-count');
             if (stockCountEl) {
-                stockCountEl.textContent = 'Unlimited';
+                stockCountEl.textContent = t('hub.stats.unlimited');
             }
             
             // Check and update market status
@@ -734,13 +764,13 @@
             const isAfterHours = isWeekday && ((hour >= 16 && hour < 20) || (hour >= 4 && hour < 9.5));
             
             if (isWeekday && isMarketHours) {
-                marketStatusEl.textContent = 'Open';
+                marketStatusEl.textContent = t('hub.stats.marketOpen');
                 marketStatusEl.style.color = '#15b37d';
             } else if (isAfterHours) {
-                marketStatusEl.textContent = 'After Hours';
+                marketStatusEl.textContent = t('hub.stats.marketAfterHours');
                 marketStatusEl.style.color = '#f59e0b';
             } else {
-                marketStatusEl.textContent = 'Closed';
+                marketStatusEl.textContent = t('hub.stats.marketClosed');
                 marketStatusEl.style.color = '#e5534b';
             }
         }
@@ -801,51 +831,29 @@
         }
         
         function showAbout() {
-            alert(`TradeLite Trading Platform Hub
-
-A comprehensive trading platform featuring:
-• Real-time cryptocurrency trading with Binance integration
-• Traditional stock market analysis tools
-• Educational trading simulation
-• Recovery tools for Bitcoin data
-
-Version: 2.0
-Built with modern web technologies for optimal performance.
-
-⚠️ This is a demo application for educational purposes only.
-Not intended for actual financial trading or investment advice.`);
+            alert(t('hub.about.body'));
         }
-        
+
         function showDisclaimer() {
-            alert(`IMPORTANT DISCLAIMER
-
-This application is for educational and demonstration purposes only.
-
-• Not financial advice or investment recommendations
-• Demo trading environment with simulated data
-• Real market data used for educational purposes
-• No actual trades are executed
-• Past performance does not guarantee future results
-
-Always consult with qualified financial advisors before making investment decisions.
-
-By using this platform, you acknowledge these limitations and use it at your own risk.`);
+            alert(t('hub.disclaimer.body'));
         }
-        
+
         function showPlatformError(platform, errorMessage) {
-            const platformName = platform === 'crypto' ? 'Crypto Trading' : 'Stock Market';
-            const message = `Unable to access ${platformName} Platform
+            const platformName = platform === 'crypto' ? t('hub.crypto.shortName') : t('hub.stock.shortName');
+            const message = [
+                t('hub.platformError.title', { platform: platformName }),
+                '',
+                t('hub.platformError.errorPrefix', { message: errorMessage }),
+                '',
+                t('hub.platformError.solutionsTitle'),
+                '• ' + t('hub.platformError.solution1'),
+                '• ' + t('hub.platformError.solution2'),
+                '• ' + t('hub.platformError.solution3'),
+                '• ' + t('hub.platformError.solution4'),
+                '',
+                t('hub.platformError.footer'),
+            ].join('\n');
 
-Error: ${errorMessage}
-
-Possible solutions:
-• Check if your web server is running (XAMPP/Apache)
-• Verify the platform files are in the correct directory
-• Check browser console for detailed error information
-• Try refreshing the page
-
-If the problem persists, please check the platform setup.`;
-            
             alert(message);
         }
         

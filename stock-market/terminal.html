@@ -48,8 +48,15 @@
             <span class="vt-demo">PAPER TRADING</span>
             <button id="reset-data" type="button" class="vt-icon-btn" title="Reset positions and orders"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
             <button id="vt-fullscreen" type="button" class="vt-icon-btn" title="Fullscreen"><i data-lucide="maximize" class="w-4 h-4"></i></button>
+            <div data-tl-auth-widget data-api-base="../api" data-auth-base="../pages/auth" data-home="../"></div>
         </div>
     </header>
+    <!-- Must load before the ScriptLoader-driven trading scripts below (which
+         only start on DOMContentLoaded) so portfolio.js/stock-app.prod.js's
+         very first localStorage read already sees this account's data. -->
+    <script src="../pages/auth/portfolio-sync.js"></script>
+    <script src="../pages/auth/order-authority.js"></script>
+    <script src="../pages/auth/auth-widget.js" defer></script>
 
     <main>
         <!-- ═══ PRICE STRIP (filled from the charted candles) ═══ -->
@@ -263,16 +270,10 @@
                     { name: 'utils', src: '../src/js/core/utils.js', description: 'Core Utilities' },
                     { name: 'indicators', src: '../src/js/utils/indicators.js', description: 'Chart Indicators' },
                     { name: 'technical-indicators', src: '../src/js/core/technical-indicators.js', description: 'Technical Analysis' },
+                    // Keep: computeHullMA here is correct; the prod bundle's HullMA is not (docs/PROF-WANG-BUG-REPORT-2026-09-12.md)
                     { name: 'HullMA', src: '../src/js/core/Wang_design__HullMA%20_2026-01-18.js', description: 'Prof. Wang Hull MA (window.computeHullMA)' },
-                    { name: 'DEMA', src: '../src/js/core/Wang_design_DEMA_2026-03-14.js', description: 'Prof. Wang DEMA (window.computeDEMA)' },
                     { name: 'technical-indicators-wang', src: '../src/js/core/technical-indicators-wang.js', description: 'Prof. Wang Indicators' },
                     { name: 'multi-indicator-system', src: '../src/js/core/multi-indicator-system.js', description: 'Multi-Panel System' },
-                    { name: 'RWI', src:'../src/js/core/Wang_design_new_indicators__RandomWalkIndex _2026-01-20.js', descrption:'RWI indicator'},
-                    { name: 'MAoneMAtwo', src:'../src/js/core/Wang_design__MAoneMAtwor_2026-04-06.js', descrption:'MAoneMAtwo indicator'},
-                    { name: 'Alligator', src:'../src/js/core/Wang_design_new_indicators__Alligator_2026-01-29.js', description:'Prof. Wang Alligator (window.computeAlligator)'},
-                    { name: 'PVI', src:'../src/js/core/Wang_design_new_indicators__PVI_percentRiseFall_2026-03-10.js', description:'Prof. Wang PVI%RiseFall (window.computePVIpercentRiseFall)'},
-                    { name: 'Bollinger4SD', src:'../src/js/core/Wang_design_new_indicators__Bollinger4SD_2026-02-28_.js', description:'Prof. Wang Bollinger4SD (window.computeBollinger4SD)'},
-                    { name: 'VolumeRSI', src:'../src/js/core/Wang_design_new_indicators__VolumeRSI_2026-03-08.js', description:'Prof. Wang VolumeRSI (window.computeVolumeRSI)'},
                     { name: 'technical-indicators-wang-prods', src:'../src/js/core/technical-indicators.prods__Wang__2026.js', descrption:'Prof. Wang Indicators (prod bundle)' },
                     { name: 'tfi-registry', src: '../src/js/indicators/registry.js', description: 'Indicator registry' },
                     { name: 'tfi-overlays', src: '../src/js/indicators/defs/overlays.js', description: 'Price-chart indicators' },

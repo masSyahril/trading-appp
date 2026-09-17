@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="auth.verifyEmail.pageTitle">Verify Email - TradeLite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="auth-theme.css">
+</head>
+<body class="tl-auth-body">
+  <div style="position:fixed; top:16px; right:16px; z-index:60;" data-tl-lang-switcher></div>
+  <a class="tl-auth-brand" href="../../index.html">📊 <span>TradeLite</span></a>
+
+  <div class="tl-auth-card">
+    <h1 class="tl-auth-title" data-i18n="auth.verifyEmail.title">Verifying your email…</h1>
+    <div id="alert-box"></div>
+    <p class="tl-auth-subtitle" id="status-text" data-i18n="auth.verifyEmail.statusWaiting">One moment.</p>
+    <p class="tl-auth-footer" id="cta" style="display:none">
+      <a href="../../index.html" data-i18n="auth.verifyEmail.goToTradeLite">Go to TradeLite</a> &nbsp;|&nbsp; <a href="login.html" data-i18n="auth.verifyEmail.signIn">Sign in</a>
+    </p>
+  </div>
+
+  <script src="../../i18n/i18n.js"></script>
+  <script src="../../i18n/lang-switcher.js"></script>
+  <script src="auth-client.js"></script>
+  <script>
+    function t(key, vars) {
+      return window.TLI18n ? window.TLI18n.t(key, vars) : key;
+    }
+
+    const alertBox = document.getElementById('alert-box');
+    const statusText = document.getElementById('status-text');
+    const cta = document.getElementById('cta');
+    const token = new URLSearchParams(window.location.search).get('token') || '';
+
+    function showAlert(kind, message) {
+      alertBox.innerHTML = `<div class="tl-alert tl-alert-${kind}">${message}</div>`;
+    }
+
+    (async () => {
+      // Wait for translations before showing any localized error copy -
+      // this page's whole job is a single status message, so it's worth
+      // the small delay to not flash raw keys.
+      if (window.TLI18n && window.TLI18n.ready) { await window.TLI18n.ready; }
+
+      if (!token) {
+        statusText.textContent = '';
+        showAlert('error', t('auth.verifyEmail.missingToken'));
+        cta.style.display = 'block';
+        return;
+      }
+      try {
+        const res = await TLAuth.verifyEmail(token);
+        statusText.textContent = '';
+        showAlert('success', res.message || 'Email verified.');
+      } catch (err) {
+        statusText.textContent = '';
+        showAlert('error', err.message || t('auth.verifyEmail.genericError'));
+      } finally {
+        cta.style.display = 'block';
+      }
+    })();
+  </script>
+</body>
+</html>

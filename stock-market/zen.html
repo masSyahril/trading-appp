@@ -21,10 +21,10 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Inter (interface/nav text) + JetBrains Mono (prices/sizes/P&L) -->
+    <!-- Manrope (interface/nav text) + IBM Plex Mono (prices/sizes/P&L) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -105,12 +105,12 @@
     <!-- Color system (--tf-* variables + component styling), then the Zen
          layout override on top - order matters, zen.css must win. -->
     <link rel="stylesheet" href="tradeflow-theme.css">
-    <link rel="stylesheet" href="tradeflow-zen.css">
+    <link rel="stylesheet" href="tradeflow-zen.css?v=2026-09-14-grid3">
 </head>
 <body class="zen-body font-sans">
     <div id="zen-workspace">
 
-        <!-- ═══ TOP FLOATING COMMAND CAPSULE ═══ -->
+        <!-- ═══ TOPBAR: command bar + account readouts share one real row ═══ -->
         <div id="zen-command-bar">
             <div class="zen-cmd-group">
                 <a href="../" class="zen-logo" title="Hub">
@@ -141,6 +141,29 @@
                 <span class="zen-price-value" id="zen-price-value">—</span>
                 <span class="zen-price-change" id="zen-price-change"></span>
             </div>
+
+            <!-- Account readouts: was a separate floating "#zen-status-chip"
+                 pill, now folded into the command bar's own row (pushed to
+                 the right via margin-left:auto in tradeflow-zen.css). -->
+            <div id="zen-status-chip">
+                <div class="zen-chip-stat">
+                    <span class="zen-chip-stat-label">Balance</span>
+                    <span class="zen-chip-stat-value" id="zen-chip-balance">$0.00</span>
+                </div>
+                <div class="zen-chip-stat">
+                    <span class="zen-chip-stat-label">Equity</span>
+                    <span class="zen-chip-stat-value" id="zen-chip-equity">$0.00</span>
+                </div>
+                <div class="zen-chip-stat">
+                    <span class="zen-chip-stat-label">Available</span>
+                    <span class="zen-chip-stat-value" id="zen-chip-available">$0.00</span>
+                </div>
+            </div>
+
+            <button id="zen-panel-launcher" type="button" class="zen-panel-launcher" title="Trade panel">
+                <i data-lucide="arrow-left-right" class="w-3.5 h-3.5"></i> Trade
+            </button>
+
             <div class="zen-cmd-divider"></div>
             <div class="zen-cmd-group">
                 <button id="zen-watchlist-toggle" type="button" class="zen-icon-btn" title="Watchlist">
@@ -175,23 +198,16 @@
                     <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
                 </a>
             </div>
+            <div class="zen-cmd-divider"></div>
+            <div class="zen-cmd-group" data-tl-auth-widget data-api-base="../api" data-auth-base="../pages/auth" data-home="../"></div>
         </div>
-
-        <!-- ═══ LIVE ACCOUNT STATUS CHIP (top-right) ═══ -->
-        <div id="zen-status-chip">
-            <div class="zen-chip-stat">
-                <span class="zen-chip-stat-label">Balance</span>
-                <span class="zen-chip-stat-value" id="zen-chip-balance">$0.00</span>
-            </div>
-            <div class="zen-chip-stat">
-                <span class="zen-chip-stat-label">Equity</span>
-                <span class="zen-chip-stat-value" id="zen-chip-equity">$0.00</span>
-            </div>
-            <div class="zen-chip-stat">
-                <span class="zen-chip-stat-label">Available</span>
-                <span class="zen-chip-stat-value" id="zen-chip-available">$0.00</span>
-            </div>
-        </div>
+        <!-- Must load before the ScriptLoader-driven trading scripts below
+             (which only start on DOMContentLoaded) so portfolio.js/
+             stock-app.prod.js's very first localStorage read already sees
+             this account's data. -->
+        <script src="../pages/auth/portfolio-sync.js"></script>
+        <script src="../pages/auth/order-authority.js"></script>
+        <script src="../pages/auth/auth-widget.js" defer></script>
 
         <!-- ═══ SHARED BACKDROP for watchlist + indicator overlays ═══ -->
         <div id="zen-backdrop"></div>
@@ -216,8 +232,8 @@
             </ul>
         </aside>
 
-        <!-- ═══ FLOATING MAIN STAGE (chart) ═══ -->
-        <main class="flex-1 flex flex-col min-w-0" style="height:100%;">
+        <!-- ═══ CHART (a real grid cell now, not a floating glass card) ═══ -->
+        <main class="flex-1 flex flex-col min-w-0" style="height:100%; min-height:0;" id="viz-area-wrap">
             <div class="flex-1 flex flex-col min-h-0" id="viz-area">
                 <div id="main-chart-panel" class="flex flex-col min-h-0">
                     <div id="chart-toolbar" class="flex items-center flex-wrap px-2 py-1 gap-1 border-b border-slate-700 shrink-0">
@@ -265,6 +281,10 @@
                             <button id="btn-jump-first" class="toolbar-btn px-1.5 py-1 text-xs text-slate-300 hover:text-white hover:bg-slate-800 rounded transition-colors" title="Jump to First">&lt;&lt;</button>
                             <button id="btn-jump-last" class="toolbar-btn px-1.5 py-1 text-xs text-slate-300 hover:text-white hover:bg-slate-800 rounded transition-colors" title="Jump to Last">&gt;&gt;</button>
                         </div>
+                        <button id="zen-chart-fullscreen-btn" type="button" class="toolbar-btn px-1.5 py-1 text-xs text-slate-300 hover:text-white hover:bg-slate-800 rounded transition-colors ml-auto" title="Full-screen chart (Esc to exit)" aria-pressed="false">
+                            <i data-lucide="maximize" class="w-3.5 h-3.5 zen-fs-icon-enter"></i>
+                            <i data-lucide="minimize" class="w-3.5 h-3.5 zen-fs-icon-exit"></i>
+                        </button>
                     </div>
                     <div id="chart" class="w-full relative flex-1 min-h-0">
                         <div id="chart-overlay-legend" class="absolute left-1.5 top-1.5 z-10 pointer-events-none flex flex-col gap-0.5 rounded">
@@ -277,79 +297,90 @@
             </div>
         </main>
 
-        <!-- ═══ EXECUTION DOCK (horizontal floating order ticket) ═══ -->
-        <aside id="order-panel" class="text-sm">
-            <span id="order-symbol" class="zen-dock-symbol"></span>
-
-            <div class="flex px-0 gap-1 shrink-0">
-                <button type="button" class="order-type-tab active" data-type="market">Market</button>
-                <button type="button" class="order-type-tab" data-type="limit">Limit</button>
-                <button type="button" class="order-type-tab" data-type="stop">Stop</button>
-            </div>
-
-            <label class="order-field" id="order-price-field" hidden>
-                <span>Trigger</span>
-                <input type="number" id="order-price" step="0.01" placeholder="0.00">
-            </label>
-
-            <label class="order-field">
-                <span>Size</span>
-                <input type="number" id="order-size" min="1" step="1" value="100">
-            </label>
-
-            <div class="size-quick-row">
-                <button type="button" class="size-quick-btn" data-size-pct="25">25%</button>
-                <button type="button" class="size-quick-btn" data-size-pct="50">50%</button>
-                <button type="button" class="size-quick-btn" data-size-pct="75">75%</button>
-                <button type="button" class="size-quick-btn" data-size-pct="100">100%</button>
-            </div>
-
-            <label class="order-field">
-                <span>Lev</span>
-                <select id="order-leverage">
-                    <option value="1">1x</option>
-                    <option value="2">2x</option>
-                    <option value="5">5x</option>
-                    <option value="10">10x</option>
-                </select>
-            </label>
-
-            <label class="order-field">
-                <span>SL</span>
-                <input type="number" id="order-sl" step="0.01">
-            </label>
-            <label class="order-field">
-                <span>TP</span>
-                <input type="number" id="order-tp" step="0.01">
-            </label>
-
-            <div class="rr-summary-box text-xs">
-                <div><span class="text-slate-400">Risk</span> <span id="rr-risk" class="text-red-400 font-bold">$0.00</span></div>
-                <div><span class="text-slate-400">Reward</span> <span id="rr-reward" class="text-emerald-400 font-bold">$0.00</span></div>
-                <div><span class="text-slate-400">R:R</span> <span id="rr-ratio" class="text-slate-100 font-bold">—</span></div>
-            </div>
-
-            <button id="btn-buy" type="button" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold transition-all">BUY</button>
-            <button id="btn-sell" type="button" class="bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold transition-all">SELL</button>
-        </aside>
-
-        <!-- ═══ POSITIONS/ORDERS/HISTORY/ACCOUNT SLIDE-UP SHEET ═══ -->
-        <section id="bottom-drawer" class="collapsed flex-col text-sm">
+        <!-- ═══ UNIFIED PANEL: Trade ticket + Positions/Orders/History/Account,
+             one docked panel with tabs (was two separate floating elements -
+             a circular order dock plus a bottom sheet). Desktop: docked to
+             the right. Tablet: slide-in overlay. Mobile: full screen, reached
+             from the bottom tab bar. ═══ -->
+        <section id="bottom-drawer" class="flex-col text-sm">
             <div id="bottom-drawer-header" class="flex items-center justify-between px-2 border-b border-slate-700 shrink-0">
-                <div class="flex gap-1 py-1.5">
-                    <button type="button" class="drawer-tab active" data-panel="positions">Positions <span class="drawer-badge" id="count-positions">0</span></button>
-                    <button type="button" class="drawer-tab" data-panel="orders">Working Orders <span class="drawer-badge" id="count-orders">0</span></button>
+                <div class="flex gap-1 py-1.5" style="overflow-x:auto;">
+                    <button type="button" class="drawer-tab active" data-panel="trade">Trade</button>
+                    <button type="button" class="drawer-tab" data-panel="positions">Positions <span class="drawer-badge" id="count-positions">0</span></button>
+                    <button type="button" class="drawer-tab" data-panel="orders">Orders <span class="drawer-badge" id="count-orders">0</span></button>
                     <button type="button" class="drawer-tab" data-panel="history">History</button>
                     <button type="button" class="drawer-tab" data-panel="account">Account</button>
                 </div>
                 <span id="zen-drawer-summary" class="zen-drawer-summary">0 positions · $0.00</span>
+                <button id="zen-panel-close" type="button" class="zen-icon-btn" title="Close panel" aria-label="Close panel">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
                 <button id="drawer-collapse-btn" type="button" class="text-slate-400 hover:text-white p-1" title="Expand/collapse">
                     <i data-lucide="chevron-up" class="w-4 h-4"></i>
                 </button>
             </div>
 
             <div class="flex-1 overflow-auto">
-                <table id="panel-positions" class="drawer-panel w-full text-xs">
+                <div id="panel-trade" class="drawer-panel">
+                    <span id="order-symbol" class="zen-dock-symbol"></span>
+
+                    <div class="order-type-tab-row">
+                        <button type="button" class="order-type-tab active" data-type="market">Market</button>
+                        <button type="button" class="order-type-tab" data-type="limit">Limit</button>
+                        <button type="button" class="order-type-tab" data-type="stop">Stop</button>
+                    </div>
+
+                    <label class="order-field" id="order-price-field" hidden>
+                        <span>Trigger</span>
+                        <input type="number" id="order-price" step="0.01" placeholder="0.00">
+                    </label>
+
+                    <label class="order-field">
+                        <span>Size</span>
+                        <input type="number" id="order-size" min="1" step="1" value="100">
+                    </label>
+
+                    <div class="size-quick-row">
+                        <button type="button" class="size-quick-btn" data-size-pct="25">25%</button>
+                        <button type="button" class="size-quick-btn" data-size-pct="50">50%</button>
+                        <button type="button" class="size-quick-btn" data-size-pct="75">75%</button>
+                        <button type="button" class="size-quick-btn" data-size-pct="100">100%</button>
+                    </div>
+
+                    <label class="order-field">
+                        <span>Lev</span>
+                        <select id="order-leverage">
+                            <option value="1">1x</option>
+                            <option value="2">2x</option>
+                            <option value="5">5x</option>
+                            <option value="10">10x</option>
+                        </select>
+                    </label>
+
+                    <div class="order-field-row">
+                        <label class="order-field">
+                            <span>SL</span>
+                            <input type="number" id="order-sl" step="0.01">
+                        </label>
+                        <label class="order-field">
+                            <span>TP</span>
+                            <input type="number" id="order-tp" step="0.01">
+                        </label>
+                    </div>
+
+                    <div class="rr-summary-box text-xs">
+                        <div><span class="text-slate-400">Risk</span> <span id="rr-risk" class="text-red-400 font-bold">$0.00</span></div>
+                        <div><span class="text-slate-400">Reward</span> <span id="rr-reward" class="text-emerald-400 font-bold">$0.00</span></div>
+                        <div><span class="text-slate-400">R:R</span> <span id="rr-ratio" class="text-slate-100 font-bold">—</span></div>
+                    </div>
+
+                    <div class="trade-actions">
+                        <button id="btn-buy" type="button" class="font-bold transition-all">BUY</button>
+                        <button id="btn-sell" type="button" class="font-bold transition-all">SELL</button>
+                    </div>
+                </div>
+
+                <table id="panel-positions" class="drawer-panel w-full text-xs" hidden>
                     <thead><tr>
                         <th>Symbol</th><th>Side</th><th>Size</th><th>Entry</th><th>Current</th>
                         <th>P&amp;L ($)</th><th>P&amp;L (%)</th><th></th>
@@ -367,7 +398,7 @@
                     <tbody></tbody>
                 </table>
 
-                <div id="panel-account" class="drawer-panel p-3 grid grid-cols-4 gap-3" hidden>
+                <div id="panel-account" class="drawer-panel p-3" hidden>
                     <div class="drawer-stat"><div class="drawer-stat-label">Balance</div><div class="drawer-stat-value" id="acct-balance">$0.00</div></div>
                     <div class="drawer-stat"><div class="drawer-stat-label">Equity</div><div class="drawer-stat-value" id="acct-equity">$0.00</div></div>
                     <div class="drawer-stat"><div class="drawer-stat-label">Margin Used</div><div class="drawer-stat-value" id="acct-margin">$0.00</div></div>
@@ -375,6 +406,30 @@
                 </div>
             </div>
         </section>
+
+        <!-- Tablet-only dimming scrim behind the overlay panel -->
+        <div class="zen-drawer-scrim" id="zen-drawer-scrim"></div>
+
+        <!-- Pinned re-open tab when the panel is collapsed on desktop -->
+        <button type="button" class="zen-panel-reopen" id="zen-panel-reopen">Trade</button>
+
+        <!-- ═══ Mobile bottom tab bar (new) - lets Chart/Watchlist/Trade/
+             Activity share one small viewport instead of stacking floating
+             layers on top of each other. ═══ -->
+        <nav class="zen-bottom-tabs" id="zen-bottom-tabs">
+            <button type="button" class="zen-bottom-tab active" data-zen-view="chart">
+                <i data-lucide="candlestick-chart" class="w-4 h-4"></i> Chart
+            </button>
+            <button type="button" class="zen-bottom-tab" data-zen-view="watchlist">
+                <i data-lucide="list" class="w-4 h-4"></i> Watchlist
+            </button>
+            <button type="button" class="zen-bottom-tab" data-zen-view="trade">
+                <i data-lucide="arrow-left-right" class="w-4 h-4"></i> Trade
+            </button>
+            <button type="button" class="zen-bottom-tab" data-zen-view="activity">
+                <i data-lucide="clipboard-list" class="w-4 h-4"></i> Activity
+            </button>
+        </nav>
 
     </div>
 
@@ -436,16 +491,10 @@
                     { name: 'utils', src: '../src/js/core/utils.js', description: 'Core Utilities' },
                     { name: 'indicators', src: '../src/js/utils/indicators.js', description: 'Chart Indicators' },
                     { name: 'technical-indicators', src: '../src/js/core/technical-indicators.js', description: 'Technical Analysis' },
+                    // Keep: computeHullMA here is correct; the prod bundle's HullMA is not (docs/PROF-WANG-BUG-REPORT-2026-09-12.md)
                     { name: 'HullMA', src: '../src/js/core/Wang_design__HullMA%20_2026-01-18.js', description: 'Prof. Wang Hull MA (window.computeHullMA)' },
-                    { name: 'DEMA', src: '../src/js/core/Wang_design_DEMA_2026-03-14.js', description: 'Prof. Wang DEMA (window.computeDEMA)' },
                     { name: 'technical-indicators-wang', src: '../src/js/core/technical-indicators-wang.js', description: 'Prof. Wang Indicators' },
                     { name: 'multi-indicator-system', src: '../src/js/core/multi-indicator-system.js', description: 'Multi-Panel System' },
-                    { name: 'RWI', src:'../src/js/core/Wang_design_new_indicators__RandomWalkIndex _2026-01-20.js', descrption:'RWI indicator'},
-                    { name: 'MAoneMAtwo', src:'../src/js/core/Wang_design__MAoneMAtwor_2026-04-06.js', descrption:'MAoneMAtwo indicator'},
-                    { name: 'Alligator', src:'../src/js/core/Wang_design_new_indicators__Alligator_2026-01-29.js', description:'Prof. Wang Alligator (window.computeAlligator)'},
-                    { name: 'PVI', src:'../src/js/core/Wang_design_new_indicators__PVI_percentRiseFall_2026-03-10.js', description:'Prof. Wang PVI%RiseFall (window.computePVIpercentRiseFall)'},
-                    { name: 'Bollinger4SD', src:'../src/js/core/Wang_design_new_indicators__Bollinger4SD_2026-02-28_.js', description:'Prof. Wang Bollinger4SD (window.computeBollinger4SD)'},
-                    { name: 'VolumeRSI', src:'../src/js/core/Wang_design_new_indicators__VolumeRSI_2026-03-08.js', description:'Prof. Wang VolumeRSI (window.computeVolumeRSI)'},
                     { name: 'technical-indicators-wang-prods', src:'../src/js/core/technical-indicators.prods__Wang__2026.js', descrption:'Prof. Wang Indicators (prod bundle)' },
                     { name: 'tfi-registry', src: '../src/js/indicators/registry.js', description: 'Indicator registry' },
                     { name: 'tfi-overlays', src: '../src/js/indicators/defs/overlays.js', description: 'Price-chart indicators' },
@@ -562,9 +611,10 @@
         })();
 
         // ─── Zen-specific chrome: watchlist slide-over, the indicator picker
-        // shortcut, account status chip, price ticker, bottom-sheet
-        // mini-summary. Reads the app's public surface (window.TradeFlowChart /
-        // window.TradeFlowPortfolio) and already-rendered DOM. ───
+        // shortcut, account status chip, price ticker, the unified panel's
+        // collapse/overlay/mobile-view behavior. Reads the app's public
+        // surface (window.TradeFlowChart / window.TradeFlowPortfolio) and
+        // already-rendered DOM. ───
         function initZenChrome() {
             const backdrop = document.getElementById('zen-backdrop');
             const sidebar = document.getElementById('sidebar');
@@ -601,7 +651,7 @@
 
             backdrop?.addEventListener('click', closeSidebar);
             window.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') closeSidebar();
+                if (e.key === 'Escape') { closeSidebar(); setChartFullscreen(false); }
                 if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
                     e.preventDefault();
                     document.getElementById('symbol-input')?.focus();
@@ -612,16 +662,45 @@
                 }
             });
 
-            // Keep the floating execution dock sitting just above the
-            // positions sheet regardless of its collapsed/expanded state.
+            // ─── Unified panel: collapse/expand (desktop shrinks the grid
+            // column and shows a pinned re-open tab; tablet slides an
+            // overlay in/out), plus a couple of extra affordances
+            // (launcher button, close ✕, scrim) that all just forward to
+            // portfolio.js's real #drawer-collapse-btn toggle instead of
+            // duplicating its state. ───
+            const workspace = document.getElementById('zen-workspace');
             const bottomDrawer = document.getElementById('bottom-drawer');
-            function syncDockPosition() {
+            const collapseBtn = document.getElementById('drawer-collapse-btn');
+            const scrim = document.getElementById('zen-drawer-scrim');
+
+            function syncPanelChrome() {
                 if (!bottomDrawer) return;
                 const collapsed = bottomDrawer.classList.contains('collapsed');
-                document.documentElement.style.setProperty('--zen-dock-bottom', collapsed ? '60px' : '336px');
+                workspace?.classList.toggle('zen-panel-collapsed', collapsed);
+                scrim?.classList.toggle('show', !collapsed && window.innerWidth <= 1180);
             }
-            document.getElementById('drawer-collapse-btn')?.addEventListener('click', () => setTimeout(syncDockPosition, 0));
-            syncDockPosition();
+            collapseBtn?.addEventListener('click', () => setTimeout(syncPanelChrome, 0));
+
+            // ─── "Full size" chart toggle: hides the rail/panel/topbar
+            // chrome so the chart alone fills the workspace, at any
+            // breakpoint. Lives in the chart's own toolbar (which stays
+            // visible in this mode), mirrors the maximize/minimize affordance
+            // from the classic page's chart, and exits on Esc alongside the
+            // sidebar. ───
+            const chartFsBtn = document.getElementById('zen-chart-fullscreen-btn');
+            function setChartFullscreen(on) {
+                if (!workspace) return;
+                const isOn = !!on;
+                if (!isOn && !workspace.classList.contains('zen-chart-fullscreen')) return;
+                workspace.classList.toggle('zen-chart-fullscreen', isOn);
+                chartFsBtn?.classList.toggle('is-active', isOn);
+                chartFsBtn?.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+                if (chartFsBtn) chartFsBtn.title = isOn ? 'Exit full-screen chart (Esc)' : 'Full-screen chart (Esc to exit)';
+                if (window.TradeFlowChart?.resize) setTimeout(() => window.TradeFlowChart.resize(), 20);
+            }
+            chartFsBtn?.addEventListener('click', () => setChartFullscreen(!workspace.classList.contains('zen-chart-fullscreen')));
+            window.addEventListener('resize', syncPanelChrome);
+            syncPanelChrome();
 
             // Clicking the collapsed sheet's mini bar (anywhere but a tab or
             // the chevron button, which already have their own handlers)
@@ -630,13 +709,57 @@
             document.getElementById('bottom-drawer-header')?.addEventListener('click', (e) => {
                 if (!bottomDrawer?.classList.contains('collapsed')) return;
                 if (e.target.closest('.drawer-tab, #drawer-collapse-btn')) return;
-                document.getElementById('drawer-collapse-btn')?.click();
+                collapseBtn?.click();
+            });
+
+            // Extra ways to reach the same real toggle: the pinned topbar
+            // launcher, the panel's own ✕, the desktop edge re-open tab,
+            // and clicking the tablet scrim to dismiss the overlay.
+            document.getElementById('zen-panel-launcher')?.addEventListener('click', () => collapseBtn?.click());
+            document.getElementById('zen-panel-close')?.addEventListener('click', () => collapseBtn?.click());
+            document.getElementById('zen-panel-reopen')?.addEventListener('click', () => collapseBtn?.click());
+            scrim?.addEventListener('click', () => { if (!bottomDrawer?.classList.contains('collapsed')) collapseBtn?.click(); });
+
+            // ─── Mobile bottom tab bar: Chart / Watchlist / Trade / Activity
+            // share one small viewport instead of stacking floating layers.
+            // "Trade" and "Activity" both open the same unified panel, just
+            // pre-selecting a different tab inside it. ───
+            const vizWrap = document.getElementById('viz-area-wrap');
+            const bottomTabs = document.querySelectorAll('.zen-bottom-tab');
+            function selectDrawerTab(panelName) {
+                document.querySelector(`.drawer-tab[data-panel="${panelName}"]`)?.click();
+            }
+            function setMobileView(view) {
+                bottomTabs.forEach(b => b.classList.toggle('active', b.dataset.zenView === view));
+                vizWrap?.classList.toggle('zen-mobile-hidden', view !== 'chart');
+                bottomDrawer?.classList.toggle('zen-mobile-active', view === 'trade' || view === 'activity');
+                if (view === 'trade') selectDrawerTab('trade');
+                if (view === 'activity') selectDrawerTab('positions');
+                if (view === 'watchlist') { openSidebar(); } else if (view !== 'chart') { closeSidebar(); }
+                if (window.TradeFlowChart?.resize) setTimeout(() => window.TradeFlowChart.resize(), 0);
+            }
+            bottomTabs.forEach(btn => btn.addEventListener('click', () => setMobileView(btn.dataset.zenView)));
+            // Watchlist rows/badges already close the sidebar themselves via
+            // whatever stock-app.prod.js does on selection; if the user picked
+            // a symbol from the mobile "Watchlist" view, drop back to Chart.
+            document.getElementById('watchlist')?.addEventListener('click', (e) => {
+                if (e.target.closest('li') && window.innerWidth <= 760) {
+                    setTimeout(() => setMobileView('chart'), 150);
+                }
             });
 
             // Live price ticker + account status chip + bottom-sheet
             // mini-summary, polled at the same 2s cadence portfolio.js
             // already uses for its own render loop.
             function updateZenReadouts() {
+              // portfolio.js's getAccountSummary() marks positions to market
+              // via window.TradeFlowChart.getLastPrice(), unguarded - safe
+              // once the app's own waitForSeam() polling has resolved, but
+              // this first call fires right as scripts finish loading, before
+              // stock-app.prod.js has necessarily assigned window.TradeFlowChart
+              // yet. Wrapped so that race doesn't abort the setInterval/
+              // onSymbolChange registration below it.
+              try {
                 const sym = window.TradeFlowChart?.getCurrentSymbol?.();
                 const price = sym ? window.TradeFlowChart?.getLastPrice?.(sym) : null;
                 const symEl = document.getElementById('zen-price-symbol');
@@ -666,6 +789,10 @@
                         summaryEl.classList.toggle('pnl-negative', unrealized < 0);
                     }
                 }
+              } catch (e) {
+                // Chart/portfolio seam not ready yet on this tick - the next
+                // interval tick (2s later) will succeed once it is.
+              }
             }
             updateZenReadouts();
             setInterval(updateZenReadouts, 2000);

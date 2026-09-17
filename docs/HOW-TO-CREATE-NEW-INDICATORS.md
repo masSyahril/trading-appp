@@ -86,7 +86,7 @@ TRIX: { name: 'TRIX', type: 'momentum', fn: 'TRIX', inputs: ['close'], params: [
 | `type` | Picker category: `trend`, `momentum`, `oscillator`, `volume`, `volatility` |
 | `fn` | The `window.*` function to call |
 | `inputs` | Candle fields passed first, in the function's argument order: `open`, `high`, `low`, `close`, `volume` |
-| `params` | The remaining arguments in order, as `[name, default]` - add `true` as a 3rd item for a fractional one (e.g. `['va', 0.7, true]`); the others are rounded because they're day counts |
+| `params` | The remaining arguments in order, as `[name, default]` - add `true` as a 3rd item for a fractional one (e.g. `['va', 0.7, true]`); the others are rounded because they're day counts. The 3rd item can instead be `{ fractional, label, min, max }` to show a clearer label and limit the input (e.g. `['alpha', 7, { label: 'alpha (1-9 = 0.1-0.9)', min: 1, max: 9 }]`; min/max apply on the stock pages only) |
 | `lines` | Returned arrays to draw as lines (`titles: { key: 'Legend name' }` renames any) |
 | `histogram` | Optional returned array drawn as bars, colored by sign - or by a returned `'Green'/'Red'/'Blue'` array named in `colorKey` |
 | `withClose` | Also draw the close price (for price-scale indicators the comment says to draw with `STK_close`) |

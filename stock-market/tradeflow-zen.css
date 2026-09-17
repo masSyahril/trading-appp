@@ -1,25 +1,74 @@
 /*
- * TradeFlow "Zen Workflow" layout - a floating-panel restructure of the same
- * app (Figma/Linear/Raycast-inspired), used only by zen.html. This file is
- * layout/positioning only: it never touches what stock-app.prod.js,
- * multi-indicator-system.js, order-panel.js, portfolio.js, price-alerts.js or
- * drawing-tools.js render *into* these elements - only where those same
- * elements (#watchlist, #chart, #order-panel, #bottom-drawer, etc., all
- * unmodified) sit on screen. Loaded after
- * tradeflow-theme.css so its color variables (--tf-*) are available and its
- * !important Tailwind remaps can still be beaten where this file needs to.
+ * TradeFlow "Zen Workspace" layout - v2.
+ *
+ * A real CSS Grid shell (topbar / rail / chart / panel) replacing the old
+ * floating-pill chrome (fixed command capsule, fixed status chip, a
+ * fixed circular order dock, a fixed bottom sheet). The old #order-panel
+ * dock is gone as a separate floating element - its fields now live inside
+ * a "Trade" tab merged into the former #bottom-drawer, which is itself no
+ * longer a bottom sheet but a panel docked to the right (desktop), an
+ * overlay drawer (tablet), or a full-screen view reached from a bottom tab
+ * bar (mobile).
+ *
+ * Root-cause fix for the "blob" bug: nothing that can wrap onto multiple
+ * rows or grow with its content gets a large border-radius anymore. Big
+ * radii are reserved for small, fixed-size things (badges, ticker chips).
+ *
+ * This file still only touches layout/position/color *around* the elements
+ * stock-app.prod.js / order-panel.js / portfolio.js / drawing-tools.js /
+ * price-alerts.js render into - every id/class those files query is kept.
+ * All new color/type tokens are scoped to `body.zen-body` (re-declaring the
+ * shared --tf-* custom properties from tradeflow-theme.css just for this
+ * page) so tradeflow-theme.css and the classic page it serves are untouched
+ * - the two pages are free to look different.
  */
 
-html, body {
-  height: 100%;
-}
+html, body { height: 100%; }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   Zen's own palette + type, layered on top of the shared --tf-* tokens.
+   Comfort (default) and Compact (denser) both get zen-specific values so
+   the existing comfort/compact toggle (#theme-toggle, shared JS) keeps
+   doing something real instead of being silently neutralized.
+   ═══════════════════════════════════════════════════════════════════════ */
 body.zen-body {
-  overflow: hidden;
-  background:
-    radial-gradient(1200px 700px at 20% -10%, rgba(16, 185, 129, 0.10), transparent 60%),
-    radial-gradient(1000px 600px at 100% 0%, rgba(41, 98, 255, 0.10), transparent 55%),
-    var(--tf-bg);
+  --tf-bg: #14181d;
+  --tf-bg-panel: #1b2029;
+  --tf-bg-hover: #262e39;
+  --tf-border: #333c48;
+  --tf-border-bright: #454f5d;
+  --tf-text: #e9e7e1;
+  --tf-text-muted: #8e97a6;
+  --tf-up: #6fa88a;
+  --tf-down: #c97064;
+  --tf-accent: #c9a15a;
+  --zen-accent-strong: #e4bf7c;
+  --zen-up-wash: rgba(111, 168, 138, 0.14);
+  --zen-down-wash: rgba(201, 112, 100, 0.14);
+  --zen-accent-wash: rgba(201, 161, 90, 0.14);
+  --zen-shadow: rgba(0, 0, 0, 0.4);
+  font-family: 'Manrope', ui-sans-serif, system-ui, -apple-system, sans-serif !important;
+}
+html[data-theme="compact"] body.zen-body {
+  --tf-bg: #101317;
+  --tf-bg-panel: #171b20;
+  --tf-bg-hover: #20252c;
+  --tf-border: #2a2f37;
+  --tf-border-bright: #3a414b;
+  --tf-text: #f2f0ea;
+  --tf-text-muted: #7c8492;
+  --tf-up: #5fa07f;
+  --tf-down: #c05f53;
+  --tf-accent: #d4ac66;
+  --zen-accent-strong: #e8c179;
+}
+body.zen-body .font-mono,
+body.zen-body #bottom-drawer table,
+body.zen-body .zen-num {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+}
+body.zen-body {
+  background: var(--tf-bg);
 }
 
 #zen-workspace {
@@ -27,29 +76,80 @@ body.zen-body {
   height: 100vh;
   width: 100vw;
   overflow: hidden;
+  display: grid;
+  grid-template-columns: 60px 1fr 380px;
+  grid-template-rows: 60px 1fr;
+  grid-template-areas:
+    "topbar topbar topbar"
+    "rail   chart  panel";
+  transition: grid-template-columns 0.18s ease;
+}
+/* Scoped to desktop only: below 1180px the panel becomes an overlay (its
+   own media query already owns grid-template-columns there), and the
+   reopen-tab this feeds is desktop-only. Without this guard, an ID+class
+   selector here would outrank the mobile/tablet breakpoints' plain-ID
+   rules by specificity and silently override their column layout whenever
+   the drawer happens to carry .collapsed. */
+@media (min-width: 1181px) {
+  #zen-workspace.zen-panel-collapsed {
+    grid-template-columns: 60px 1fr 0;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Top floating command capsule
+   "Full size" chart toggle: collapses the whole shell down to just the
+   chart, at any breakpoint. !important is deliberate and load-bearing here
+   (unlike the unscoped rule above that caused a real bug) - this state is
+   meant to unconditionally beat every responsive grid variant, so there is
+   no breakpoint this should lose to.
+   ═══════════════════════════════════════════════════════════════════════ */
+#zen-workspace.zen-chart-fullscreen {
+  grid-template-columns: 1fr !important;
+  grid-template-rows: 1fr !important;
+  grid-template-areas: "chart" !important;
+}
+#zen-workspace.zen-chart-fullscreen #viz-area-wrap {
+  grid-area: chart !important;
+}
+#zen-workspace.zen-chart-fullscreen #zen-command-bar,
+#zen-workspace.zen-chart-fullscreen #watchlist-rail,
+#zen-workspace.zen-chart-fullscreen #sidebar,
+#zen-workspace.zen-chart-fullscreen #zen-backdrop,
+#zen-workspace.zen-chart-fullscreen #bottom-drawer,
+#zen-workspace.zen-chart-fullscreen .zen-bottom-tabs,
+#zen-workspace.zen-chart-fullscreen .zen-panel-reopen,
+#zen-workspace.zen-chart-fullscreen .zen-panel-launcher,
+#zen-workspace.zen-chart-fullscreen .zen-drawer-scrim {
+  display: none !important;
+}
+#zen-chart-fullscreen-btn.is-active { color: var(--tf-accent); }
+.zen-fs-icon-exit { display: none; }
+#zen-chart-fullscreen-btn.is-active .zen-fs-icon-enter { display: none; }
+#zen-chart-fullscreen-btn.is-active .zen-fs-icon-exit { display: inline-flex; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Topbar: command bar + status readouts share one real row instead of two
+   floating pills.
    ═══════════════════════════════════════════════════════════════════════ */
 #zen-command-bar {
-  position: fixed;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 40;
+  grid-area: topbar;
+  position: static;
+  transform: none;
   display: flex;
   align-items: center;
   gap: 4px;
-  max-width: calc(100vw - 260px);
-  padding: 6px 8px;
-  border-radius: 999px;
-  background: rgba(30, 41, 59, 0.75);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border: 1px solid var(--tf-border);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  max-width: none;
+  width: 100%;
+  padding: 0 14px;
+  border-radius: 0;
+  background: var(--tf-bg-panel);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  border-bottom: 1px solid var(--tf-border);
+  box-shadow: none;
   overflow-x: auto;
+  overflow-y: hidden;
 }
 #zen-command-bar::-webkit-scrollbar { display: none; }
 
@@ -64,15 +164,15 @@ body.zen-body {
   height: 22px;
   background: var(--tf-border);
   flex-shrink: 0;
-  margin: 0 2px;
+  margin: 0 4px;
 }
 .zen-logo {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px 6px 12px;
+  padding: 6px 10px 6px 0;
   font-weight: 800;
-  color: var(--tf-up);
+  color: var(--tf-accent);
   font-size: 14px;
   white-space: nowrap;
   flex-shrink: 0;
@@ -83,7 +183,7 @@ body.zen-body {
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 999px;
+  border-radius: 8px;
   color: var(--tf-text-muted);
   background: transparent;
   border: none;
@@ -93,7 +193,7 @@ body.zen-body {
 }
 .zen-icon-btn:hover { background: var(--tf-bg-hover); color: var(--tf-text); }
 .zen-icon-btn:active { transform: scale(0.92); }
-.zen-icon-btn.zen-active { color: var(--tf-up); background: rgba(16, 185, 129, 0.15); }
+.zen-icon-btn.zen-active { color: var(--tf-accent); background: var(--zen-accent-wash); }
 
 .zen-search-wrap {
   display: flex;
@@ -101,8 +201,8 @@ body.zen-body {
   gap: 6px;
   background: var(--tf-bg);
   border: 1px solid var(--tf-border);
-  border-radius: 999px;
-  padding: 5px 6px 5px 12px;
+  border-radius: 8px;
+  padding: 5px 6px 5px 10px;
   flex-shrink: 0;
 }
 .zen-search-wrap input {
@@ -111,7 +211,7 @@ body.zen-body {
   outline: none;
   color: var(--tf-text);
   font-size: 13px;
-  width: 108px;
+  width: 96px;
 }
 .zen-search-kbd {
   font-size: 10px;
@@ -122,12 +222,12 @@ body.zen-body {
   white-space: nowrap;
 }
 .zen-search-wrap button {
-  background: var(--tf-up);
-  color: #06251b;
+  background: var(--tf-accent);
+  color: #1c1409;
   border: none;
-  border-radius: 999px;
-  width: 26px;
-  height: 26px;
+  border-radius: 6px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -141,7 +241,7 @@ body.zen-body {
 
 #zen-command-bar .tab-btn {
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: 7px;
   font-size: 12px;
   font-weight: 700;
   color: var(--tf-text-muted);
@@ -152,8 +252,11 @@ body.zen-body {
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 #zen-command-bar .tab-btn:hover { color: var(--tf-text); background: var(--tf-bg-hover); }
-#zen-command-bar .tab-btn.active {
-  color: #fff;
+/* Beats stock-app.prod.js's toggled Tailwind utilities (text-blue-400 etc.)
+   on specificity so the active tab reads in Zen's accent, not classic's blue. */
+#zen-command-bar .tab-btn.active,
+#zen-command-bar .tab-btn.active.text-blue-400 {
+  color: #1c1409 !important;
   background: var(--tf-accent);
   border-color: var(--tf-accent);
 }
@@ -162,7 +265,7 @@ body.zen-body {
   display: flex;
   align-items: baseline;
   gap: 6px;
-  padding: 0 10px;
+  padding: 0 6px;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -172,9 +275,9 @@ body.zen-body {
   color: var(--tf-text-muted);
 }
 .zen-price-ticker .zen-price-value {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--tf-text);
 }
@@ -185,42 +288,39 @@ body.zen-body {
   width: 32px;
   height: 32px;
   justify-content: center;
+  border-radius: 8px;
 }
 #zen-command-bar .theme-toggle-label { display: none; }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Account status chip (top-right)
+   Account stats - folded into the command bar as its own trailing group
+   (was a separate floating "#zen-status-chip" pill; the id is kept as an
+   empty-but-harmless wrapper in the HTML in case anything else targets it
+   later, but it no longer positions independently).
    ═══════════════════════════════════════════════════════════════════════ */
 #zen-status-chip {
-  position: fixed;
-  top: 16px;
-  right: 16px;
-  z-index: 40;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  border-radius: 999px;
-  background: rgba(30, 41, 59, 0.75);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border: 1px solid var(--tf-border);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  gap: 14px;
+  padding: 0 12px;
+  margin-left: auto;
+  border-left: 1px solid var(--tf-border);
+  flex-shrink: 0;
 }
-.zen-chip-stat { display: flex; flex-direction: column; gap: 1px; }
+.zen-chip-stat { display: flex; flex-direction: column; gap: 1px; align-items: flex-end; }
 .zen-chip-stat-label {
   color: var(--tf-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: 9px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .zen-chip-stat-value {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   color: var(--tf-text);
-  font-size: 12px;
+  font-size: 12.5px;
 }
 #zen-chip-available.margin-warning {
   padding: 1px 8px;
@@ -228,72 +328,101 @@ body.zen-body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Floating glass main stage (chart)
+   Chart area - a real grid cell, not a floating glass card over a padded
+   backdrop.
    ═══════════════════════════════════════════════════════════════════════ */
+/* #viz-area-wrap (the <main>) is the actual grid item for "chart" - it's
+   placed via an inline style since it's the direct child of #zen-workspace;
+   #viz-area itself is a grandchild and just needs to fill that <main>. */
+#viz-area-wrap { grid-area: chart; min-width: 0; }
 #viz-area {
   height: 100%;
-  /* Left: clear the fixed watchlist rail (16px in, 40px wide) with a 12px gap -
-     otherwise it covers the chart's left edge: the toolbar's first button, the
-     OHLC row and the start of every indicator pane's legend. */
-  padding: 84px 24px 136px 68px;
+  padding: 0;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  min-height: 0;
 }
 #main-chart-panel {
   flex: 1;
   min-height: 0;
   display: flex !important;
   flex-direction: column;
-  background: rgba(30, 41, 59, 0.55) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid var(--tf-border) !important;
-  border-radius: 20px !important;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  background: var(--tf-bg) !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none;
   overflow: hidden;
 }
 #chart-toolbar {
   border-radius: 0 !important;
-  background: rgba(15, 23, 42, 0.5) !important;
+  background: var(--tf-bg-panel) !important;
   border-bottom: 1px solid var(--tf-border) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
 }
 #chart {
   border-radius: 0 !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Watchlist: persistent thin rail + slide-over drawer (left edge)
+   Watchlist: a real grid-column icon rail (not fixed/floating), plus the
+   same slide-over drawer for the full list.
    ═══════════════════════════════════════════════════════════════════════ */
 #watchlist-rail {
-  position: fixed !important;
+  grid-area: rail;
+  position: static !important;
   display: flex !important;
-  top: 92px;
-  bottom: 148px;
-  left: 16px;
-  width: 40px;
-  z-index: 25;
-  border-radius: 14px !important;
-  border: 1px solid var(--tf-border) !important;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  flex-direction: column;
+  align-items: center;
+  top: auto;
+  bottom: auto;
+  left: auto;
+  width: 100%;
+  height: 100%;
+  z-index: auto;
+  border-radius: 0 !important;
+  border: none !important;
+  border-right: 1px solid var(--tf-border) !important;
+  box-shadow: none;
   padding-bottom: 6px;
+  padding-top: 6px;
   overflow-y: auto;
 }
-.watchlist-rail-expand { border-radius: 14px 14px 0 0 !important; }
+.watchlist-rail-expand {
+  border-radius: 8px !important;
+  width: 36px;
+  height: 28px;
+  margin: 0 auto 6px;
+  border-bottom: none !important;
+  border: 1px dashed var(--tf-border) !important;
+}
+#watchlist-rail-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
 
 #sidebar {
   position: fixed !important;
   display: flex !important;
-  top: 0;
-  left: 0;
+  flex-direction: column;
+  top: 60px;
+  left: 60px;
   bottom: 0;
   width: 300px !important;
   z-index: 50;
   border-right: 1px solid var(--tf-border) !important;
-  border-radius: 0 20px 20px 0 !important;
-  box-shadow: 24px 0 60px rgba(0, 0, 0, 0.5);
-  transform: translateX(-100%);
-  transition: transform 0.25s ease;
+  border-radius: 0 !important;
+  box-shadow: 12px 0 32px var(--zen-shadow);
+  transform: translateX(calc(-100% - 60px));
+  transition: transform 0.22s ease;
   visibility: hidden;
 }
 #sidebar.zen-open {
@@ -301,16 +430,13 @@ body.zen-body {
   visibility: visible;
 }
 
-/* Indicators are native panes inside the chart card (added from the
-   indicator picker - the sliders button or Ctrl/Cmd+I). */
-
 /* ═══════════════════════════════════════════════════════════════════════
    Backdrop for the watchlist slide-over
    ═══════════════════════════════════════════════════════════════════════ */
 #zen-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(2, 6, 23, 0.55);
+  background: rgba(8, 10, 13, 0.5);
   backdrop-filter: blur(2px);
   z-index: 42;
   opacity: 0;
@@ -323,126 +449,320 @@ body.zen-body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Execution dock - horizontal floating order ticket, always visible just
-   above the positions sheet's collapsed bar (JS keeps --zen-dock-bottom in
-   sync with the sheet's collapsed/expanded state).
-   ═══════════════════════════════════════════════════════════════════════ */
-#order-panel {
-  position: fixed !important;
-  left: 50%;
-  bottom: var(--zen-dock-bottom, 60px);
-  transform: translateX(-50%);
-  width: auto !important;
-  max-width: calc(100vw - 32px);
-  z-index: 30;
-  display: flex !important;
-  flex-direction: row !important;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
-  border-radius: 999px;
-  background: rgba(30, 41, 59, 0.85) !important;
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border: 1px solid var(--tf-border) !important;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
-  transition: bottom 0.2s ease;
-  font-size: 12px;
-}
-.zen-dock-symbol {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-weight: 800;
-  color: var(--tf-up);
-  padding: 0 4px;
-}
-#order-panel .order-type-tab { padding: 5px 10px; }
-#order-panel .order-field {
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-}
-#order-panel .order-field span {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-#order-panel .order-field input,
-#order-panel .order-field select {
-  width: 76px;
-  padding: 5px 8px;
-  border-radius: 999px;
-}
-#order-panel .size-quick-row { gap: 3px; }
-#order-panel .size-quick-btn {
-  padding: 5px 8px;
-  border-radius: 999px;
-}
-#order-panel .rr-summary-box {
-  display: flex !important;
-  gap: 10px;
-  padding: 4px 12px;
-  border-radius: 999px;
-  border-left: none !important;
-  border: 1px solid var(--tf-border) !important;
-}
-#order-panel .rr-summary-box > div { display: flex; align-items: baseline; gap: 4px; }
-#order-panel #btn-buy,
-#order-panel #btn-sell {
-  padding: 8px 18px;
-  border-radius: 999px;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   Positions/Orders/History/Account slide-up sheet - collapsed by default,
-   shows a persistent mini bar (position count + live P&L); reuses
-   portfolio.js's existing setupCollapse()/.collapsed class toggle
-   unmodified, just redefines what "collapsed" means visually here
-   (transform, not height:34px) so tables underneath keep a real, laid-out
-   size at all times.
+   Unified panel (formerly #order-panel + #bottom-drawer as two separate
+   floating elements). #bottom-drawer is now the single docked panel; its
+   first tab ("Trade") holds the fields that used to live in the floating
+   #order-panel dock. #order-panel itself is gone.
    ═══════════════════════════════════════════════════════════════════════ */
 #bottom-drawer {
-  position: fixed !important;
+  grid-area: panel;
+  position: static !important;
   display: flex !important;
-  left: 50%;
-  transform: translateX(-50%) translateY(0);
-  bottom: 0;
-  width: min(1040px, calc(100vw - 32px)) !important;
-  height: 320px !important;
-  z-index: 30;
-  border-radius: 20px 20px 0 0 !important;
-  border: 1px solid var(--tf-border) !important;
-  border-bottom: none !important;
-  box-shadow: 0 -16px 40px rgba(0, 0, 0, 0.45);
-  transition: transform 0.25s ease;
-}
-#bottom-drawer.collapsed {
-  height: 320px !important;
-  transform: translateX(-50%) translateY(calc(100% - 44px));
+  flex-direction: column !important;
+  left: auto;
+  transform: none !important;
+  bottom: auto;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: auto;
+  border-radius: 0 !important;
+  border: none !important;
+  border-left: 1px solid var(--tf-border) !important;
+  box-shadow: none;
+  transition: none;
+  overflow: hidden;
 }
 #bottom-drawer-header {
-  height: 44px;
+  height: 48px;
   box-sizing: border-box;
   flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
-#bottom-drawer.collapsed #bottom-drawer-header {
-  cursor: pointer;
+#bottom-drawer-header::-webkit-scrollbar { display: none; }
+.drawer-tab {
+  flex-shrink: 0;
+}
+#zen-panel-close {
+  display: none;
+  flex-shrink: 0;
+  margin-left: 4px;
 }
 .zen-drawer-summary {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
   font-size: 12px;
   font-weight: 700;
   color: var(--tf-text-muted);
   padding: 0 10px;
   white-space: nowrap;
+  display: none; /* the same numbers are already visible in the topbar's account stats */
 }
 .zen-drawer-summary.pnl-positive { color: var(--tf-up) !important; }
 .zen-drawer-summary.pnl-negative { color: var(--tf-down) !important; }
 
-@media (max-width: 768px) {
+/* Trade tab: the former floating order-ticket dock, now a normal panel pane.
+   :not([hidden]) guard - see the note above #panel-account: an unconditional
+   author `display` rule here would beat the UA [hidden]{display:none} rule
+   the moment portfolio.js's tab-switcher sets this pane's hidden attribute. */
+#panel-trade:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+#panel-trade { padding: 14px; }
+#panel-trade .zen-dock-symbol {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--tf-accent);
+}
+#panel-trade .order-type-tab-row {
+  display: flex;
+  gap: 4px;
+  background: var(--tf-bg);
+  border-radius: 9px;
+  padding: 3px;
+}
+#panel-trade .order-type-tab {
+  flex: 1;
+  border-radius: 6px;
+  border-color: transparent;
+  background: transparent;
+}
+#panel-trade .order-type-tab.active {
+  background: var(--tf-bg-panel);
+  border-color: transparent;
+  color: var(--tf-text);
+  box-shadow: 0 1px 2px var(--zen-shadow);
+}
+#panel-trade .order-field {
+  width: 100%;
+}
+#panel-trade .order-field span {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+#panel-trade .order-field input,
+#panel-trade .order-field select {
+  width: 100%;
+  border-radius: 9px;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 14px;
+  padding: 9px 10px;
+}
+#panel-trade .order-field-row {
+  display: flex;
+  gap: 10px;
+}
+#panel-trade .order-field-row .order-field { flex: 1; }
+#panel-trade .size-quick-row { gap: 6px; margin-top: 8px; }
+#panel-trade .size-quick-btn { border-radius: 7px; padding: 6px 0; }
+#panel-trade .rr-summary-box {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px 10px;
+  padding: 12px;
+  border-radius: 10px;
+  border-left: none !important;
+  border: 1px solid var(--tf-border) !important;
+  box-shadow: none;
+}
+#panel-trade .rr-summary-box > div { display: flex; flex-direction: column; gap: 2px; }
+#panel-trade .rr-summary-box .text-slate-400 {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+#panel-trade .trade-actions {
+  display: flex;
+  gap: 10px;
+}
+#panel-trade #btn-buy,
+#panel-trade #btn-sell {
+  flex: 1;
+  padding: 13px 0;
+  border-radius: 10px;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+}
+#panel-trade #btn-buy {
+  background: var(--zen-up-wash) !important;
+  color: var(--tf-up) !important;
+  border-color: var(--tf-up) !important;
+}
+#panel-trade #btn-buy:hover { background: var(--tf-up) !important; color: var(--tf-bg) !important; }
+#panel-trade #btn-sell {
+  background: var(--zen-down-wash) !important;
+  color: var(--tf-down) !important;
+  border-color: var(--tf-down) !important;
+}
+#panel-trade #btn-sell:hover { background: var(--tf-down) !important; color: var(--tf-bg) !important; }
+#panel-trade #btn-buy:active,
+#panel-trade #btn-sell:active { transform: scale(0.97); }
+
+/* Positions / Orders / History / Account panes.
+   NOTE: the grid display is applied with a :not([hidden]) guard - an
+   unconditional Tailwind-style `display:grid` class on this element fights
+   the browser's `[hidden]{display:none}` UA rule (author styles always win
+   ties with the UA stylesheet, hidden attribute or not), which is exactly
+   how the original app's Account tab always rendered even while "hidden". */
+.drawer-panel.p-3 { padding: 14px; }
+#panel-account:not([hidden]) {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.drawer-stat {
+  background: var(--tf-bg-panel);
+  border: 1px solid var(--tf-border);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   A pinned re-open tab appears whenever the panel is collapsed/closed, on
+   any viewport - the trade ticket must never be more than one click away.
+   ═══════════════════════════════════════════════════════════════════════ */
+.zen-panel-reopen {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 45;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  background: var(--tf-accent);
+  color: #1c1409;
+  border: none;
+  border-radius: 8px 0 0 8px;
+  padding: 10px 8px;
+  font-size: 12px;
+  font-weight: 800;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  cursor: pointer;
+  box-shadow: -4px 0 16px var(--zen-shadow);
+}
+#zen-workspace.zen-panel-collapsed .zen-panel-reopen { display: flex; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Mobile bottom tab bar (new - lets the four "screens" below share one
+   viewport instead of stacking floating layers).
+   ═══════════════════════════════════════════════════════════════════════ */
+.zen-bottom-tabs { display: none; }
+
+/* ================= BREAKPOINT: tablet - panel becomes an overlay ======= */
+@media (max-width: 1180px) {
+  #zen-workspace {
+    grid-template-columns: 60px 1fr;
+    grid-template-areas:
+      "topbar topbar"
+      "rail   chart";
+  }
   #zen-status-chip .zen-chip-stat:not(:last-child) { display: none; }
-  #sidebar { width: 82vw !important; }
+  #bottom-drawer {
+    position: fixed !important;
+    top: 60px;
+    right: 0;
+    bottom: 0;
+    width: min(400px, 92vw) !important;
+    height: auto !important;
+    z-index: 60;
+    border-left: 1px solid var(--tf-border) !important;
+    box-shadow: -12px 0 32px var(--zen-shadow);
+    transform: translateX(110%);
+    transition: transform 0.22s ease;
+  }
+  #bottom-drawer:not(.collapsed) { transform: translateX(0); }
+  #zen-panel-close { display: flex; }
+  .zen-panel-launcher { display: flex !important; }
+  .zen-panel-reopen { display: none !important; }
+}
+.zen-panel-launcher {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  background: var(--tf-accent);
+  color: #1c1409;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 12.5px;
+  font-weight: 800;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.zen-drawer-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 10, 13, 0.45);
+  z-index: 55;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+.zen-drawer-scrim.show { opacity: 1; pointer-events: auto; }
+
+/* ================= BREAKPOINT: mobile - full-screen views ============= */
+@media (max-width: 760px) {
+  #zen-workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr 58px;
+    grid-template-areas:
+      "topbar"
+      "content"
+      "bottomtabs";
+  }
+  /* Kept as one horizontally-scrollable row (same interaction the old
+     floating pill already relied on at narrow widths) rather than forcing
+     ten-plus icon buttons into a cramped multi-row reflow. */
+  #zen-command-bar { padding: 0 10px; }
+  #zen-status-chip .zen-chip-stat:not(:last-child) { display: none; }
+  .zen-search-wrap input { width: 88px; }
+
   #watchlist-rail { display: none !important; }
-  #viz-area { padding-left: 24px; }
+  #viz-area-wrap, #bottom-drawer { grid-area: content; }
+  #viz-area-wrap.zen-mobile-hidden { display: none !important; }
+  #bottom-drawer {
+    position: static !important;
+    width: 100% !important;
+    transform: none !important;
+    box-shadow: none;
+    border-left: none !important;
+    display: none !important;
+  }
+  #bottom-drawer.zen-mobile-active { display: flex !important; }
+  #zen-panel-close { display: none !important; }
+  #sidebar { top: 0; left: 0; width: 100% !important; transform: translateX(-100%); }
+  #sidebar.zen-open { transform: translateX(0); }
+  .zen-panel-launcher { display: none !important; }
+
+  .zen-bottom-tabs {
+    grid-area: bottomtabs;
+    display: flex;
+    background: var(--tf-bg-panel);
+    border-top: 1px solid var(--tf-border);
+  }
+  .zen-bottom-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    background: transparent;
+    border: none;
+    color: var(--tf-text-muted);
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 6px 0;
+    cursor: pointer;
+  }
+  .zen-bottom-tab.active { color: var(--tf-accent); }
+  .zen-panel-reopen { display: none !important; }
 }

@@ -1,0 +1,206 @@
+{
+  "common": {
+    "loading": "載入中…"
+  },
+  "nav": {
+    "mainLabel": "主要導覽",
+    "footerLabel": "頁尾導覽",
+    "platforms": "交易平台",
+    "about": "關於我們",
+    "recoveryTools": "復原工具"
+  },
+  "hub": {
+    "hero": {
+      "title": "選擇您的交易平台",
+      "subtitle": "存取專為加密貨幣與傳統股票市場打造的交易環境。每個平台都針對其市場進行最佳化,並提供專屬工具與即時資料。"
+    },
+    "stats": {
+      "ariaLabel": "平台統計資訊",
+      "cryptoAssets": "加密資產",
+      "stockSymbols": "股票代號",
+      "marketData": "市場資料",
+      "cryptoTradingHours": "加密貨幣交易",
+      "unlimited": "無限",
+      "live": "即時",
+      "marketOpen": "開盤",
+      "marketAfterHours": "盤後",
+      "marketClosed": "休市"
+    },
+    "platformsSection": {
+      "ariaLabel": "交易平台"
+    },
+    "crypto": {
+      "ariaLabel": "前往加密貨幣交易平台",
+      "title": "加密貨幣交易",
+      "subtitle": "比特幣、以太幣與數位資產",
+      "description": "透過幣安（Binance）即時資料交易加密貨幣。提供進階圖表、技術指標,以及全天候的數位資產交易服務。",
+      "features": [
+        "比特幣、以太幣、幣安幣、Solana、Cardano、瑞波幣",
+        "幣安 WebSocket 即時報價",
+        "多種時間週期（1分鐘、5分鐘、15分鐘、1小時、4小時、1天）",
+        "MACD 技術指標與柱狀圖",
+        "即時部位追蹤與損益",
+        "市價單模擬系統",
+        "全天候加密貨幣市場"
+      ],
+      "cta": "啟動加密貨幣平台",
+      "shortName": "加密貨幣交易"
+    },
+    "stock": {
+      "ariaLabel": "前往股票市場平台",
+      "title": "股票市場",
+      "subtitle": "傳統股票與證券",
+      "description": "透過完整的市場資料、公司資訊與強大的分析工具,交易傳統證券與股票市場。",
+      "features": [
+        "透過 Stooq 資料供應商提供美股資料",
+        "每日歷史資料與圖表",
+        "MACD 技術指標分析",
+        "交易時段追蹤（美東時間 9:30-16:00）",
+        "盤後交易模擬",
+        "部位追蹤與投資組合管理",
+        "自選股清單與交易紀錄"
+      ],
+      "cta": "啟動股票平台",
+      "shortName": "股票市場"
+    },
+    "footer": {
+      "text": "TradeLite 交易平台 — 僅供教育用途之示範應用程式,非投資建議。",
+      "companyData": "公司資料",
+      "recoveryTools": "復原工具",
+      "about": "關於我們",
+      "disclaimer": "免責聲明"
+    },
+    "about": {
+      "body": "TradeLite 交易平台中心\n\n完整的交易平台功能包括:\n• 整合幣安的即時加密貨幣交易\n• 傳統股票市場分析工具\n• 教育用途交易模擬\n• 比特幣資料復原工具\n\n版本:2.0\n採用現代網頁技術打造,提供最佳效能。\n\n⚠️ 本應用程式僅供教育示範之用。\n並非用於實際金融交易或投資建議。"
+    },
+    "disclaimer": {
+      "body": "重要免責聲明\n\n本應用程式僅供教育與示範用途。\n\n• 非財務建議或投資推薦\n• 使用模擬資料的示範交易環境\n• 使用真實市場資料僅供教育用途\n• 不會執行任何實際交易\n• 過去績效不代表未來表現\n\n進行投資決策前,請務必諮詢合格的財務顧問。\n\n使用本平台即表示您了解並接受上述限制,並自行承擔風險。"
+    },
+    "platformError": {
+      "title": "無法存取{platform}平台",
+      "errorPrefix": "錯誤:{message}",
+      "solutionsTitle": "可能的解決方法:",
+      "solution1": "確認您的網頁伺服器（XAMPP/Apache）是否正在執行",
+      "solution2": "確認平台檔案位於正確的目錄",
+      "solution3": "查看瀏覽器主控台以取得詳細錯誤資訊",
+      "solution4": "嘗試重新整理頁面",
+      "footer": "若問題持續發生,請檢查平台設定。"
+    }
+  },
+  "authWidget": {
+    "signIn": "登入",
+    "register": "註冊",
+    "accountSettings": "帳戶設定",
+    "verifyEmailAddress": "驗證電子郵件地址",
+    "logOut": "登出",
+    "loggingOut": "登出中…",
+    "sending": "傳送中…",
+    "sent": "已傳送!請查看您的電子郵件",
+    "sendFailed": "傳送失敗,請再試一次"
+  },
+  "auth": {
+    "backToTradeLite": "← 返回 TradeLite",
+    "login": {
+      "pageTitle": "登入 - TradeLite",
+      "title": "登入",
+      "subtitle": "歡迎回來,請輸入您的帳號資訊以繼續。",
+      "emailLabel": "電子郵件",
+      "passwordLabel": "密碼",
+      "submit": "登入",
+      "submitting": "登入中…",
+      "forgotPassword": "忘記密碼?",
+      "noAccount": "還沒有帳號?",
+      "registerLink": "註冊"
+    },
+    "register": {
+      "pageTitle": "建立帳號 - TradeLite",
+      "title": "建立您的帳號",
+      "subtitle": "模擬交易、自選股清單與價格提醒 — 全部儲存在您的帳戶中。",
+      "nameLabel": "姓名",
+      "emailLabel": "電子郵件",
+      "passwordLabel": "密碼",
+      "passwordHint": "至少 8 個字元,需包含英文字母與數字。",
+      "submit": "建立帳號",
+      "submitting": "建立帳號中…",
+      "haveAccount": "已經有帳號了嗎?",
+      "signInLink": "登入",
+      "successMessage": "帳號建立成功!請查看您的電子郵件以取得驗證連結。即將跳轉…"
+    },
+    "forgotPassword": {
+      "pageTitle": "忘記密碼 - TradeLite",
+      "title": "重設您的密碼",
+      "subtitle": "輸入您的帳戶電子郵件,我們將寄送重設連結給您。",
+      "emailLabel": "電子郵件",
+      "submit": "傳送重設連結",
+      "submitting": "傳送中…",
+      "rememberedIt": "想起密碼了?",
+      "signInLink": "登入",
+      "genericSuccess": "如果該電子郵件已註冊,重設連結已經寄出。",
+      "genericError": "發生錯誤,請再試一次。"
+    },
+    "resetPassword": {
+      "pageTitle": "設定新密碼 - TradeLite",
+      "title": "設定新密碼",
+      "subtitle": "為您的帳戶設定一組新密碼。",
+      "newPasswordLabel": "新密碼",
+      "passwordHint": "至少 8 個字元,需包含英文字母與數字。",
+      "submit": "更新密碼",
+      "submitting": "更新中…",
+      "backToSignIn": "返回登入",
+      "missingToken": "此連結缺少重設權杖。請從「忘記密碼?」頁面重新申請。",
+      "redirecting": "即將跳轉至登入頁面…",
+      "genericError": "無法更新您的密碼。"
+    },
+    "verifyEmail": {
+      "pageTitle": "驗證電子郵件 - TradeLite",
+      "title": "正在驗證您的電子郵件…",
+      "statusWaiting": "請稍候。",
+      "missingToken": "此連結缺少驗證權杖。",
+      "genericError": "此連結無效或已過期。",
+      "goToTradeLite": "前往 TradeLite",
+      "signIn": "登入"
+    },
+    "account": {
+      "pageTitle": "帳戶設定 - TradeLite",
+      "title": "帳戶設定",
+      "subtitle": "管理您的個人資料、密碼與已登入的裝置。",
+      "profileTitle": "個人資料",
+      "displayNameLabel": "顯示名稱",
+      "saveNameBtn": "儲存名稱",
+      "savingBtn": "儲存中…",
+      "resendBtn": "重新寄送驗證信",
+      "resendingBtn": "傳送中…",
+      "resendSentBtn": "已傳送!請查看您的電子郵件",
+      "resendError": "無法寄送驗證信。",
+      "verifiedBadge": "已驗證",
+      "unverifiedBadge": "尚未驗證",
+      "nameUpdated": "顯示名稱已更新。",
+      "nameUpdateError": "無法更新您的名稱。",
+      "passwordTitle": "變更密碼",
+      "passwordSubtitle": "您在此裝置上將保持登入狀態,但所有其他已登入的裝置都會被登出。",
+      "currentPasswordLabel": "目前密碼",
+      "newPasswordLabel": "新密碼",
+      "confirmPasswordLabel": "確認新密碼",
+      "updatePasswordBtn": "更新密碼",
+      "updatingBtn": "更新中…",
+      "passwordMismatch": "新密碼與確認密碼不相符。",
+      "passwordUpdated": "密碼已更新。其他裝置已被登出。",
+      "passwordUpdateError": "無法更新您的密碼。",
+      "sessionsTitle": "已登入的裝置",
+      "sessionsSubtitle": "目前登入您帳戶的所有裝置。",
+      "revokeAllBtn": "登出其他裝置",
+      "revokeAllLoadingBtn": "登出中…",
+      "revokeAllSuccess": "已登出 {count} 台其他裝置。",
+      "revokeAllError": "無法登出其他裝置。",
+      "loadingSessions": "載入裝置清單中…",
+      "noSessions": "目前沒有使用中的登入紀錄。",
+      "thisDevice": "本裝置",
+      "logoutDeviceBtn": "登出",
+      "loggingOutDeviceBtn": "登出中…",
+      "logoutDeviceError": "無法登出該裝置。",
+      "loadSessionsError": "無法載入裝置清單。",
+      "unknownIp": "未知 IP",
+      "sessionMetaLine": "{ip} · 最後上線時間 {time}"
+    }
+  }
+}

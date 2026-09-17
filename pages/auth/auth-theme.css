@@ -1,0 +1,248 @@
+/*
+ * Shared dark theme for the standalone pages under pages/auth/ (login,
+ * register, verify-email, forgot/reset password). Self-contained - doesn't
+ * depend on any other page's stylesheet - and echoes the same palette as
+ * the TradeLite hub (index.html) so it reads as the same product.
+ */
+:root {
+  --tl-bg-primary: #0b0f14;
+  --tl-bg-secondary: #1c2128;
+  --tl-bg-panel: rgba(255, 255, 255, 0.05);
+  --tl-border: rgba(255, 255, 255, 0.1);
+  --tl-border-hover: rgba(255, 255, 255, 0.2);
+  --tl-text-primary: #e6edf3;
+  --tl-text-secondary: rgba(230, 237, 243, 0.75);
+  --tl-text-muted: rgba(230, 237, 243, 0.55);
+  --tl-accent-blue: #58a6ff;
+  --tl-accent-blue-light: #79c0ff;
+  --tl-accent-green: #00d4aa;
+  --tl-accent-red: #f85149;
+}
+
+* { box-sizing: border-box; }
+
+body.tl-auth-body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: linear-gradient(135deg, var(--tl-bg-primary) 0%, var(--tl-bg-secondary) 100%);
+  color: var(--tl-text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+.tl-auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 1.3rem;
+  margin-bottom: 24px;
+  color: var(--tl-text-primary);
+  text-decoration: none;
+}
+.tl-auth-brand span {
+  background: linear-gradient(90deg, var(--tl-accent-blue), var(--tl-accent-blue-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.tl-auth-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--tl-bg-panel);
+  border: 1px solid var(--tl-border);
+  border-radius: 14px;
+  padding: 28px 26px;
+  backdrop-filter: blur(20px);
+}
+
+.tl-auth-title {
+  margin: 0 0 6px;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+.tl-auth-subtitle {
+  margin: 0 0 22px;
+  font-size: 0.88rem;
+  color: var(--tl-text-secondary);
+}
+
+.tl-field { margin-bottom: 16px; }
+.tl-field label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--tl-text-secondary);
+  margin-bottom: 6px;
+}
+.tl-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--tl-border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--tl-text-primary);
+  font-size: 0.92rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.tl-input:focus { border-color: var(--tl-accent-blue); }
+
+.tl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 11px 16px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.05s ease;
+}
+.tl-btn:active { transform: scale(0.99); }
+.tl-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.tl-btn-primary {
+  background: linear-gradient(90deg, var(--tl-accent-blue), var(--tl-accent-blue-light));
+  color: #04101c;
+}
+.tl-btn-primary:hover:not(:disabled) { opacity: 0.92; }
+
+.tl-alert {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+.tl-alert-error {
+  background: rgba(248, 81, 73, 0.12);
+  border: 1px solid rgba(248, 81, 73, 0.35);
+  color: #ffb4ae;
+}
+.tl-alert-success {
+  background: rgba(0, 212, 170, 0.12);
+  border: 1px solid rgba(0, 212, 170, 0.35);
+  color: #8cf2dc;
+}
+
+.tl-auth-footer {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--tl-text-muted);
+}
+.tl-auth-footer a {
+  color: var(--tl-accent-blue-light);
+  text-decoration: none;
+}
+.tl-auth-footer a:hover { text-decoration: underline; }
+
+.tl-back-link {
+  margin-top: 22px;
+  font-size: 0.82rem;
+  color: var(--tl-text-muted);
+  text-decoration: none;
+}
+.tl-back-link:hover { color: var(--tl-text-secondary); }
+
+.tl-hint {
+  font-size: 0.76rem;
+  color: var(--tl-text-muted);
+  margin-top: 6px;
+}
+
+.tl-spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(4, 16, 28, 0.35);
+  border-top-color: #04101c;
+  border-radius: 50%;
+  animation: tl-spin 0.7s linear infinite;
+  margin-right: 8px;
+  vertical-align: -2px;
+}
+@keyframes tl-spin { to { transform: rotate(360deg); } }
+
+/* Account settings page - wider, multi-card layout on top of the same theme. */
+.tl-account-wrap {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.tl-account-wrap .tl-auth-card { max-width: none; }
+
+.tl-section-title { margin: 0 0 4px; font-size: 1.05rem; font-weight: 700; }
+.tl-section-sub { margin: 0 0 18px; font-size: 0.85rem; color: var(--tl-text-secondary); }
+
+.tl-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.tl-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.tl-badge-verified { background: rgba(0, 212, 170, 0.15); color: #8cf2dc; }
+.tl-badge-unverified { background: rgba(255, 180, 84, 0.15); color: #ffb454; }
+.tl-badge-current { background: rgba(88, 166, 255, 0.15); color: var(--tl-accent-blue-light); margin-left: 8px; }
+
+.tl-btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--tl-text-primary);
+  border: 1px solid var(--tl-border);
+  width: auto;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+}
+.tl-btn-secondary:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); }
+
+.tl-btn-danger {
+  background: rgba(248, 81, 73, 0.12);
+  color: #ffb4ae;
+  border: 1px solid rgba(248, 81, 73, 0.35);
+  width: auto;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+}
+.tl-btn-danger:hover:not(:disabled) { background: rgba(248, 81, 73, 0.22); }
+
+.tl-session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+.tl-session-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--tl-border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  flex-wrap: wrap;
+}
+.tl-session-info { display: flex; flex-direction: column; gap: 3px; }
+.tl-session-device { font-size: 0.88rem; font-weight: 600; display: flex; align-items: center; }
+.tl-session-meta { font-size: 0.76rem; color: var(--tl-text-muted); }
+
+.tl-empty { font-size: 0.85rem; color: var(--tl-text-muted); padding: 4px 0 12px; }
