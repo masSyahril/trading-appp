@@ -757,3 +757,121 @@ body.indicator-resizing {
     justify-content: flex-end;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Light appearance - this file hardcodes its slate/emerald palette rather
+   than reading custom properties, so the override mirrors every selector
+   above that sets a background/border/text color. Contrast checked against
+   WCAG AA (small UI text/icons; filled accent buttons at the AA-large tier
+   that's standard for bold pill/icon buttons).
+   ═══════════════════════════════════════════════════════════════════════ */
+[data-appearance="light"] .indicator-panel {
+  background: #ffffff;
+  border-top-color: #e2e8f0;
+  border-bottom-color: #e2e8f0;
+}
+[data-appearance="light"] .indicator-panel:hover { background: #f1f5f9; }
+[data-appearance="light"] .indicator-header {
+  background: #f1f5f9;
+  border-bottom-color: #e2e8f0;
+}
+[data-appearance="light"] .indicator-panel.minimized .indicator-header:hover { background: #e2e8f0; }
+[data-appearance="light"] .indicator-select,
+[data-appearance="light"] .indicator-select-btn,
+[data-appearance="light"] .indicator-param input,
+[data-appearance="light"] .nav-btn,
+[data-appearance="light"] .icon-btn,
+[data-appearance="light"] .btn-minimize,
+[data-appearance="light"] .indicator-picker-search {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  color: #1e293b;
+}
+[data-appearance="light"] .indicator-select option { background: #ffffff; color: #1e293b; }
+[data-appearance="light"] .indicator-select:hover,
+[data-appearance="light"] .indicator-select-btn:hover,
+[data-appearance="light"] .nav-btn:hover,
+[data-appearance="light"] .icon-btn:hover:not(:disabled),
+[data-appearance="light"] .btn-minimize:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #64748b;
+}
+[data-appearance="light"] .indicator-select:focus,
+[data-appearance="light"] .indicator-select-btn:focus-visible,
+[data-appearance="light"] .indicator-param input:focus,
+[data-appearance="light"] .indicator-picker-search:focus {
+  border-color: #089981;
+  box-shadow: 0 0 0 2px rgba(8, 153, 129, 0.15);
+}
+[data-appearance="light"] .indicator-select-btn .chevron-icon,
+[data-appearance="light"] .indicator-params,
+[data-appearance="light"] .indicator-param span,
+[data-appearance="light"] .nav-btn,
+[data-appearance="light"] .icon-btn,
+[data-appearance="light"] .btn-minimize,
+[data-appearance="light"] .indicator-tab-btn,
+[data-appearance="light"] .indicator-settings-popover .popover-close,
+[data-appearance="light"] .indicator-picker-close,
+[data-appearance="light"] .indicator-picker-category-label,
+[data-appearance="light"] .indicator-picker-empty {
+  color: #5b6472;
+}
+[data-appearance="light"] .btn-minimize.minimized,
+[data-appearance="light"] .btn-maximize.active,
+[data-appearance="light"] .indicator-tab-btn.active,
+[data-appearance="light"] #view-toggle-btn.active {
+  background: #089981;
+  border-color: #089981;
+  color: #ffffff;
+}
+[data-appearance="light"] .btn-remove-indicator {
+  background: rgba(211, 58, 74, 0.1);
+  border-color: rgba(211, 58, 74, 0.35);
+  color: #d33a4a;
+}
+[data-appearance="light"] .btn-remove-indicator:hover {
+  background: rgba(211, 58, 74, 0.2);
+  border-color: #d33a4a;
+}
+[data-appearance="light"] .indicator-resize-handle::after { background: #cbd5e1; }
+[data-appearance="light"] .indicator-resize-handle:hover::after { background: #94a3b8; }
+[data-appearance="light"] #indicators-tabbar {
+  background: #ffffff;
+  border-bottom-color: #e2e8f0;
+}
+[data-appearance="light"] .indicator-tab-btn {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+[data-appearance="light"] .indicator-tab-btn:hover {
+  color: #0f172a;
+  border-color: #64748b;
+}
+[data-appearance="light"] .indicator-settings-popover,
+[data-appearance="light"] .indicator-picker-modal {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+}
+[data-appearance="light"] .indicator-settings-popover-header,
+[data-appearance="light"] .indicator-picker-header {
+  border-bottom-color: #e2e8f0;
+  color: #1e293b;
+}
+[data-appearance="light"] .indicator-settings-popover .popover-close:hover,
+[data-appearance="light"] .indicator-picker-close:hover,
+[data-appearance="light"] .indicator-picker-item:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+[data-appearance="light"] .indicator-picker-item { color: #1e293b; }
+[data-appearance="light"] .indicator-picker-overlay { background: rgba(15, 23, 42, 0.35); }
+[data-appearance="light"] #indicators-container {
+  scrollbar-color: #cbd5e1 #ffffff;
+}
+[data-appearance="light"] #indicators-container::-webkit-scrollbar-track { background: #ffffff; }
+[data-appearance="light"] #indicators-container::-webkit-scrollbar-thumb { background: #cbd5e1; }
+[data-appearance="light"] #indicators-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+[data-appearance="light"] .indicator-chart { background: #f8fafc; }
+[data-appearance="light"] .crosshair-sync-line { border-left-color: rgba(15, 23, 42, 0.35); }

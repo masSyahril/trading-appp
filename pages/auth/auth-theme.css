@@ -246,3 +246,57 @@ body.tl-auth-body {
 .tl-session-meta { font-size: 0.76rem; color: var(--tl-text-muted); }
 
 .tl-empty { font-size: 0.85rem; color: var(--tl-text-muted); padding: 4px 0 12px; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Light appearance, driven by data-appearance on <html> (assets/theme).
+   Most of this file resolves through the --tl- variables, so the block
+   below repaints it; the rules after it are the handful that hardcode a
+   pale color meant for a dark backdrop (alerts, badges, white-alpha
+   surfaces), which a variable swap alone would not reach.
+   Note: never write two token names as "--tl-a/--tl-b" inside a comment -
+   the "*" "/" pair would close it early and the next rule would be dropped.
+   ═══════════════════════════════════════════════════════════════════════ */
+html[data-appearance="light"] {
+  --tl-bg-primary: #f5f7fa;
+  --tl-bg-secondary: #e9edf3;
+  --tl-bg-panel: rgba(15, 23, 42, 0.045);
+  --tl-border: rgba(15, 23, 42, 0.12);
+  --tl-border-hover: rgba(15, 23, 42, 0.22);
+  --tl-text-primary: #0f172a;
+  --tl-text-secondary: rgba(15, 23, 42, 0.75);
+  --tl-text-muted: rgba(15, 23, 42, 0.56);
+  --tl-accent-blue: #1568d6;
+  --tl-accent-blue-light: #2b7de9;
+  --tl-accent-green: #0a8f75;
+  --tl-accent-red: #d33a4a;
+}
+
+html[data-appearance="light"] .tl-auth-card { background: #ffffff; }
+html[data-appearance="light"] .tl-input { background: #ffffff; }
+html[data-appearance="light"] .tl-btn-primary { color: #ffffff; }
+html[data-appearance="light"] .tl-alert-error {
+  background: #fdecec;
+  border-color: rgba(211, 58, 74, 0.35);
+  color: #a11322;
+}
+html[data-appearance="light"] .tl-alert-success {
+  background: #e7f7f1;
+  border-color: rgba(10, 143, 117, 0.35);
+  color: #076a56;
+}
+html[data-appearance="light"] .tl-badge-verified { background: rgba(10, 143, 117, 0.14); color: #076a56; }
+html[data-appearance="light"] .tl-badge-unverified { background: rgba(180, 83, 9, 0.14); color: #8a4708; }
+html[data-appearance="light"] .tl-badge-current { background: rgba(21, 104, 214, 0.14); color: #1454ad; }
+html[data-appearance="light"] .tl-btn-secondary { background: #ffffff; }
+html[data-appearance="light"] .tl-btn-secondary:hover:not(:disabled) { background: #eef1f5; }
+html[data-appearance="light"] .tl-btn-danger {
+  background: #fdecec;
+  color: #a11322;
+  border-color: rgba(211, 58, 74, 0.35);
+}
+html[data-appearance="light"] .tl-btn-danger:hover:not(:disabled) { background: #fbdcdc; }
+html[data-appearance="light"] .tl-session-item { background: #ffffff; }
+html[data-appearance="light"] .tl-spinner {
+  border-color: rgba(255, 255, 255, 0.45);
+  border-top-color: #ffffff;
+}

@@ -6,10 +6,13 @@
     <meta name="theme-color" content="#020617">
     <meta name="mobile-web-app-capable" content="yes">
     <title>TradeFlow - Crypto</title>
+    <!-- Set light/dark before first paint (no flash of wrong theme) -->
+    <script>(function(){try{var t=localStorage.getItem('tl-appearance')||'dark';document.documentElement.setAttribute('data-appearance',t);document.documentElement.style.colorScheme=t;}catch(e){}})();</script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link rel="stylesheet" href="../src/css/multi-indicator-styles.css">
+    <link rel="stylesheet" href="../assets/theme/theme.css">
     <script>
         tailwind.config = {
             theme: {
@@ -25,6 +28,26 @@
             --crypto-main-chart-height: 300px;
             --crypto-indicator-chart-height: 156px;
             --crypto-touch-min: 44px;
+            /* Chart/indicator canvas colors (read in JS via getComputedStyle -
+               see crypto-app.prod.js's readThemeVar/applyLiveChartTheme and
+               multi-indicator-system.js's readIndicatorThemeVar/refreshTheme,
+               since a <canvas> chart's colors are JS options, not CSS, and
+               don't follow the light/dark toggle on their own). */
+            --cc-bg: #020617;
+            --cc-text: #e2e8f0;
+            --cc-border: #1e293b;
+            --cc-grid: #13202e;
+            /* Asian-style candles: rising = red, falling = green (see setupChart) */
+            --cc-up: #ef4444;
+            --cc-down: #10b981;
+        }
+        html[data-appearance="light"] {
+            --cc-bg: #ffffff;
+            --cc-text: #1e293b;
+            --cc-border: #e2e8f0;
+            --cc-grid: #eef1f6;
+            --cc-up: #dc2626;
+            --cc-down: #059669;
         }
         /* Android / mobile: dynamic viewport + legacy Chrome fallback (address bar) */
         html {
@@ -40,7 +63,15 @@
             padding-left: env(safe-area-inset-left, 0px);
             padding-right: env(safe-area-inset-right, 0px);
             padding-bottom: env(safe-area-inset-bottom, 0px);
+            transition: background-color 0.2s ease, color 0.2s ease;
         }
+        [data-appearance="light"] body {
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        /* Every hardcoded Tailwind slate utility class this page uses is
+           re-mapped for light appearance once, shared with the other
+           Tailwind-based pages - see assets/theme/theme.css. */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .indicator-panel { transition: all 0.3s ease-in-out; }
@@ -182,6 +213,7 @@
                 <button id="add-symbol-mobile" type="button" class="crypto-touch-target bg-emerald-600 hover:bg-emerald-500 text-white px-3 rounded-lg text-xs font-semibold">Add</button>
             </div>
             <span class="hidden sm:inline-flex text-xs font-semibold text-emerald-400 bg-emerald-500/15 px-2 py-1 rounded" title="Binance feed">24/7</span>
+            <div data-tl-theme-toggle></div>
             <button id="reset-data" type="button" class="crypto-touch-target p-2 hover:bg-slate-800 rounded-full flex items-center justify-center shrink-0" title="Reset Data">
                 <i data-lucide="refresh-cw" class="w-5 h-5 text-slate-300"></i>
             </button>
@@ -200,6 +232,7 @@
     <script src="../pages/auth/crypto-sync.js"></script>
     <script src="../pages/auth/crypto-order-authority.js"></script>
     <script src="../pages/auth/auth-widget.js" defer></script>
+    <script src="../assets/theme/theme.js" defer></script>
 
     <div class="flex flex-1 min-h-0 overflow-hidden relative">
         <aside id="sidebar" class="absolute lg:static inset-y-0 left-0 w-[220px] bg-slate-900 border-r border-slate-700 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-40 flex flex-col">

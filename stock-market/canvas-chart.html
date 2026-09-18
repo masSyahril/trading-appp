@@ -11,15 +11,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 
+    <!-- Set light/dark before first paint (no flash of wrong theme); shares
+         the 'tl-appearance' key/attribute with every other page in the app. -->
+    <script>(function(){try{var t=localStorage.getItem('tl-appearance')||'dark';document.documentElement.setAttribute('data-appearance',t);document.documentElement.style.colorScheme=t;}catch(e){}})();</script>
+
     <style>
         :root {
-            --cc-bg: #ffffff; --cc-panel: #f8f9fa; --cc-border: #e0e3eb;
-            --cc-text: #131722; --cc-text-muted: #787d8d;
-            --cc-up: #089981; --cc-down: #f23645; --cc-accent: #2962ff;
-        }
-        html[data-theme="dark"] {
             --cc-bg: #131722; --cc-panel: #1e222d; --cc-border: #2a2e39;
             --cc-text: #d1d4dc; --cc-text-muted: #787b86;
+            --cc-up: #089981; --cc-down: #f23645; --cc-accent: #2962ff;
+        }
+        [data-appearance="light"] {
+            --cc-bg: #ffffff; --cc-panel: #f8f9fa; --cc-border: #e0e3eb;
+            --cc-text: #131722; --cc-text-muted: #787d8d;
         }
         html, body { height: 100%; margin: 0; }
         body {
@@ -169,8 +173,14 @@
             // id -> registry entry, for whatever's currently on the chart.
             const active = new Map();
 
+            // Canvas colors are a JS option read once at creation, not CSS, so
+            // this has to start from whatever the anti-FOUC snippet in <head>
+            // already set - hardcoding 'light' here left the canvas stuck in
+            // light mode whenever the app's shared dark default (or a stored
+            // dark preference) applied everywhere else on the page.
+            const initialAppearance = document.documentElement.getAttribute('data-appearance') === 'light' ? 'light' : 'dark';
             const chart = ChartCanvasEngine.createChartCanvas(container, {
-                theme: 'light',
+                theme: initialAppearance,
                 onHover: renderLegend,
             });
 
@@ -342,12 +352,38 @@
                 if (e.key === 'Enter') document.getElementById('cc-load').click();
             });
             document.getElementById('cc-theme-toggle').addEventListener('click', (e) => {
-                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-                document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
-                chart.setTheme(isDark ? 'light' : 'dark');
-                e.currentTarget.innerHTML = isDark
-                    ? '<i data-lucide="moon" class="w-3.5 h-3.5"></i>'
-                    : '<i data-lucide="sun" class="w-3.5 h-3.5"></i>';
+                const next = document.documentElement.getAttribute('data-appearance') === 'light' ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-appearance', next);
+                try {
+                    localStorage.setItem('tl-appearance', next);
+                    document.documentElement.style.colorScheme = next;
+                } catch (err) {}
+                chart.setTheme(next);
+                e.currentTarget.innerHTML = next === 'light'
+                    ? '<i data-lucide="sun" class="w-3.5 h-3.5"></i>'
+                    : '<i data-lucide="moon" class="w-3.5 h-3.5"></i>';
+                lucide.createIcons();
+            });
+            // Reflect the appearance this page already loaded with (set by the
+            // anti-FOUC snippet in <head>, shared with every other page) - the
+            // chart itself already starts in the right theme (initialAppearance
+            // above), this just matches the toggle button's icon to it.
+            if (initialAppearance === 'light') {
+                document.getElementById('cc-theme-toggle').innerHTML = '<i data-lucide="sun" class="w-3.5 h-3.5"></i>';
+                lucide.createIcons();
+            }
+            // Cross-tab sync: another page's toggle only updates this tab's
+            // localStorage, so pick that up here too (this page has its own
+            // toggle button rather than the shared assets/theme/theme.js one).
+            window.addEventListener('storage', (e) => {
+                if (e.key !== 'tl-appearance') return;
+                const next = e.newValue === 'light' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-appearance', next);
+                document.documentElement.style.colorScheme = next;
+                chart.setTheme(next);
+                document.getElementById('cc-theme-toggle').innerHTML = next === 'light'
+                    ? '<i data-lucide="sun" class="w-3.5 h-3.5"></i>'
+                    : '<i data-lucide="moon" class="w-3.5 h-3.5"></i>';
                 lucide.createIcons();
             });
             document.getElementById('cc-reset-view').addEventListener('click', () => chart.resetView());

@@ -11,6 +11,16 @@ window.TradeFlowPortfolio = (function () {
   const STARTING_BALANCE = 100000;
   const FILL_CHECK_INTERVAL_MS = 2000;
 
+  // Defense-in-depth for the innerHTML renders below: the server already
+  // restricts client_id (position/order "id") to [A-Za-z0-9_-], but this
+  // escapes it (and any other field interpolated into markup) anyway, so a
+  // bug or a future field added without that same server-side restriction
+  // can't turn into a stored-XSS by itself.
+  const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, ch => HTML_ESCAPES[ch]);
+  }
+
   let state = loadState();
 
   // When a signed-in user's page has pages/auth/order-authority.js active,
@@ -208,12 +218,12 @@ window.TradeFlowPortfolio = (function () {
       const pnlPct = p.entryPrice ? (pnl / (p.entryPrice * p.size)) * 100 : 0;
       const cls = pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
       return `<tr>
-        <td>${p.symbol}</td>
+        <td>${escapeHtml(p.symbol)}</td>
         <td class="${p.side === 'buy' ? 'pnl-positive' : 'pnl-negative'}">${p.side.toUpperCase()}</td>
         <td>${p.size}</td><td>${p.entryPrice.toFixed(2)}</td><td>${cur.toFixed(2)}</td>
         <td class="${cls}">${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}</td>
         <td class="${cls}">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</td>
-        <td><button data-close="${p.id}" class="drawer-action-btn">Close</button></td>
+        <td><button data-close="${escapeHtml(p.id)}" class="drawer-action-btn">Close</button></td>
       </tr>`;
     }).join('') || emptyRow(8, 'No open positions');
 
@@ -226,12 +236,12 @@ window.TradeFlowPortfolio = (function () {
     const tbody = document.querySelector('#panel-orders tbody');
     if (!tbody) return;
     tbody.innerHTML = state.workingOrders.map(o => `<tr>
-      <td>${o.symbol}</td><td>${o.type.toUpperCase()}</td>
+      <td>${escapeHtml(o.symbol)}</td><td>${o.type.toUpperCase()}</td>
       <td class="${o.side === 'buy' ? 'pnl-positive' : 'pnl-negative'}">${o.side.toUpperCase()}</td>
       <td>${o.size}</td><td>${o.price.toFixed(2)}</td>
       <td>
-        <button data-edit="${o.id}" class="drawer-action-btn">Edit</button>
-        <button data-cancel="${o.id}" class="drawer-action-btn drawer-action-danger">Cancel</button>
+        <button data-edit="${escapeHtml(o.id)}" class="drawer-action-btn">Edit</button>
+        <button data-cancel="${escapeHtml(o.id)}" class="drawer-action-btn drawer-action-danger">Cancel</button>
       </td>
     </tr>`).join('') || emptyRow(6, 'No working orders');
 
@@ -249,7 +259,7 @@ window.TradeFlowPortfolio = (function () {
     tbody.innerHTML = state.history.slice(0, 50).map(h => {
       const cls = h.pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
       return `<tr>
-        <td>${h.symbol}</td>
+        <td>${escapeHtml(h.symbol)}</td>
         <td class="${h.side === 'buy' ? 'pnl-positive' : 'pnl-negative'}">${h.side.toUpperCase()}</td>
         <td>${h.size}</td><td>${h.entryPrice.toFixed(2)}</td><td>${h.exitPrice.toFixed(2)}</td>
         <td class="${cls}">${h.pnl >= 0 ? '+' : ''}${h.pnl.toFixed(2)}</td>

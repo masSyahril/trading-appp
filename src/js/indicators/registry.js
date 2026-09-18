@@ -158,7 +158,10 @@
   };
 
   // Line colours of the pane indicators - the MultiIndicatorSystem palette, so
-  // the converted indicators look the way they did.
+  // the converted indicators look the way they did. These are chosen for a dark
+  // pane; on a light one the pale ones (yellow, cyan, the pastel extras in
+  // defs/wang.js) all but disappear, so themeColor() below swaps each for a
+  // darker tone of the same hue while the light appearance is on.
   NS.palette = {
     UP: '#ef4444',     // red = up, green = down (Chinese convention)
     DOWN: '#22c55e',
@@ -169,6 +172,35 @@
     LINE5: '#380532ff',
     LINE6: '#029c0f',
     VOLUME: '#6b7280',
+  };
+
+  // Same hue, dark enough to read on a white pane. Keyed by the dark-theme
+  // colour as written in the definitions (lower-cased, alpha suffix included).
+  const LIGHT_LINE_COLORS = {
+    '#00bcd4': '#0e7490',   // LINE1 cyan
+    '#ffeb3b': '#a16207',   // LINE2 yellow - the worst offender on white
+    '#ff9800': '#c2410c',   // LINE3 orange
+    '#6b7280': '#4b5563',   // VOLUME grey
+    // the extra line colours defs/wang.js cycles through
+    '#e879f9': '#a21caf',
+    '#4ade80': '#15803d',
+    '#f87171': '#b91c1c',
+    '#a78bfa': '#6d28d9',
+    '#fbbf24': '#b45309',
+    '#94a3b8': '#475569',
+  };
+
+  // The colour a series should actually be drawn in right now. Definitions keep
+  // their dark-theme colour; this maps it for the light appearance and leaves
+  // anything it doesn't know (user-picked colours included) untouched.
+  NS.themeColor = function (color) {
+    if (typeof color !== 'string') return color;
+    try {
+      if (document.documentElement.getAttribute('data-appearance') !== 'light') return color;
+    } catch (e) {
+      return color;
+    }
+    return LIGHT_LINE_COLORS[color.toLowerCase()] || color;
   };
 
   // Shorthands for `outputs` entries.

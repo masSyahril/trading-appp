@@ -69,6 +69,10 @@
       chart.subscribeCrosshairMove((param) => this.legend.updateValues(param));
       // Pane separators are dragged inside the library; save the new heights afterwards.
       host.addEventListener('pointerup', () => setTimeout(() => this._saveIfResized(), 50));
+      // Light/dark switch (assets/theme/theme.js), in this tab and in others.
+      this._onAppearance = () => this.refreshColors();
+      window.addEventListener('tl:appearancechange', this._onAppearance);
+      window.addEventListener('storage', (e) => { if (e.key === 'tl-appearance') this._onAppearance(); });
       this._syncPaneObservers();
     }
 
@@ -309,13 +313,14 @@
       };
       if (out.priceFormat) base.priceFormat = out.priceFormat;
       if (def.levels.length && !inst.series.length) base.autoscaleInfoProvider = withLevels(def.levels);
+      const drawColor = NS.themeColor(out.color);
       const opts = out.type === 'histogram'
-        ? { ...base, color: out.color }
+        ? { ...base, color: drawColor }
         : out.type === 'area'
-          ? { ...base, lineColor: out.color, topColor: out.color + '55', bottomColor: out.color + '05', lineWidth: out.lineWidth || 2, crosshairMarkerVisible: false }
+          ? { ...base, lineColor: drawColor, topColor: drawColor + '55', bottomColor: drawColor + '05', lineWidth: out.lineWidth || 2, crosshairMarkerVisible: false }
           : {
             ...base,
-            color: out.color,
+            color: drawColor,
             lineWidth: out.lineWidth || 2,
             lineStyle: LINE_STYLE[out.lineStyle || 'solid'],
             crosshairMarkerVisible: false,
@@ -414,7 +419,17 @@
     }
 
     _styleFor(inst, s) {
-      return { ...s.base, ...((inst.styles && inst.styles[s.key]) || {}) };
+      // The definition's colour is the dark-theme one; map it for the current
+      // appearance first, so a user's own colour (applied after) still wins.
+      const base = { ...s.base, color: NS.themeColor(s.base.color) };
+      return { ...base, ...((inst.styles && inst.styles[s.key]) || {}) };
+    }
+
+    // The light/dark toggle swaps the pane background under lines whose colours
+    // were picked for the other one, so re-push every series' colour.
+    refreshColors() {
+      this.instances.forEach(inst => { try { this._applyStyles(inst); } catch (e) {} });
+      try { this.legend.render(); } catch (e) {}
     }
 
     _applyStyles(inst) {

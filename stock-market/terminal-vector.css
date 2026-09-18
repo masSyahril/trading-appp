@@ -573,3 +573,79 @@ body.vt-full-chart .vt-account-panel { display: none; }
   .vt-chart-bottom .vt-watermark-text { display: none; }
   .vt-footer { flex-wrap: wrap; gap: 10px; font-size: 9px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Light appearance. Most of the page already resolves through --vt-* / --tf-*
+   variables (never write them as one token here: a "*" followed by "/" closes
+   this comment early and the CSS parser then drops the rule after it),
+   so the variable block below repaints it; the handful of rules that
+   hardcode a color meant for a dark backdrop (nav brand text, tags, active
+   tab tints, inputs, the alert toast) get direct light replacements too.
+   ═══════════════════════════════════════════════════════════════════════ */
+html[data-appearance="light"] {
+  --vt-bg: #ffffff;
+  --vt-panel: #f8f9fb;
+  --vt-raised: #eef1f5;
+  --vt-border: #e0e3eb;
+  --vt-muted: #5f6672;
+  --vt-text: #131722;
+  --vt-green: #089981;
+  --vt-red: #f23645;
+  --vt-orange: #b45309;
+  --vt-chart: #f8fafc;
+  --tf-bg: #ffffff;
+  --tf-text: #5f6672;
+  --tf-border: #e0e3eb;
+  --tf-up: #089981;
+  --tf-down: #f23645;
+  --tf-accent: #089981;
+  --tfi-fg: #131722;
+  --tfi-muted: #5f6672;
+  --tfi-panel: #ffffff;
+  --tfi-raised: #f0f3fa;
+  --tfi-border: #e0e3eb;
+  --tfi-accent: #089981;
+  --tfi-accent-soft: rgba(8, 153, 129, 0.12);
+  --tfi-row-bg: rgba(255, 255, 255, 0.9);
+  --tfi-legend-bg: rgba(255, 255, 255, 0.78);
+  --tfi-danger: #f23645;
+}
+html[data-appearance="light"] .vt-brand { color: #0f172a; }
+html[data-appearance="light"] .vt-nav a.active { color: #0f172a; }
+html[data-appearance="light"] .vt-demo { border-color: rgba(180, 83, 9, 0.4); }
+html[data-appearance="light"] .vt-tag {
+  background: #eef1f5;
+  color: #475569;
+}
+html[data-appearance="light"] #chart-toolbar .tab-btn.active,
+html[data-appearance="light"] .vt-tools .draw-tool-btn.active,
+html[data-appearance="light"] .vt-scale-btn.active {
+  background: rgba(8, 153, 129, 0.12);
+}
+html[data-appearance="light"] #chart-overlay-legend {
+  background: rgba(255, 255, 255, 0.75);
+}
+html[data-appearance="light"] .indicators-btn-count:not(:empty),
+html[data-appearance="light"] .drawer-badge {
+  background: #e2e8f0;
+  color: #475569;
+}
+html[data-appearance="light"] .vt-watermark-text { color: #94a3b8; }
+html[data-appearance="light"] .vt-input-wrap,
+html[data-appearance="light"] .vt-acct-grid,
+html[data-appearance="light"] select.vt-select {
+  background: #f8f9fb;
+  border-color: #e0e3eb;
+}
+html[data-appearance="light"] .vt-input-wrap select option { background: #ffffff; }
+html[data-appearance="light"] #watchlist li[data-sym]:hover { background: #eef1f5; }
+html[data-appearance="light"] #watchlist li.bg-slate-800 { background: rgba(8, 153, 129, 0.1); }
+html[data-appearance="light"] .drawer-action-danger { border-color: rgba(180, 83, 9, 0.4); }
+html[data-appearance="light"] #bottom-drawer td { border-top-color: #e2e8f0; }
+html[data-appearance="light"] #bottom-drawer tbody tr:hover { background: #f1f5f9; }
+html[data-appearance="light"] .alert-toast {
+  border-color: rgba(8, 153, 129, 0.4);
+  background: #ecfdf5;
+  color: #065f46;
+  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.18);
+}

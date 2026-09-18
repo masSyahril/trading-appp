@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TradeFlow - Terminal</title>
 
+    <!-- Set light/dark before first paint (no flash of wrong theme) -->
+    <script>(function(){try{var t=localStorage.getItem('tl-appearance')||'dark';document.documentElement.setAttribute('data-appearance',t);document.documentElement.style.colorScheme=t;}catch(e){}})();</script>
+
     <!-- Tailwind CSS (stock-app.prod.js / portfolio.js render markup with its utility classes) -->
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -30,6 +33,7 @@
 
     <!-- "Vector" look from crypto-terminal.html - layout/colour only -->
     <link rel="stylesheet" href="terminal-vector.css">
+    <link rel="stylesheet" href="../assets/theme/theme.css">
 </head>
 <body class="vt-body">
 
@@ -46,6 +50,7 @@
         </nav>
         <div class="vt-header-right">
             <span class="vt-demo">PAPER TRADING</span>
+            <div data-tl-theme-toggle></div>
             <button id="reset-data" type="button" class="vt-icon-btn" title="Reset positions and orders"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
             <button id="vt-fullscreen" type="button" class="vt-icon-btn" title="Fullscreen"><i data-lucide="maximize" class="w-4 h-4"></i></button>
             <div data-tl-auth-widget data-api-base="../api" data-auth-base="../pages/auth" data-home="../"></div>
@@ -263,6 +268,7 @@
 
     <!-- Script Loading System (identical chain/order to index.html) -->
     <script src="../src/js/utils/script-loader.js?v=2"></script>
+    <script src="../assets/theme/theme.js" defer></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             try {

@@ -688,3 +688,59 @@ header,
   border: 1px solid rgba(239, 68, 68, 0.5);
   animation: margin-warning-pulse 1.6s ease-in-out infinite;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Light appearance. Uses the html+attribute selector so it always beats a
+   plain [data-theme="compact"] rule of equal specificity elsewhere in this
+   file - light wins regardless of the separate comfort/compact density
+   setting. --tf-* / --tfi-* values (never write them as one token here: a "*"
+   followed by "/" closes this comment early and the CSS parser then drops the
+   rule after it) match the palette already shipped in
+   tradeflow-dashboard.css (dashboard.html) so every page's light mode reads
+   as one consistent product. A handful of rules below hardcode a pale
+   accent/danger text (e.g. #60a5fa, #fca5a5) meant for a dark background;
+   those get direct light replacements too since a CSS variable swap alone
+   wouldn't reach them.
+   ═══════════════════════════════════════════════════════════════════════ */
+html[data-appearance="light"] {
+  --tf-bg: #ffffff;
+  --tf-bg-panel: #f8f9fa;
+  --tf-bg-hover: #eef0f3;
+  --tf-border: #e0e3eb;
+  --tf-border-bright: #c7ccd6;
+  --tf-text: #131722;
+  --tf-text-muted: #5f6672;
+  --tf-up: #089981;
+  --tf-down: #f23645;
+  --tf-accent: #2962ff;
+}
+html[data-appearance="light"] .tools-menu-item-danger { color: #d33a4a; }
+html[data-appearance="light"] .tools-menu-item-danger:hover {
+  background: rgba(211, 58, 74, 0.1) !important;
+  color: #b8283b;
+}
+html[data-appearance="light"] #chart-toolbar {
+  background: rgba(255, 255, 255, 0.78) !important;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.08);
+}
+html[data-appearance="light"] #chart-overlay-legend {
+  background: rgba(255, 255, 255, 0.72);
+}
+html[data-appearance="light"] .order-type-tab.active {
+  background: rgba(41, 98, 255, 0.1);
+  color: #2962ff;
+}
+html[data-appearance="light"] .drawer-badge {
+  color: #1e293b;
+}
+html[data-appearance="light"] .drawer-action-danger {
+  color: #d33a4a;
+  border-color: rgba(211, 58, 74, 0.4);
+}
+html[data-appearance="light"] .drawer-action-danger:hover {
+  background: rgba(211, 58, 74, 0.1);
+}
+html[data-appearance="light"] .watchlist-rail-badge.active {
+  color: #2962ff;
+  background: rgba(41, 98, 255, 0.1);
+}

@@ -107,6 +107,7 @@
     setupChart();
     setupChartControls();
     setupIndicatorSystem();
+    setupThemeSync();
     syncSymbolHeader();
       connectWatchlistStream();
       loadCandlesAndSubscribe(currentSymbol, timeframe);
@@ -993,6 +994,72 @@
     }
   }
 
+  function readThemeVar(name, fallback) {
+    try {
+      const val = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return val || fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  // The chart is a <canvas> lightweight-charts draws into - its colors are
+  // plain JS option values set once at chart-creation time (setupChart()),
+  // not CSS, so switching --cc-* via the light/dark toggle (assets/theme/theme.js)
+  // never repaints an already-created chart on its own. This re-reads the
+  // --cc-* vars and pushes them back into the chart/series/indicator panels
+  // whenever the appearance changes, so the canvas actually follows light/dark too.
+  function applyLiveChartTheme() {
+    if (!chart) return;
+    try {
+      const bg = readThemeVar('--cc-bg', '#020617');
+      const text = readThemeVar('--cc-text', '#e2e8f0');
+      const border = readThemeVar('--cc-border', '#1e293b');
+      const up = readThemeVar('--cc-up', '#ef4444');
+      const down = readThemeVar('--cc-down', '#10b981');
+
+      chart.applyOptions({
+        layout: {
+          background: { color: bg },
+          textColor: text,
+        },
+        grid: {
+          vertLines: { color: border },
+          horzLines: { color: border },
+        },
+        rightPriceScale: { borderColor: border },
+        timeScale: { borderColor: border },
+      });
+
+      if (candleSeries) {
+        candleSeries.applyOptions({
+          upColor: up,
+          downColor: down,
+          borderUpColor: up,
+          borderDownColor: down,
+          wickUpColor: up,
+          wickDownColor: down,
+        });
+      }
+
+      // Each indicator panel below the main chart is its own separate
+      // lightweight-charts instance (see multi-indicator-system.js), so it
+      // needs its own repaint - refreshTheme() re-reads the same --cc-* vars.
+      if (indicatorSystem && typeof indicatorSystem.refreshTheme === 'function') {
+        try { indicatorSystem.refreshTheme(); } catch (e) {}
+      }
+    } catch (error) {
+      console.error('❌ Failed to apply live chart theme:', error);
+    }
+  }
+
+  function setupThemeSync() {
+    window.addEventListener('tl:appearancechange', applyLiveChartTheme);
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'tl-appearance') applyLiveChartTheme();
+    });
+  }
+
   function setupChart() {
     try {
       // Check if LightweightCharts is available
@@ -1006,15 +1073,15 @@
       }
       chart = LightweightCharts.createChart(el.chart, {
         layout: {
-          background: { color: "#020617" },
-          textColor: "#e2e8f0",
+          background: { color: readThemeVar('--cc-bg', "#020617") },
+          textColor: readThemeVar('--cc-text', "#e2e8f0"),
         },
         grid: {
-          vertLines: { color: "#1e293b" },
-          horzLines: { color: "#1e293b" },
+          vertLines: { color: readThemeVar('--cc-border', "#1e293b") },
+          horzLines: { color: readThemeVar('--cc-border', "#1e293b") },
         },
         rightPriceScale: {
-          borderColor: "#334155",
+          borderColor: readThemeVar('--cc-border', "#334155"),
           minimumWidth: (typeof MultiIndicatorSystem !== 'undefined' && MultiIndicatorSystem.PRICE_SCALE_ALIGN_WIDTH) || 56,
           scaleMargins: {
             top: 0,
@@ -1022,7 +1089,7 @@
           },
         },
         timeScale: {
-          borderColor: "#334155",
+          borderColor: readThemeVar('--cc-border', "#334155"),
           timeVisible: true,
           secondsVisible: false,
           rightOffset: 8,
@@ -1055,12 +1122,12 @@
 
       /* Asian-style candles: rising (close ≥ open) = red, falling = green */
       candleSeries = chart.addCandlestickSeries({
-        upColor: "#ef4444",
-        downColor: "#10b981",
-        borderUpColor: "#ef4444",
-        borderDownColor: "#10b981",
-        wickUpColor: "#ef4444",
-        wickDownColor: "#10b981",
+        upColor: readThemeVar('--cc-up', "#ef4444"),
+        downColor: readThemeVar('--cc-down', "#10b981"),
+        borderUpColor: readThemeVar('--cc-up', "#ef4444"),
+        borderDownColor: readThemeVar('--cc-down', "#10b981"),
+        wickUpColor: readThemeVar('--cc-up', "#ef4444"),
+        wickDownColor: readThemeVar('--cc-down', "#10b981"),
       });
 
       const resizeObserver = new ResizeObserver((entries) => {

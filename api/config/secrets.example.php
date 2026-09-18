@@ -36,6 +36,15 @@ return [
         'force_https_cookies' => false,
     ],
 
+    'monitoring' => [
+        // Reserved, not read by any code yet. Errors currently always log
+        // to api/logs/error.log (see lib/monitoring.php). Once you've
+        // created a Sentry project (roadmap doc's Fase 2 notes have the
+        // signup steps) and run `composer require sentry/sentry`, this is
+        // where its DSN goes - format: https://<public_key>@<host>/<project_id>
+        'sentry_dsn' => '',
+    ],
+
     // Dev/test-only. Leave this whole key out entirely for a real
     // deployment. If set, api/orders/*.php and api/stocks.php's ?latest=1
     // read prices from this JSON file instead of calling Yahoo Finance -

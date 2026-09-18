@@ -16,6 +16,19 @@
   --cf-down: #EF4444;
 }
 
+[data-appearance="light"] {
+  --cf-bg: #f8fafc;
+  --cf-card: #ffffff;
+  --cf-card-hover: #f1f5f9;
+  --cf-border: #e2e8f0;
+  --cf-text: #0f172a;
+  --cf-text-muted: #5b6472;
+  --cf-accent: #0284c7;
+  --cf-accent-hover: #0369a1;
+  --cf-up: #089981;
+  --cf-down: #dc2626;
+}
+
 body {
   background: var(--cf-bg) !important;
   color: var(--cf-text) !important;
@@ -195,6 +208,17 @@ button.remove {
 button.remove:hover {
   background: rgba(239, 68, 68, 0.2);
   border-color: rgba(239, 68, 68, 0.55);
+}
+
+[data-appearance="light"] button.remove {
+  border-color: rgba(220, 38, 38, 0.35);
+  background: rgba(220, 38, 38, 0.08);
+  color: #b91c1c;
+}
+
+[data-appearance="light"] button.remove:hover {
+  background: rgba(220, 38, 38, 0.16);
+  border-color: rgba(220, 38, 38, 0.55);
 }
 
 /* ─── Custom file input ──────────────────────────────────────────────────── */

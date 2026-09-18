@@ -4,17 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bitcoin Data Recovery Tool</title>
+    <!-- Appearance (light/dark) is set before the styles below are applied so the
+         page never flashes the wrong theme; the key/attribute are shared with
+         every other page in the app (assets/theme/theme.js). -->
+    <script>(function(){try{var t=localStorage.getItem('tl-appearance')||'dark';document.documentElement.setAttribute('data-appearance',t);document.documentElement.style.colorScheme=t;}catch(e){}})();</script>
+    <link rel="stylesheet" href="../../assets/theme/theme.css">
     <style>
+        :root {
+            --u-bg: #0b0f14;
+            --u-text: #e6edf3;
+            --u-panel: #1c2128;
+            --u-pre: #161b22;
+            --u-success-bg: #0d4922;
+            --u-error-bg: #4c1519;
+            --u-info-bg: #0c2d6b;
+        }
+        /* Light appearance - same palette the hub (index.html) uses. */
+        html[data-appearance="light"] {
+            --u-bg: #f5f7fa;
+            --u-text: #0f172a;
+            --u-panel: #ffffff;
+            --u-pre: #eef1f5;
+            --u-success-bg: #e7f7f1;
+            --u-error-bg: #fdecec;
+            --u-info-bg: #e8f0fd;
+        }
         body {
             font-family: Arial, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            background: #0b0f14;
-            color: #e6edf3;
+            background: var(--u-bg);
+            color: var(--u-text);
         }
         .container {
-            background: #1c2128;
+            background: var(--u-panel);
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 20px;
@@ -43,19 +67,19 @@
             margin: 10px 0;
         }
         .success {
-            background: #0d4922;
+            background: var(--u-success-bg);
             border-left: 4px solid #238636;
         }
         .error {
-            background: #4c1519;
+            background: var(--u-error-bg);
             border-left: 4px solid #da3633;
         }
         .info {
-            background: #0c2d6b;
+            background: var(--u-info-bg);
             border-left: 4px solid #1f6feb;
         }
         pre {
-            background: #161b22;
+            background: var(--u-pre);
             padding: 10px;
             border-radius: 4px;
             overflow-x: auto;
@@ -386,5 +410,6 @@
         checkCurrentState();
         log("Bitcoin Data Recovery Tool loaded", 'success');
     </script>
+    <script src="../../assets/theme/theme.js" defer></script>
 </body>
 </html>

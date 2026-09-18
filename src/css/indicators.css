@@ -21,6 +21,23 @@
   --tfi-legend-icon: 16px;
 }
 
+/* Shared light default - pages that define their own --tfi-* (terminal-vector.css,
+   tradeflow-dashboard.css) override this again further down the cascade, so
+   each keeps its own identity; pages that don't (tradeflow-theme.css) inherit
+   this and stay visually consistent with the rest of the light palette. */
+[data-appearance="light"] {
+  --tfi-fg: #131722;
+  --tfi-muted: #5f6672;
+  --tfi-panel: #ffffff;
+  --tfi-raised: #f0f3fa;
+  --tfi-border: #e0e3eb;
+  --tfi-accent: #2962ff;
+  --tfi-accent-soft: rgba(41, 98, 255, 0.12);
+  --tfi-row-bg: rgba(255, 255, 255, 0.9);
+  --tfi-legend-bg: rgba(255, 255, 255, 0.78);
+  --tfi-danger: #f23645;
+}
+
 [hidden].tfi-backdrop { display: none !important; }
 
 /* ─── Legend ─────────────────────────────────────────────────────────── */

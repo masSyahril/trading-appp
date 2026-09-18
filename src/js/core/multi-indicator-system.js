@@ -8,6 +8,34 @@ const PRICE_SCALE_ALIGN_WIDTH = 56;
 const TIME_SCALE_RIGHT_OFFSET = 8;
 const TIME_SCALE_BAR_SPACING = 6;
 
+// Indicator line colours are picked for a dark pane; on a light one the pale
+// ones (yellow, cyan, the pastel extras) all but disappear. TL_LINE_COLOR maps
+// between the two sets, in whichever direction the current appearance needs, and
+// leaves any other colour (a user-picked one, say) untouched. The same table
+// lives in src/js/indicators/registry.js for the stock pages' indicator system.
+const TL_LIGHT_LINE_COLORS = {
+  '#00bcd4': '#0e7490',   // LINE1 cyan
+  '#ffeb3b': '#a16207',   // LINE2 yellow - the worst offender on white
+  '#ff9800': '#c2410c',   // LINE3 orange
+  '#6b7280': '#4b5563',   // volume grey
+  '#e879f9': '#a21caf',
+  '#4ade80': '#15803d',
+  '#f87171': '#b91c1c',
+  '#a78bfa': '#6d28d9',
+  '#fbbf24': '#b45309',
+  '#94a3b8': '#475569',
+};
+const TL_DARK_LINE_COLORS = Object.fromEntries(
+  Object.entries(TL_LIGHT_LINE_COLORS).map(([dark, light]) => [light, dark])
+);
+function TL_LINE_COLOR(color) {
+  if (typeof color !== 'string') return color;
+  let light = false;
+  try { light = document.documentElement.getAttribute('data-appearance') === 'light'; } catch (e) { return color; }
+  const table = light ? TL_LIGHT_LINE_COLORS : TL_DARK_LINE_COLORS;
+  return table[color.toLowerCase()] || color;
+}
+
 // ─── Prof. Wang bundle panel indicators ─────────────────────────────────────
 // Functions in technical-indicators.prods__Wang__2026.js whose comments say
 // "drawing ... in the small windows". They differ only in which window.*
@@ -175,6 +203,20 @@ function _rsi0Based(closes, period) {
   return rsi;
 }
 
+// Standalone indicator panels (createIndicatorPanel/initializePanel below) are
+// each their own lightweight-charts instance - used by the crypto-trading page
+// - so, unlike panes on a shared chart, their colors don't come from the main
+// chart's applyOptions() and need their own read of the --cc-* theme vars
+// (assets/theme/theme.js flips these on the light/dark toggle).
+function readIndicatorThemeVar(name, fallback) {
+  try {
+    const val = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return val || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 class MultiIndicatorSystem {
   static get PRICE_SCALE_ALIGN_WIDTH() { return PRICE_SCALE_ALIGN_WIDTH; }
   static get TIME_SCALE_RIGHT_OFFSET() { return TIME_SCALE_RIGHT_OFFSET; }
@@ -201,7 +243,9 @@ class MultiIndicatorSystem {
       }
     };
     
-    this.colors = {
+    // Dark-pane colours. Read through the `colors` getter below, which swaps the
+    // pale ones for darker tones of the same hue while the light appearance is on.
+    this._baseColors = {
       UP: '#ef4444',    // Red for up (Chinese style)
       DOWN: '#22c55e',  // Green for down (Chinese style)
       LINE1: '#00bcd4', // Taiwan style light blue
@@ -2476,18 +2520,18 @@ class MultiIndicatorSystem {
     }
     const chart = LightweightCharts.createChart(chartElement, {
       layout: {
-        background: { color: '#0b0f14' },
-        textColor: '#e6edf3',
+        background: { color: readIndicatorThemeVar('--cc-bg', '#0b0f14') },
+        textColor: readIndicatorThemeVar('--cc-text', '#e6edf3'),
         // The main chart carries the library's TradingView attribution logo;
         // repeating it on every small panel would just clutter them.
         attributionLogo: false,
       },
       grid: {
-        vertLines: { color: '#1e293b' },
-        horzLines: { color: '#13202e' }
+        vertLines: { color: readIndicatorThemeVar('--cc-border', '#1e293b') },
+        horzLines: { color: readIndicatorThemeVar('--cc-grid', '#13202e') }
       },
       rightPriceScale: {
-        borderColor: '#1f2a36',
+        borderColor: readIndicatorThemeVar('--cc-border', '#1f2a36'),
         visible: this.displayOptions.showPriceScale,
         scaleMargins: this.displayOptions.priceScaleMargins,
         borderVisible: true,
@@ -2497,7 +2541,7 @@ class MultiIndicatorSystem {
         visible: false
       },
       timeScale: {
-        borderColor: '#1f2a36',
+        borderColor: readIndicatorThemeVar('--cc-border', '#1f2a36'),
         timeVisible: true,
         secondsVisible: false,
         rightOffset: TIME_SCALE_RIGHT_OFFSET,
@@ -11043,6 +11087,54 @@ renderBollingerBands4SD(chart, data, colors, seriesMap) {
   renderHULLMA(chart, data, colors, seriesMap) {
     if (!data || (!data.hullma && !data.ehullma)) return;
     this.renderMultiLine(chart, data, colors, seriesMap, ['hullma', 'ehullma'], ['HMA', 'eHMA']);
+  }
+
+  // Each standalone panel (see initializePanel) is its own lightweight-charts
+  // instance created with colors read from --cc-* at that moment, so it never
+  // repaints on its own when the light/dark toggle flips those vars later.
+  // The host page calls this after the appearance changes (see
+  // crypto-app.prod.js's applyLiveChartTheme/setupThemeSync) to push the
+  // freshly-read colors back into every live panel chart.
+  // Panel line colours for the appearance in effect right now (see _baseColors).
+  get colors() {
+    const out = {};
+    Object.keys(this._baseColors).forEach(k => { out[k] = TL_LINE_COLOR(this._baseColors[k]); });
+    return out;
+  }
+
+  refreshTheme() {
+    if (!this.panels || this.panels.size === 0) return;
+    const bg = readIndicatorThemeVar('--cc-bg', '#0b0f14');
+    const text = readIndicatorThemeVar('--cc-text', '#e6edf3');
+    const border = readIndicatorThemeVar('--cc-border', '#1f2a36');
+    const grid = readIndicatorThemeVar('--cc-grid', '#13202e');
+    this.panels.forEach((panel) => {
+      if (!panel || !panel.chart) return;
+      try {
+        panel.chart.applyOptions({
+          layout: { background: { color: bg }, textColor: text },
+          grid: { vertLines: { color: border }, horzLines: { color: grid } },
+          rightPriceScale: { borderColor: border },
+          timeScale: { borderColor: border },
+        });
+      } catch (e) {}
+      // A series keeps the colour it was created with, so re-map the palette
+      // lines (histogram bars carry their own per-bar up/down colours in the
+      // data and read fine on either background).
+      if (!panel.series || typeof panel.series.forEach !== 'function') return;
+      panel.series.forEach((series) => {
+        try {
+          const opts = typeof series.options === 'function' ? series.options() : null;
+          if (!opts) return;
+          const next = {};
+          ['color', 'lineColor'].forEach((k) => {
+            const mapped = TL_LINE_COLOR(opts[k]);
+            if (opts[k] && mapped !== opts[k]) next[k] = mapped;
+          });
+          if (Object.keys(next).length) series.applyOptions(next);
+        } catch (e) {}
+      });
+    });
   }
 }
 

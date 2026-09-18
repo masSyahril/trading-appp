@@ -1,22 +1,40 @@
 /*
- * TradeFlow "Dashboard" skin - a light, high-density TradingView-inspired
- * restyle, used only by dashboard.html. Palette per spec: white workspace
- * (#FFFFFF), cool-gray panels (#F8F9FA), #E0E3EB borders, #089981/#F23645
- * up/down, #2962FF accent.
+ * TradeFlow "Dashboard" skin - a high-density TradingView-inspired restyle,
+ * used only by dashboard.html. Ships two palettes: a dark default (matching
+ * the rest of the app) and a light variant under [data-appearance="light"]
+ * with the original spec this file shipped with - white workspace (#FFFFFF),
+ * cool-gray panels (#F8F9FA), #E0E3EB borders, #089981/#F23645 up/down,
+ * #2962FF accent.
  *
  * IMPORTANT: --tf-bg/--tf-text/--tf-border/--tf-up/--tf-down are not just
  * cosmetic names here - stock-app.prod.js's setupChart() reads these exact
  * custom properties off <html> at chart-creation time (readThemeVar(), see
  * stock-app.prod.js) to color the *actual chart canvas* (background, grid,
  * candles). Defining them for real is what makes the main chart genuinely
- * light, not just the chrome around it.
+ * match the surrounding chrome, in both appearances.
  *
- * Indicator panes are native panes of the main chart, so they take the
- * same light --tf-* colours; the legend/picker/settings use the --tfi-*
- * palette below.
+ * Indicator panes are native panes of the main chart, so they take the same
+ * --tf-* colours; the legend/picker/settings use the --tfi-* palette below.
  */
 
 :root {
+  --tf-bg: #0f172a;
+  --tf-text: #e2e8f0;
+  --tf-border: #334155;
+  --tf-up: #10b981;
+  --tf-down: #ef4444;
+
+  --td-panel: #1e293b;
+  --td-hover: #334155;
+  --td-text-muted: #94a3b8;
+  --td-accent: #2962ff;
+  --td-grid: rgba(255, 255, 255, 0.035);
+  --td-surface: #1e293b;
+  --td-overlay: rgba(15, 23, 42, 0.82);
+  --tf-border-hover: #475569;
+}
+
+[data-appearance="light"] {
   --tf-bg: #ffffff;
   --tf-text: #131722;
   --tf-border: #e0e3eb;
@@ -28,6 +46,9 @@
   --td-text-muted: #787d8d;
   --td-accent: #2962ff;
   --td-grid: #f0f3fa;
+  --td-surface: #ffffff;
+  --td-overlay: rgba(255, 255, 255, 0.85);
+  --tf-border-hover: #c8ccd6;
 }
 
 html, body { height: 100%; }
@@ -79,7 +100,7 @@ body.td-body {
   padding: 4px 8px;
   border-radius: 4px;
   border: 1px solid var(--tf-border);
-  background: #fff;
+  background: var(--td-surface);
 }
 .td-symbol-widget input {
   background: transparent;
@@ -133,10 +154,10 @@ body.td-body {
 
 .td-btn-outline {
   padding: 6px 12px; font-size: 12px; font-weight: 700;
-  color: var(--tf-text); background: #fff; border: 1px solid var(--tf-border); border-radius: 4px;
+  color: var(--tf-text); background: var(--td-surface); border: 1px solid var(--tf-border); border-radius: 4px;
   cursor: pointer; transition: background-color 0.12s ease, border-color 0.12s ease;
 }
-.td-btn-outline:hover { background: var(--td-hover); border-color: #c8ccd6; }
+.td-btn-outline:hover { background: var(--td-hover); border-color: var(--tf-border-hover, #c8ccd6); }
 
 .td-btn-accent {
   display: flex; align-items: center; gap: 6px;
@@ -198,7 +219,7 @@ body.td-body {
 }
 
 #chart-overlay-legend {
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--td-overlay);
   padding: 4px 8px;
   border-radius: 4px;
   border: 1px solid var(--tf-border);
@@ -222,9 +243,21 @@ body.td-body {
 .td-change-pill.neg { background: rgba(242, 54, 69, 0.12); color: var(--tf-down); }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Indicator legend, picker and settings (src/css/indicators.css), light
+   Indicator legend, picker and settings (src/css/indicators.css)
    ═══════════════════════════════════════════════════════════════════════ */
 :root {
+  --tfi-fg: #e2e8f0;
+  --tfi-muted: #94a3b8;
+  --tfi-panel: #0f172a;
+  --tfi-raised: #1e293b;
+  --tfi-border: #334155;
+  --tfi-accent: #3b82f6;
+  --tfi-accent-soft: rgba(59, 130, 246, 0.16);
+  --tfi-row-bg: rgba(15, 23, 42, 0.78);
+  --tfi-legend-bg: rgba(15, 23, 42, 0.55);
+  --tfi-danger: #f87171;
+}
+[data-appearance="light"] {
   --tfi-fg: #131722;
   --tfi-muted: #787d8d;
   --tfi-panel: #ffffff;
@@ -258,7 +291,7 @@ body.td-body {
 .td-watchlist-title { font-size: 11px; font-weight: 700; color: var(--td-text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
 .td-watchlist-search {
   display: flex; align-items: center; gap: 6px;
-  background: #fff; border: 1px solid var(--tf-border); border-radius: 4px; padding: 5px 8px;
+  background: var(--td-surface); border: 1px solid var(--tf-border); border-radius: 4px; padding: 5px 8px;
 }
 .td-watchlist-search input { flex: 1; background: transparent; border: none; outline: none; font-size: 12px; color: var(--tf-text); }
 
@@ -274,7 +307,7 @@ body.td-body {
 .td-watchlist-cols span:nth-child(2) { flex: 1; text-align: right; }
 .td-watchlist-cols span:nth-child(3) { flex: 1; text-align: right; }
 
-#watchlist { flex: 1; overflow-y: auto; background: #fff; }
+#watchlist { flex: 1; overflow-y: auto; background: var(--td-surface); }
 #watchlist li {
   display: flex !important;
   align-items: center;
@@ -314,7 +347,7 @@ body.td-body {
   max-height: 46%;
   overflow-y: auto;
   border-top: 1px solid var(--tf-border);
-  background: #fff;
+  background: var(--td-surface);
   padding: 12px;
   display: flex;
   flex-direction: column;
@@ -348,21 +381,21 @@ body.td-body {
 #order-symbol { color: var(--tf-up); }
 .order-type-tab {
   flex: 1; padding: 5px 0; font-size: 11px; font-weight: 700; border-radius: 4px; cursor: pointer;
-  background: #fff; border: 1px solid var(--tf-border); color: var(--td-text-muted);
+  background: var(--td-surface); border: 1px solid var(--tf-border); color: var(--td-text-muted);
   transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 .order-type-tab:hover { color: var(--tf-text); }
 .order-type-tab.active { background: rgba(41, 98, 255, 0.1); border-color: var(--td-accent); color: var(--td-accent); }
 .order-field { display: flex; flex-direction: column; gap: 3px; font-size: 10px; color: var(--td-text-muted); }
 .order-field input, .order-field select {
-  background: #fff; border: 1px solid var(--tf-border); border-radius: 4px; color: var(--tf-text);
+  background: var(--td-surface); border: 1px solid var(--tf-border); border-radius: 4px; color: var(--tf-text);
   padding: 5px 7px; font-size: 12px; font-family: "Roboto Mono", "JetBrains Mono", ui-monospace, monospace;
 }
 .order-field input:focus, .order-field select:focus { outline: none; border-color: var(--td-accent); }
 .size-quick-row { display: flex; gap: 3px; }
 .size-quick-btn {
   flex: 1; padding: 3px 0; font-size: 10px; font-weight: 700; border-radius: 4px; cursor: pointer;
-  background: #fff; border: 1px solid var(--tf-border); color: var(--td-text-muted);
+  background: var(--td-surface); border: 1px solid var(--tf-border); color: var(--td-text-muted);
   transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 .size-quick-btn:hover { border-color: var(--td-accent); color: var(--td-accent); }
@@ -386,14 +419,14 @@ body.td-body {
   transition: background-color 0.12s ease, color 0.12s ease;
 }
 .drawer-tab:hover { background: var(--td-hover); color: var(--tf-text); }
-.drawer-tab.active { background: #fff; border-color: var(--tf-border); color: var(--tf-text); }
+.drawer-tab.active { background: var(--td-surface); border-color: var(--tf-border); color: var(--tf-text); }
 .drawer-badge { background: var(--tf-border); color: var(--tf-text); font-size: 10px; padding: 1px 6px; border-radius: 8px; }
 
-#bottom-drawer table { border-collapse: collapse; background: #fff; }
+#bottom-drawer table { border-collapse: collapse; background: var(--td-surface); }
 #bottom-drawer table th {
   text-align: left; color: var(--td-text-muted); font-weight: 700; font-size: 10px;
   text-transform: uppercase; letter-spacing: 0.03em;
-  padding: 5px 10px; border-bottom: 1px solid var(--tf-border); position: sticky; top: 0; background: #fff;
+  padding: 5px 10px; border-bottom: 1px solid var(--tf-border); position: sticky; top: 0; background: var(--td-surface);
 }
 #bottom-drawer table td {
   padding: 4px 10px; border-bottom: 1px solid var(--tf-border); color: var(--tf-text);
@@ -405,9 +438,9 @@ body.td-body {
 .pnl-negative { color: var(--tf-down) !important; }
 .drawer-action-btn {
   font-size: 10px; padding: 2px 7px; border-radius: 3px; border: 1px solid var(--tf-border);
-  background: #fff; color: var(--tf-text); cursor: pointer; margin-right: 4px;
+  background: var(--td-surface); color: var(--tf-text); cursor: pointer; margin-right: 4px;
 }
-.drawer-action-btn:hover { border-color: #c8ccd6; background: var(--td-hover); }
+.drawer-action-btn:hover { border-color: var(--tf-border-hover, #c8ccd6); background: var(--td-hover); }
 .drawer-action-danger { color: var(--tf-down); border-color: rgba(242, 54, 69, 0.3); }
 .drawer-stat-label { font-size: 10px; color: var(--td-text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
 .drawer-stat-value { font-size: 14px; font-weight: 700; color: var(--tf-text); margin-top: 2px; font-family: "Roboto Mono", "JetBrains Mono", ui-monospace, monospace; }

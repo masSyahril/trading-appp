@@ -4,17 +4,21 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>TradeLite - Major Companies</title>
+    <!-- Set light/dark before first paint (no flash of wrong theme) -->
+    <script>(function(){try{var t=localStorage.getItem('tl-appearance')||'dark';document.documentElement.setAttribute('data-appearance',t);document.documentElement.style.colorScheme=t;}catch(e){}})();</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../src/css/styles.css" />
     <link rel="stylesheet" href="companies-theme.css" />
+    <link rel="stylesheet" href="../assets/theme/theme.css" />
   </head>
   <body>
     <div class="app">
       <header class="topbar">
         <div class="brand">TradeLite</div>
         <div class="actions">
+          <div data-tl-theme-toggle></div>
           <a href="./" class="secondary" title="Back to stock trading">← Back</a>
         </div>
       </header>
@@ -65,5 +69,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script defer src="companies.prod.js"></script>
+    <script defer src="../assets/theme/theme.js"></script>
   </body>
 </html>

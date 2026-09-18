@@ -122,6 +122,7 @@
       updateMarketStatus();
       updateMarketIndicators();
       setupChart();
+      setupThemeSync();
       setupIndicators();
       setupChartControls();
       setupChartStyleDropdown();
@@ -1243,6 +1244,71 @@
     } catch {
       return fallback;
     }
+  }
+
+  // The chart is a <canvas> lightweight-charts draws into - its colors are
+  // plain JS option values set once at chart-creation time (setupChart()),
+  // not CSS, so switching --tf-* via the light/dark toggle (assets/theme/theme.js)
+  // never repaints an already-created chart on its own. This re-reads the
+  // --tf-* vars and pushes them back into the chart/series whenever the
+  // appearance changes, so the canvas actually follows light/dark too.
+  function applyLiveChartTheme() {
+    if (!chart) return;
+    try {
+      const bg = readThemeVar('--tf-bg', '#131722');
+      const text = readThemeVar('--tf-text', '#d1d4dc');
+      const border = readThemeVar('--tf-border', '#2a2e39');
+      const up = readThemeVar('--tf-up', '#26a69a');
+      const down = readThemeVar('--tf-down', '#ef5350');
+      const accent = readThemeVar('--tf-accent', '#2962ff');
+
+      chart.applyOptions({
+        layout: {
+          background: { color: bg },
+          textColor: text,
+          panes: { separatorColor: border, separatorHoverColor: 'rgba(148, 163, 184, 0.3)' },
+        },
+        grid: {
+          vertLines: { color: border },
+          horzLines: { color: border },
+        },
+        rightPriceScale: { borderColor: border },
+        timeScale: { borderColor: border },
+      });
+
+      if (candleSeries) {
+        if (chartStyle === 'line') {
+          candleSeries.applyOptions({ color: accent });
+        } else if (chartStyle === 'area') {
+          candleSeries.applyOptions({ lineColor: accent });
+        } else {
+          candleSeries.applyOptions({
+            upColor: up,
+            downColor: down,
+            borderUpColor: up,
+            borderDownColor: down,
+            wickUpColor: up,
+            wickDownColor: down,
+          });
+        }
+      }
+
+      // Indicator panes are native panes of this same chart, so the layout/grid
+      // update above already repaints their background; only re-broadcast so
+      // any indicator-side legend/badge that also caches a color can refresh.
+      if (typeof MultiIndicatorSystem !== 'undefined' && typeof MultiIndicatorSystem.refreshTheme === 'function') {
+        try { MultiIndicatorSystem.refreshTheme(); } catch (e) {}
+      }
+    } catch (error) {
+      console.error('❌ Failed to apply live chart theme:', error);
+    }
+  }
+
+  function setupThemeSync() {
+    window.addEventListener('tl:appearancechange', applyLiveChartTheme);
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'tl-appearance') applyLiveChartTheme();
+    });
   }
 
   function saveLS(key, val) {

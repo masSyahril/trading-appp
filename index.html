@@ -4,10 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TradeLite - Trading Platform Hub</title>
+    <!-- Set light/dark before first paint (no flash of wrong theme) -->
+    <script>(function(){try{var t=localStorage.getItem('tl-appearance')||'dark';document.documentElement.setAttribute('data-appearance',t);document.documentElement.style.colorScheme=t;}catch(e){}})();</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📈%3C/text%3E%3C/svg%3E">
+    <link rel="stylesheet" href="assets/theme/theme.css">
     <style>
         :root {
             --bg-primary: #0b0f14;
@@ -23,10 +26,38 @@
             --accent-crypto: #f7931a;
             --accent-stock: #00d4aa;
             --accent-success: #15b37d;
+            --status-open: #15b37d;
+            --status-afterhours: #f59e0b;
+            --status-closed: #e5534b;
             --shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.3);
             --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
+
+        /* Light appearance - contrast-checked against WCAG AA (see project notes) */
+        [data-appearance="light"] {
+            --bg-primary: #f5f7fa;
+            --bg-secondary: #e9edf3;
+            --bg-panel: rgba(15, 23, 42, 0.045);
+            --border-primary: rgba(15, 23, 42, 0.12);
+            --border-hover: rgba(15, 23, 42, 0.22);
+            --text-primary: #0f172a;
+            --text-secondary: rgba(15, 23, 42, 0.75);
+            --text-muted: rgba(15, 23, 42, 0.56);
+            --accent-blue: #1568d6;
+            --accent-blue-light: #2b7de9;
+            --accent-crypto: #b5651d;
+            --accent-stock: #0a8f75;
+            --accent-success: #078257;
+            --status-open: #078257;
+            --status-afterhours: #b45309;
+            --status-closed: #d33a4a;
+            --shadow-hover: 0 20px 40px rgba(15, 23, 42, 0.12);
+        }
+
+        html, body {
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -485,12 +516,14 @@
                 <a href="pages/utilities/recover_bitcoin_data.html" class="nav-link" data-i18n="nav.recoveryTools">Recovery Tools</a>
             </nav>
             <div style="display:flex; align-items:center; gap:10px;">
+                <div data-tl-theme-toggle></div>
                 <div data-tl-lang-switcher></div>
                 <div data-tl-auth-widget data-api-base="api" data-auth-base="pages/auth" data-home="."></div>
             </div>
             <script src="i18n/i18n.js" defer></script>
             <script src="i18n/lang-switcher.js" defer></script>
             <script src="pages/auth/auth-widget.js" defer></script>
+            <script src="assets/theme/theme.js" defer></script>
         </div>
     </header>
     
@@ -765,13 +798,13 @@
             
             if (isWeekday && isMarketHours) {
                 marketStatusEl.textContent = t('hub.stats.marketOpen');
-                marketStatusEl.style.color = '#15b37d';
+                marketStatusEl.style.color = 'var(--status-open)';
             } else if (isAfterHours) {
                 marketStatusEl.textContent = t('hub.stats.marketAfterHours');
-                marketStatusEl.style.color = '#f59e0b';
+                marketStatusEl.style.color = 'var(--status-afterhours)';
             } else {
                 marketStatusEl.textContent = t('hub.stats.marketClosed');
-                marketStatusEl.style.color = '#e5534b';
+                marketStatusEl.style.color = 'var(--status-closed)';
             }
         }
         

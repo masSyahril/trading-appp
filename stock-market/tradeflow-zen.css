@@ -62,6 +62,28 @@ html[data-theme="compact"] body.zen-body {
   --tf-accent: #d4ac66;
   --zen-accent-strong: #e8c179;
 }
+
+/* Light appearance - wins over both Comfort and Compact above regardless of
+   density (same selector specificity as the compact rule; placed after it so
+   source order decides). Keeps Zen's own warm gold accent identity, darkened
+   enough to pass WCAG AA on a white panel. */
+html[data-appearance="light"] body.zen-body {
+  --tf-bg: #ffffff;
+  --tf-bg-panel: #f8f9fa;
+  --tf-bg-hover: #eef0f3;
+  --tf-border: #e0e3eb;
+  --tf-border-bright: #c7ccd6;
+  --tf-text: #131722;
+  --tf-text-muted: #5f6672;
+  --tf-up: #089981;
+  --tf-down: #f23645;
+  --tf-accent: #8a6d1f;
+  --zen-accent-strong: #6b5518;
+  --zen-up-wash: rgba(8, 153, 129, 0.1);
+  --zen-down-wash: rgba(242, 54, 69, 0.1);
+  --zen-accent-wash: rgba(138, 109, 31, 0.12);
+  --zen-shadow: rgba(15, 23, 42, 0.16);
+}
 body.zen-body .font-mono,
 body.zen-body #bottom-drawer table,
 body.zen-body .zen-num {

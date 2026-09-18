@@ -1,0 +1,110 @@
+/*
+ * Shared light/dark toggle button - looks correct dropped into any header on
+ * any page, since it only uses currentColor + a translucent neutral pill
+ * (no page-specific colors), plus a self-contained floating fallback for
+ * pages that don't have a header placeholder to drop it into.
+ */
+.tl-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(128, 140, 156, 0.4);
+  background: rgba(128, 140, 156, 0.14);
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.tl-theme-toggle:hover {
+  background: rgba(128, 140, 156, 0.26);
+  border-color: rgba(128, 140, 156, 0.55);
+}
+
+.tl-theme-toggle:active {
+  transform: scale(0.92);
+}
+
+.tl-theme-toggle:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.tl-theme-toggle svg {
+  display: block;
+}
+
+.tl-theme-toggle-floating {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483000;
+}
+
+.tl-theme-toggle-floating .tl-theme-toggle {
+  width: 40px;
+  height: 40px;
+  background: rgba(15, 23, 42, 0.88);
+  border-color: rgba(15, 23, 42, 0.88);
+  color: #e6edf3;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.tl-theme-toggle-floating .tl-theme-toggle:hover {
+  background: rgba(30, 41, 59, 0.95);
+}
+
+[data-appearance="light"] .tl-theme-toggle-floating .tl-theme-toggle {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #0f172a;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.18);
+}
+
+[data-appearance="light"] .tl-theme-toggle-floating .tl-theme-toggle:hover {
+  background: #ffffff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl-theme-toggle {
+    transition: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Shared Tailwind-slate light overrides.
+   crypto-trading/index.html, stock-market/index.html and stock-market/zen.html
+   build their chrome with hardcoded Tailwind slate utility classes (not CSS
+   custom properties), all originally tuned for a dark bg. Rather than
+   duplicate this mapping in three places, it lives once here - any page that
+   links this stylesheet and uses these classes gets a correctly-contrasted
+   light version for free. Contrast-checked against WCAG AA/AA-large.
+   ═══════════════════════════════════════════════════════════════════════ */
+[data-appearance="light"] .bg-slate-900 { background-color: #ffffff !important; }
+[data-appearance="light"] .bg-slate-900\/60 { background-color: rgba(255, 255, 255, 0.75) !important; }
+[data-appearance="light"] .bg-slate-900\/90 { background-color: rgba(255, 255, 255, 0.92) !important; }
+[data-appearance="light"] .bg-slate-950 { background-color: #f8fafc !important; }
+[data-appearance="light"] .bg-slate-950\/50 { background-color: rgba(241, 245, 249, 0.75) !important; }
+[data-appearance="light"] .bg-slate-950\/70 { background-color: rgba(241, 245, 249, 0.85) !important; }
+[data-appearance="light"] .bg-slate-800 { background-color: #f1f5f9 !important; }
+[data-appearance="light"] .bg-slate-700 { background-color: #e2e8f0 !important; }
+[data-appearance="light"] .bg-slate-700\/50 { background-color: rgba(226, 232, 240, 0.65) !important; }
+[data-appearance="light"] .bg-slate-600 { background-color: #cbd5e1 !important; }
+[data-appearance="light"] .border-slate-800 { border-color: #e2e8f0 !important; }
+[data-appearance="light"] .border-slate-700 { border-color: #cbd5e1 !important; }
+[data-appearance="light"] .border-slate-700\/50 { border-color: rgba(203, 213, 225, 0.6) !important; }
+[data-appearance="light"] .border-slate-700\/70 { border-color: rgba(203, 213, 225, 0.75) !important; }
+[data-appearance="light"] .border-slate-600 { border-color: #94a3b8 !important; }
+[data-appearance="light"] .text-white { color: #0f172a !important; }
+[data-appearance="light"] .text-slate-100 { color: #0f172a !important; }
+[data-appearance="light"] .text-slate-200 { color: #1e293b !important; }
+[data-appearance="light"] .text-slate-300 { color: #334155 !important; }
+[data-appearance="light"] .text-slate-400 { color: #475569 !important; }
+[data-appearance="light"] .text-slate-500 { color: #5b6472 !important; }
+[data-appearance="light"] .text-slate-600 { color: #334155 !important; }
+[data-appearance="light"] ::-webkit-scrollbar-track { background: #f1f5f9; }
+[data-appearance="light"] ::-webkit-scrollbar-thumb { background: #cbd5e1; }

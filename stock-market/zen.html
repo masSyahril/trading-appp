@@ -18,6 +18,9 @@
         })();
     </script>
 
+    <!-- Light/dark appearance (independent of the density setting above) -->
+    <script>(function(){try{var t=localStorage.getItem('tl-appearance')||'dark';document.documentElement.setAttribute('data-appearance',t);document.documentElement.style.colorScheme=t;}catch(e){}})();</script>
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -39,6 +42,7 @@
          screen changes, via tradeflow-zen.css below) -->
     <link rel="stylesheet" href="../src/css/multi-indicator-styles.css">
     <link rel="stylesheet" href="../src/css/indicators.css">
+    <link rel="stylesheet" href="../assets/theme/theme.css">
 
     <script>
         tailwind.config = {
@@ -74,6 +78,16 @@
             transition: opacity 0.3s ease, transform 0.3s ease;
         }
         .alert-toast-out { opacity: 0; transform: translateX(20px); }
+        html[data-appearance="light"] .alert-toast {
+            background: #ffffff; border-color: #b45309; color: #131722;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+        }
+        html[data-appearance="light"] #rr-modal .rr-panel {
+            background: rgba(255, 255, 255, 0.98); border-color: rgba(224, 227, 235, 0.95);
+            box-shadow: 0 18px 50px rgba(15, 23, 42, 0.22);
+        }
+        html[data-appearance="light"] #rr-modal .rr-header { border-bottom-color: rgba(224, 227, 235, 0.9); }
+        html[data-appearance="light"] #rr-modal .rr-close:hover { background: rgba(203, 213, 225, 0.5); }
 
         /* Draggable RR modal (unchanged from the classic page) */
         #rr-modal[hidden] { display: none !important; }
@@ -179,6 +193,7 @@
                     <span class="theme-toggle-icon"><i data-lucide="sparkles" class="w-4 h-4"></i></span>
                     <span class="theme-toggle-label">Comfort Mode</span>
                 </button>
+                <div data-tl-theme-toggle></div>
                 <button id="reset-data" type="button" class="zen-icon-btn" title="Reset Data">
                     <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                 </button>
@@ -484,6 +499,7 @@
 
     <!-- Script Loading System (identical chain/order to index.html) -->
     <script src="../src/js/utils/script-loader.js?v=2"></script>
+    <script src="../assets/theme/theme.js" defer></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             try {

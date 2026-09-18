@@ -29,7 +29,7 @@ $body = tl_read_json_body();
 $uid = $user['id'];
 
 try {
-    $clientId = tl_expect_string($body['clientId'] ?? null, 'clientId', 40);
+    $clientId = tl_expect_client_id($body['clientId'] ?? null, 'clientId');
     $symbol = tl_expect_symbol($body['symbol'] ?? null, 'symbol');
     $side = tl_expect_side($body['side'] ?? null, 'side');
     $type = $body['type'] ?? null;

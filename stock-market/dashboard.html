@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TradeFlow - Dashboard</title>
 
+    <!-- Set light/dark before first paint (no flash of wrong theme) -->
+    <script>(function(){try{var t=localStorage.getItem('tl-appearance')||'dark';document.documentElement.setAttribute('data-appearance',t);document.documentElement.style.colorScheme=t;}catch(e){}})();</script>
+
     <script src="https://cdn.tailwindcss.com"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,23 +30,35 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .indicator-panel { transition: all 0.3s ease-in-out; }
 
+        /* A few Tailwind slate utility classes below were tuned for this
+           page's original light-only look; on the new dark default they need
+           a dark-appropriate value instead (light appearance keeps Tailwind's
+           own value, which already reads fine on a white background). */
+        html:not([data-appearance="light"]) .text-slate-500 { color: var(--td-text-muted); }
+        html:not([data-appearance="light"]) .border-slate-200 { border-color: var(--tf-border); }
+        html:not([data-appearance="light"]) .hover\:text-slate-800:hover { color: var(--tf-text); }
+
         #alert-toast-container {
             position: fixed; top: 52px; right: 16px; z-index: 10000;
             display: flex; flex-direction: column; gap: 8px; pointer-events: none;
         }
         .alert-toast {
-            background: #ffffff; border: 1px solid #f59e0b; color: #131722;
+            background: var(--td-surface, #ffffff); border: 1px solid #f59e0b; color: var(--tf-text, #131722);
             padding: 10px 14px; border-radius: 6px; font-size: 0.8rem;
             box-shadow: 0 8px 24px rgba(19, 23, 34, 0.12); max-width: 320px;
             opacity: 1; transition: opacity 0.3s ease, transform 0.3s ease;
         }
+        html[data-appearance="light"] .alert-toast { box-shadow: 0 8px 24px rgba(19, 23, 34, 0.12); }
+        html:not([data-appearance="light"]) .alert-toast { box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); border-color: #b45309; }
         .alert-toast-out { opacity: 0; transform: translateX(20px); }
     </style>
 
-    <!-- Fixed light TradingView-style palette - standalone, like terminal.html
-         is for the dark one; not layered on the Comfort/Compact --tf-* system
-         the Classic/Zen pages toggle between. -->
+    <!-- TradingView-style palette - dark by default, light under
+         [data-appearance="light"] (see tradeflow-dashboard.css). Standalone,
+         like terminal.html; not layered on the separate Comfort/Compact
+         --tf-* density system the Classic/Zen pages toggle between. -->
     <link rel="stylesheet" href="tradeflow-dashboard.css">
+    <link rel="stylesheet" href="../assets/theme/theme.css">
 </head>
 <body class="td-body flex flex-col h-screen overflow-hidden">
 
@@ -77,6 +92,7 @@
 
         <div class="td-spacer"></div>
 
+        <div data-tl-theme-toggle></div>
         <button id="reset-data" class="td-header-icon" title="Reset Data"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
         <a href="companies.html" class="td-header-icon" title="Companies"><i data-lucide="building" class="w-4 h-4"></i></a>
         <a href="zen.html" class="td-header-icon" title="Zen Workspace"><i data-lucide="wand-2" class="w-4 h-4"></i></a>
@@ -251,6 +267,7 @@
 
     <!-- Script Loading System (identical chain/order to index.html) -->
     <script src="../src/js/utils/script-loader.js?v=2"></script>
+    <script src="../assets/theme/theme.js" defer></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             try {

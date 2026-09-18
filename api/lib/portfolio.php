@@ -36,6 +36,20 @@ function tl_expect_symbol($val, string $field): string {
     return $val;
 }
 
+/**
+ * Client-generated ids (position/order/alert "client_id") are only ever
+ * produced by our own frontend as `ord_<timestamp>_<random>` - never free
+ * text a user types. Restricting the character set here (rather than just
+ * the length tl_expect_string checks) closes a stored-XSS path: these ids
+ * get echoed back into the DOM (see stock-market/js/portfolio.js) as HTML
+ * attribute values, so a value containing `"` or `>` could otherwise break
+ * out of that attribute.
+ */
+function tl_expect_client_id($val, string $field): string {
+    tl_expect(is_string($val) && preg_match('/^[A-Za-z0-9_-]{1,40}$/', $val) === 1, "Invalid {$field}: expected an id");
+    return $val;
+}
+
 function tl_expect_side($val, string $field): string {
     tl_expect($val === 'buy' || $val === 'sell', "Invalid {$field}: expected 'buy' or 'sell'");
     return $val;
@@ -75,7 +89,7 @@ function tl_datetime_to_ms(?string $dt): ?int {
 /** @return array{client_id:string,symbol:string,side:string,size:float,leverage:float,entry_price:float,sl:?float,tp:?float,opened_at:string} */
 function tl_validate_position(array $p): array {
     return [
-        'client_id' => tl_expect_string($p['id'] ?? null, 'position.id', 40),
+        'client_id' => tl_expect_client_id($p['id'] ?? null, 'position.id'),
         'symbol' => tl_expect_symbol($p['symbol'] ?? null, 'position.symbol'),
         'side' => tl_expect_side($p['side'] ?? null, 'position.side'),
         'size' => tl_expect_number($p['size'] ?? null, 'position.size', 0, 1e12),
@@ -91,7 +105,7 @@ function tl_validate_order(array $o): array {
     $type = $o['type'] ?? null;
     tl_expect($type === 'limit' || $type === 'stop', 'Invalid order.type: expected \'limit\' or \'stop\'');
     return [
-        'client_id' => tl_expect_string($o['id'] ?? null, 'order.id', 40),
+        'client_id' => tl_expect_client_id($o['id'] ?? null, 'order.id'),
         'symbol' => tl_expect_symbol($o['symbol'] ?? null, 'order.symbol'),
         'side' => tl_expect_side($o['side'] ?? null, 'order.side'),
         'type' => $type,
@@ -106,7 +120,7 @@ function tl_validate_order(array $o): array {
 
 function tl_validate_history_entry(array $h): array {
     return [
-        'client_id' => is_string($h['id'] ?? null) ? substr($h['id'], 0, 40) : null,
+        'client_id' => (is_string($h['id'] ?? null) && preg_match('/^[A-Za-z0-9_-]{1,40}$/', $h['id']) === 1) ? $h['id'] : null,
         'symbol' => tl_expect_symbol($h['symbol'] ?? null, 'history.symbol'),
         'side' => tl_expect_side($h['side'] ?? null, 'history.side'),
         'size' => tl_expect_number($h['size'] ?? null, 'history.size', 0, 1e12),
@@ -179,7 +193,7 @@ function tl_validate_alerts_payload(array $body): ?array {
     $seen = [];
     foreach ($alertsIn as $a) {
         tl_expect(is_array($a), 'Invalid alert entry');
-        $id = tl_expect_string($a['id'] ?? null, 'alert.id', 40);
+        $id = tl_expect_client_id($a['id'] ?? null, 'alert.id');
         if (isset($seen[$id])) {
             continue;
         }
