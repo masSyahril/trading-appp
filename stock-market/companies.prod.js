@@ -64,10 +64,12 @@
     const allSymbols = Object.keys(local).sort();
     tbody.innerHTML = '';
 
+    const t = window.TradeFlowI18n ? window.TradeFlowI18n.t : (k) => k;
+
     if (!allSymbols.length) {
       tbody.appendChild(emptyStateRow(
-        'No local data yet',
-        'Import a Nasdaq CSV/Excel file above, or click "Load Sample Data" for an instant preview with AAPL, TSLA, NVDA, and MSFT.',
+        t('companies.noLocalDataTitle'),
+        t('companies.noLocalDataDesc'),
         '📭'
       ));
       return;
@@ -76,15 +78,15 @@
     const term = filterText.trim().toLowerCase();
     const symbols = term
       ? allSymbols.filter(sym => {
-          const name = (COMPANY_NAMES[sym] || 'Local import').toLowerCase();
+          const name = (COMPANY_NAMES[sym] || t('companies.localImport')).toLowerCase();
           return sym.toLowerCase().includes(term) || name.includes(term);
         })
       : allSymbols;
 
     if (!symbols.length) {
       tbody.appendChild(emptyStateRow(
-        `No matches for "${filterText.trim()}"`,
-        'Try a different symbol or company name.',
+        t('companies.noMatchesTitle', { query: filterText.trim() }),
+        t('companies.noMatchesDesc'),
         '🔍'
       ));
       return;
@@ -102,13 +104,13 @@
       tr.dataset.sym = sym;
       tr.innerHTML = `
         <td class="sym">${sym}</td>
-        <td>${COMPANY_NAMES[sym] || 'Local import'}</td>
+        <td>${COMPANY_NAMES[sym] || t('companies.localImport')}</td>
         <td>${fmtPrice(last)}</td>
         <td>${fmtPrice(prev)}</td>
         <td class="${chgClass}">${chgText}</td>
         <td class="actions-cell">
-          <a href="./index.html?symbol=${encodeURIComponent(sym)}" class="secondary">Open</a>
-          <button class="remove" data-del="${sym}">Delete</button>
+          <a href="./index.html?symbol=${encodeURIComponent(sym)}" class="secondary">${t('companies.open')}</a>
+          <button class="remove" data-del="${sym}">${t('companies.delete')}</button>
         </td>
       `;
       tbody.appendChild(tr);
@@ -199,7 +201,8 @@
       symbol: findIndex(header, ['symbol','ticker'])
     };
     if (idx.date < 0 || idx.open < 0 || idx.high < 0 || idx.low < 0 || idx.close < 0) {
-      throw new Error('CSV must include columns: Date, Open, High, Low, Close (aliases like Close/Last, Adj Close are supported). Optional: Volume, Symbol');
+      const t = window.TradeFlowI18n ? window.TradeFlowI18n.t : (k) => k;
+      throw new Error(t('companies.csvMissingColumns'));
     }
     const local = loadLocal();
     const added = [];
@@ -254,13 +257,15 @@
   }
 
   fileInput.addEventListener('change', () => {
+    const t = window.TradeFlowI18n ? window.TradeFlowI18n.t : (k) => k;
     const file = fileInput.files && fileInput.files[0];
-    fileNameEl.textContent = file ? file.name : 'No file chosen';
+    fileNameEl.textContent = file ? file.name : t('companies.noFileChosen');
   });
 
   importBtn.addEventListener('click', async () => {
+    const t = window.TradeFlowI18n ? window.TradeFlowI18n.t : (k) => k;
     const file = fileInput.files && fileInput.files[0];
-    if (!file) { alert('Choose a CSV or Excel file first.'); return; }
+    if (!file) { alert(t('companies.chooseFileFirst')); return; }
     const name = file.name.toLowerCase();
     const isExcel = name.endsWith('.xlsx') || name.endsWith('.xls') || (file.type && file.type.includes('spreadsheet'));
     let text = '';
@@ -273,7 +278,7 @@
       }
     } catch (e) {
       console.error(e);
-      alert('Failed to read file: ' + (e.message || e));
+      alert(t('companies.failedToReadFile', { error: e.message || e }));
       return;
     }
 
@@ -281,16 +286,16 @@
     const hasSymbolColumn = /(^|,)\s*symbol\s*(,|$)/i.test(firstLine);
     let defaultSymbol = '';
     if (!hasSymbolColumn) {
-      defaultSymbol = prompt('Enter symbol for this file (no Symbol column detected):', '') || '';
-      if (!defaultSymbol) { alert('Symbol is required when file has no Symbol column.'); return; }
+      defaultSymbol = prompt(t('companies.promptSymbol'), '') || '';
+      if (!defaultSymbol) { alert(t('companies.symbolRequired')); return; }
     }
     try {
       importCSV(text, defaultSymbol);
       renderFromLocal();
-      alert('Import completed.');
+      alert(t('companies.importCompleted'));
     } catch (e) {
       console.error(e);
-      alert('Import failed: ' + (e.message || e));
+      alert(t('companies.importFailed', { error: e.message || e }));
     }
   });
 
@@ -311,14 +316,16 @@
     if (!btn) return;
     const sym = btn.getAttribute('data-del');
     if (!sym) return;
-    if (!confirm(`Delete local data for ${sym}?`)) return;
+    const t = window.TradeFlowI18n ? window.TradeFlowI18n.t : (k) => k;
+    if (!confirm(t('companies.confirmDeleteSymbol', { symbol: sym }))) return;
     deleteSymbol(sym);
     renderFromLocal();
   });
 
   refreshBtn.addEventListener('click', renderFromLocal);
   clearBtn.addEventListener('click', () => {
-    if (!confirm('Clear all locally imported data?')) return;
+    const t = window.TradeFlowI18n ? window.TradeFlowI18n.t : (k) => k;
+    if (!confirm(t('companies.confirmClearAll'))) return;
     saveLocal({});
     renderFromLocal();
   });
@@ -364,6 +371,12 @@
     renderFromLocal();
   });
 
-  // Initial render
-  renderFromLocal();
+  // Initial render - wait for language strings to land first (only matters
+  // for the empty-state message; the file-picker/table-header labels are
+  // handled separately by i18n.js's data-i18n static-markup pass).
+  if (window.TradeFlowI18n) {
+    window.TradeFlowI18n.ready(renderFromLocal);
+  } else {
+    renderFromLocal();
+  }
 })();

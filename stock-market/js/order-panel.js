@@ -115,12 +115,12 @@
   function placeOrder(side) {
     const symbol = window.TradeFlowChart.getCurrentSymbol();
     const size = parseFloat(document.getElementById('order-size')?.value);
-    if (!size || size <= 0) { alert('Enter a valid position size.'); return; }
+    if (!size || size <= 0) { alert(window.TradeFlowI18n.t('order.enterValidSize')); return; }
 
     let price = null;
     if (orderType !== 'market') {
       price = parseFloat(document.getElementById('order-price')?.value);
-      if (!isFinite(price) || price <= 0) { alert('Enter a valid trigger price.'); return; }
+      if (!isFinite(price) || price <= 0) { alert(window.TradeFlowI18n.t('order.enterValidPrice')); return; }
     }
 
     const sl = parseFloat(document.getElementById('order-sl')?.value);

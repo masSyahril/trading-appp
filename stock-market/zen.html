@@ -193,6 +193,9 @@
                     <span class="theme-toggle-icon"><i data-lucide="sparkles" class="w-4 h-4"></i></span>
                     <span class="theme-toggle-label">Comfort Mode</span>
                 </button>
+                <button id="lang-toggle-btn" type="button" class="zen-icon-btn" title="Switch language">
+                    <i data-lucide="languages" class="w-4 h-4"></i>
+                </button>
                 <div data-tl-theme-toggle></div>
                 <button id="reset-data" type="button" class="zen-icon-btn" title="Reset Data">
                     <i data-lucide="refresh-cw" class="w-4 h-4"></i>
@@ -504,6 +507,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             try {
                 await ScriptLoader.loadTradingScripts([
+                    { name: 'i18n', src: 'js/i18n.js', description: 'Language strings (EN/中文)' },
                     { name: 'utils', src: '../src/js/core/utils.js', description: 'Core Utilities' },
                     { name: 'indicators', src: '../src/js/utils/indicators.js', description: 'Chart Indicators' },
                     { name: 'technical-indicators', src: '../src/js/core/technical-indicators.js', description: 'Technical Analysis' },

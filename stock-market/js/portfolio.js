@@ -92,7 +92,9 @@ window.TradeFlowPortfolio = (function () {
       state.workingOrders.push(order);
       save();
       render();
-      showToast(`${order.side.toUpperCase()} ${order.type} order placed: ${order.symbol} @ ${order.price.toFixed(2)}`);
+      showToast(window.TradeFlowI18n.t('portfolio.toastOrderPlaced', {
+        side: sideLabel(order.side), type: typeLabel(order.type), symbol: order.symbol, price: order.price.toFixed(2),
+      }));
     }
   }
 
@@ -105,14 +107,16 @@ window.TradeFlowPortfolio = (function () {
     state.positions.push(position);
     save();
     render();
-    showToast(`${position.side.toUpperCase()} filled: ${position.size} ${position.symbol} @ ${position.entryPrice.toFixed(2)}`);
+    showToast(window.TradeFlowI18n.t('portfolio.toastFilled', {
+      side: sideLabel(position.side), size: position.size, symbol: position.symbol, price: position.entryPrice.toFixed(2),
+    }));
   }
 
   function closePosition(id) {
     const pos = state.positions.find(p => p.id === id);
     if (!pos) return;
     const exitPrice = currentPrice(pos.symbol) ?? pos.entryPrice;
-    closePositionAt(pos, exitPrice, 'Closed');
+    closePositionAt(pos, exitPrice, window.TradeFlowI18n.t('portfolio.reasonClosed'));
   }
 
   function closePositionAt(pos, exitPrice, reason) {
@@ -124,7 +128,9 @@ window.TradeFlowPortfolio = (function () {
     state.positions.splice(idx, 1);
     save();
     render();
-    showToast(`${reason} ${pos.symbol}: ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}`);
+    showToast(window.TradeFlowI18n.t('portfolio.toastClosed', {
+      reason, symbol: pos.symbol, sign: pnl >= 0 ? '+' : '-', pnl: fmtMoney(Math.abs(pnl)),
+    }));
   }
 
   // sl/tp are captured on every position at order time but, until now,
@@ -142,7 +148,10 @@ window.TradeFlowPortfolio = (function () {
       const isLong = pos.side !== 'sell';
       const hitSl = pos.sl != null && (isLong ? price <= pos.sl : price >= pos.sl);
       const hitTp = pos.tp != null && (isLong ? price >= pos.tp : price <= pos.tp);
-      if (hitSl || hitTp) toClose.push({ pos, price, reason: hitSl ? 'Stop-loss hit' : 'Take-profit hit' });
+      if (hitSl || hitTp) toClose.push({
+        pos, price,
+        reason: hitSl ? window.TradeFlowI18n.t('portfolio.reasonStopLoss') : window.TradeFlowI18n.t('portfolio.reasonTakeProfit'),
+      });
     });
     toClose.forEach(({ pos, price, reason }) => closePositionAt(pos, price, reason));
   }
@@ -156,7 +165,10 @@ window.TradeFlowPortfolio = (function () {
   function editOrderPrice(id) {
     const order = state.workingOrders.find(o => o.id === id);
     if (!order) return;
-    const next = prompt(`New trigger price for ${order.symbol} ${order.type}:`, order.price);
+    const next = prompt(
+      window.TradeFlowI18n.t('portfolio.promptNewTriggerPrice', { symbol: order.symbol, type: typeLabel(order.type) }),
+      order.price
+    );
     if (next == null) return;
     const price = parseFloat(next);
     if (!isFinite(price)) return;
@@ -189,13 +201,26 @@ window.TradeFlowPortfolio = (function () {
   }
 
   // ─── Rendering ──────────────────────────────────────────────────────────────
+  // Currency stays USD regardless of language (see the roadmap's i18n
+  // notes) - Intl.NumberFormat just adapts digit grouping/decimal style to
+  // the active locale, the same way portfolio.js already adapts its text.
+  const moneyFormatter = () => new Intl.NumberFormat(window.TradeFlowI18n.intlLocale(), {
+    style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2,
+  });
   function fmtMoney(n) {
-    const sign = n < 0 ? '-' : '';
-    return `${sign}$${Math.abs(n).toFixed(2)}`;
+    return moneyFormatter().format(n);
   }
 
   function emptyRow(colspan, message) {
     return `<tr><td colspan="${colspan}" class="drawer-empty">${message}</td></tr>`;
+  }
+
+  function sideLabel(side) {
+    return window.TradeFlowI18n.t(side === 'sell' ? 'side.sell' : 'side.buy');
+  }
+
+  function typeLabel(type) {
+    return window.TradeFlowI18n.t(type === 'limit' ? 'type.limit' : type === 'stop' ? 'type.stop' : 'type.market');
   }
 
   function render() {
@@ -219,13 +244,13 @@ window.TradeFlowPortfolio = (function () {
       const cls = pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
       return `<tr>
         <td>${escapeHtml(p.symbol)}</td>
-        <td class="${p.side === 'buy' ? 'pnl-positive' : 'pnl-negative'}">${p.side.toUpperCase()}</td>
+        <td class="${p.side === 'buy' ? 'pnl-positive' : 'pnl-negative'}">${sideLabel(p.side)}</td>
         <td>${p.size}</td><td>${p.entryPrice.toFixed(2)}</td><td>${cur.toFixed(2)}</td>
         <td class="${cls}">${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}</td>
         <td class="${cls}">${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</td>
-        <td><button data-close="${escapeHtml(p.id)}" class="drawer-action-btn">Close</button></td>
+        <td><button data-close="${escapeHtml(p.id)}" class="drawer-action-btn">${window.TradeFlowI18n.t('portfolio.close')}</button></td>
       </tr>`;
-    }).join('') || emptyRow(8, 'No open positions');
+    }).join('') || emptyRow(8, window.TradeFlowI18n.t('portfolio.noOpenPositions'));
 
     tbody.querySelectorAll('[data-close]').forEach(btn =>
       btn.addEventListener('click', () => closePosition(btn.dataset.close))
@@ -236,14 +261,14 @@ window.TradeFlowPortfolio = (function () {
     const tbody = document.querySelector('#panel-orders tbody');
     if (!tbody) return;
     tbody.innerHTML = state.workingOrders.map(o => `<tr>
-      <td>${escapeHtml(o.symbol)}</td><td>${o.type.toUpperCase()}</td>
-      <td class="${o.side === 'buy' ? 'pnl-positive' : 'pnl-negative'}">${o.side.toUpperCase()}</td>
+      <td>${escapeHtml(o.symbol)}</td><td>${typeLabel(o.type)}</td>
+      <td class="${o.side === 'buy' ? 'pnl-positive' : 'pnl-negative'}">${sideLabel(o.side)}</td>
       <td>${o.size}</td><td>${o.price.toFixed(2)}</td>
       <td>
-        <button data-edit="${escapeHtml(o.id)}" class="drawer-action-btn">Edit</button>
-        <button data-cancel="${escapeHtml(o.id)}" class="drawer-action-btn drawer-action-danger">Cancel</button>
+        <button data-edit="${escapeHtml(o.id)}" class="drawer-action-btn">${window.TradeFlowI18n.t('portfolio.edit')}</button>
+        <button data-cancel="${escapeHtml(o.id)}" class="drawer-action-btn drawer-action-danger">${window.TradeFlowI18n.t('portfolio.cancel')}</button>
       </td>
-    </tr>`).join('') || emptyRow(6, 'No working orders');
+    </tr>`).join('') || emptyRow(6, window.TradeFlowI18n.t('portfolio.noWorkingOrders'));
 
     tbody.querySelectorAll('[data-cancel]').forEach(btn =>
       btn.addEventListener('click', () => cancelOrder(btn.dataset.cancel))
@@ -260,12 +285,12 @@ window.TradeFlowPortfolio = (function () {
       const cls = h.pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
       return `<tr>
         <td>${escapeHtml(h.symbol)}</td>
-        <td class="${h.side === 'buy' ? 'pnl-positive' : 'pnl-negative'}">${h.side.toUpperCase()}</td>
+        <td class="${h.side === 'buy' ? 'pnl-positive' : 'pnl-negative'}">${sideLabel(h.side)}</td>
         <td>${h.size}</td><td>${h.entryPrice.toFixed(2)}</td><td>${h.exitPrice.toFixed(2)}</td>
         <td class="${cls}">${h.pnl >= 0 ? '+' : ''}${h.pnl.toFixed(2)}</td>
-        <td>${new Date(h.closedAt).toLocaleString()}</td>
+        <td>${new Date(h.closedAt).toLocaleString(window.TradeFlowI18n.intlLocale())}</td>
       </tr>`;
-    }).join('') || emptyRow(7, 'No closed trades yet');
+    }).join('') || emptyRow(7, window.TradeFlowI18n.t('portfolio.noClosedTrades'));
   }
 
   function getAccountSummary() {
@@ -348,7 +373,9 @@ window.TradeFlowPortfolio = (function () {
     state.positions.push(position);
     save();
     render();
-    showToast(`${position.side.toUpperCase()} filled: ${position.size} ${position.symbol} @ ${position.entryPrice.toFixed(2)}`);
+    showToast(window.TradeFlowI18n.t('portfolio.toastFilled', {
+      side: sideLabel(position.side), size: position.size, symbol: position.symbol, price: position.entryPrice.toFixed(2),
+    }));
   }
 
   // A signed-in close: the server (api/orders/close.php) already decided
@@ -357,7 +384,7 @@ window.TradeFlowPortfolio = (function () {
   function closePositionAtPrice(id, price, reason) {
     const pos = state.positions.find(p => p.id === id);
     if (!pos) return false;
-    closePositionAt(pos, price, reason || 'Closed');
+    closePositionAt(pos, price, reason || window.TradeFlowI18n.t('portfolio.reasonClosed'));
     return true;
   }
 

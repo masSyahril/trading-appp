@@ -1,4 +1,4 @@
-# Bug report: five functions in the Prof. Wang indicator file
+# Bug report: eleven functions in the Prof. Wang indicator file
 
 **File:** `src/js/core/technical-indicators.prods__Wang__2026.js`
 **Date:** 2026-09-12
@@ -7,7 +7,12 @@ file on 2026-09-17, exactly as written below, each marked with a `fix 2026-09-17
 comment; `npm test` no longer shows their three `[WARN]` lines. Fix 4 (`HullMA`) was
 applied on 2026-09-19, marked with `fix 2026-09-19` comments (the three weight-sum
 loops now use `i<=` instead of `i<`). Fix 5 (`Flexible_KD`, added 2026-09-17 as `Flexible_KDlization`) was applied
-the same day as fixes 1-3. Line numbers below are from before the fixes (a line was added
+the same day as fixes 1-3. Fix 6 (the 2026-09-18/19 batch: `HighLowOsc_KDlization`,
+`VariantRateMA_TwoDaysAgo_KD`, `VariantRateMA_ThreeDaysAgo_KD`, and
+`VariantRateEMA_TwoDaysAgo_KD` and `VariantRateEMA_ThreeDaysAgo_KD` added later
+the same day) was applied on
+2026-09-19, marked with `fix 2026-09-19` comments. Fix 7 (`VertHoriFilter`, registered
+on 2026-09-19) was applied the same day. Line numbers below are from before the fixes (a line was added
 in `VolRatio`, so later lines are one further down). If a new copy of the file
 replaces this one, check that it includes these fixes.
 
@@ -20,6 +25,12 @@ replaces this one, check that it includes these fixes.
 | `EOM_EMV` (line 1758) | EOM (Ease of Movement) | the smoothed line **eEOM_EMV** is blank on every bar | `if(i===1)` → `if(i===2)` (1 line) |
 | `HullMA` (line 2836) | HULL_MA (Hull MA), ZeroLagHullMA | values too high - HULL_MA shows about 3 times the price | the three weight sums must include their last weight: `i<` → `i<=` (3 lines) |
 | `Flexible_KD`, was `Flexible_KDlization` (line 10703) | Flexible_KD | **the whole file fails to load** (syntax error), so every Prof. Wang indicator disappears | fix the starting values, declare the two arrays, `rsv(i)` → `rsv` (4 lines) |
+| `HighLowOsc_KDlization` (line 10832) | HighLowOsc(HLO)_KD | throws on every call, so the indicator never draws | `const TR` → `let TR`; `min` used `Math.max` (2 lines) |
+| `VariantRateMA_TwoDaysAgo_KD` (line 10878) | VariRtMA_TwoDaysAgo_KD | throws on every call, so the indicator never draws | loop reads `STK_high.length`, which this function never receives → `STK_close.length`; `min` used `Math.max` (2 lines) |
+| `VariantRateMA_ThreeDaysAgo_KD` (line 10922) | VariRtMA_ThreeDaysAgo_KD | throws on every call, so the indicator never draws | same two fixes (2 lines) |
+| `VariantRateEMA_TwoDaysAgo_KD` (line 10966) | VariRtEMA_TwoDaysAgo_KD | both lines sit flat at exactly 50 on every bar | `min` used `Math.max` (1 line) |
+| `VariantRateEMA_ThreeDaysAgo_KD` (line 11021) | VariRtEMA_ThreeDaysAgo_KD | both lines sit flat at exactly 50 on every bar | `min` used `Math.max` (1 line) |
+| `VertHoriFilter` (line 1113) | VHF2 (Vertical Horizontal Filter) | **VHF** is drawn on every second bar only; **eVHF** is blank on every bar | `for(j=i++; ...)` → `for(let j=i; ...)` (1 line) |
 
 A blank line is one where every value is `NaN`: one missing starting value makes
 the first result `NaN`, and each later value is computed from the previous one,
@@ -223,6 +234,119 @@ so every Prof. Wang indicator on every page disappeared until it was fixed.
 
 **Tested** (KD_day 9, alpha 7, beta 7): K and D have values from bar 8 on, all
 between 0 and 100, and match a direct calculation of the same formula.
+
+---
+
+## 6. The 2026-09-18/19 batch - five broken functions (fixed 2026-09-19)
+
+These three were added on 2026-09-18/19. None of them could run: each threw on
+the first call, so the indicator drew nothing at all. Each also computed its
+window minimum with `Math.max`, which is a silent bug - `min` would end up equal
+to `max`, the `max === min` guard would fire on every bar and the KD lines would
+sit flat at 50.
+
+### 6a. `HighLowOsc_KDlization` (line 10832)
+
+```js
+10835  const TR=0;     //True Range, TR
+...
+10839    TR=Math.max(...);          // TypeError: Assignment to constant variable
+10855    max=Math.max(max, HLO[j]);  min=Math.max(min, HLO[j]);   // min uses Math.max
+```
+
+**Fix:** `let TR=0;` and `min=Math.min(min, HLO[j]);`
+
+### 6b/6c. `VariantRateMA_TwoDaysAgo_KD` (10878), `VariantRateMA_ThreeDaysAgo_KD` (10922)
+
+Both take `(STK_close, MA_day, KD_num)` - there is no `STK_high` in them - but
+their main loop ends at `STK_high.length`:
+
+```js
+10894  for(let i=KD_num+MA_day+1; i<=STK_high.length; i++) {   // ReferenceError: STK_high is not defined
+10899    min=Math.max(min, VarRtMA_TwoDaysAgo[j]);             // min uses Math.max
+```
+
+**Fix:** `STK_close.length`, and `min=Math.min(...)` in both functions.
+
+**Tested** (esp 9, KD_num 9, MA_day 5), after the fixes: all three return values
+on every bar from their documented start bar, all within 0-100.
+
+| Function | Before | After |
+|---|---|---|
+| `HighLowOsc_KDlization` | throws (TypeError) | K and D from bar 9, 8.5 to 91.3 |
+| `VariantRateMA_TwoDaysAgo_KD` | throws (ReferenceError) | K and D from bar 14, 0.2 to 99.8 |
+| `VariantRateMA_ThreeDaysAgo_KD` | throws (ReferenceError) | K and D from bar 15, 0.0 to 99.9 |
+
+### 6d/6e. `VariantRateEMA_TwoDaysAgo_KD` (10966), `VariantRateEMA_ThreeDaysAgo_KD` (11021)
+
+Added later on 2026-09-19. These two run, but carry the same `min` typo, and on
+its own that is enough to make an indicator useless:
+
+```js
+10996      max=Math.max(max, VarRtEMA_TwoDaysAgo[j]);
+10997      min=Math.max(min, VarRtEMA_TwoDaysAgo[j]);   // min uses Math.max
+```
+
+With `min` computed as a maximum, `min` always ends up equal to `max`, so the
+`if(max===min) { RSV=50; }` guard fires on every bar and K and D come out as
+exactly 50.00 on every bar. `VariantRateEMA_ThreeDaysAgo_KD` has the identical
+line (11052) over `VarRtEMA_ThreeDaysAgo[j]`.
+
+| Function | Before | After |
+|---|---|---|
+| `VariantRateEMA_TwoDaysAgo_KD` | 50.00 on all 190 test bars (1 distinct value) | 190 distinct values, 0.2 to 99.96, from bar 10 |
+| `VariantRateEMA_ThreeDaysAgo_KD` | 50.00 on all 189 test bars (1 distinct value) | 189 distinct values, 0.4 to 100.0, from bar 11 |
+
+**Fix:** use `Math.min` for `min` in both functions.
+
+### Where this keeps coming from
+
+The commented-out shortcut inside `DEMA_KDlization` (line 10809) carried the
+same mistake, so every function copied from it inherited it. That comment now
+reads `min=Math.min(...)`, to stop the next copy repeating it.
+
+`DEMA2` and `DEMA_KDlization` themselves, added the same day, had no problems.
+
+---
+
+## 7. `VertHoriFilter` - VHF skips every second bar, eVHF is blank (fixed 2026-09-19)
+
+Registered on 2026-09-19 as **VHF2 (Vertical Horizontal Filter)**. One line in the
+inner loop causes both problems:
+
+```js
+for(j=i++; j<=(i+VHF_day-1); j++) {   // line 1122
+```
+
+`i++` is the outer loop counter. Reading it here increments it a second time, on
+top of the `i++` the `for` statement already does, and that has two separate
+effects:
+
+1. **VHF gets holes.** The outer loop now advances by 2, so it writes
+   `VHF[20]`, `VHF[22]`, `VHF[24]` ... and every odd bar is left empty. Half the
+   chart is missing. (The window it measures is also one day too long: the
+   condition `j<=(i+VHF_day-1)` reads the already-incremented `i`, so it covers
+   `VHF_day+1` days instead of `VHF_day`.)
+2. **eVHF is blank.** `i` is 2 by the time `if (i>1)` is reached on the very
+   first pass, so the guard that is meant to keep the first `eVHF` as its seed
+   value fires immediately. It reads `eVHF[i+VHF_day-2]`, which is one of the
+   holes from (1) - `undefined` - so the first value becomes `NaN`, and every
+   later value is computed from the one before it, so all of them are `NaN`.
+
+**Fix:** `for(let j=i; j<=(i+VHF_day-1); j++) {`
+
+`max_close`, `min_close` and `j` were also missing `let`, which made them global
+variables shared with anything else on the page; they now have it.
+
+| | VHF | eVHF |
+|---|---|---|
+| now | 90 of 200 test bars, 89 holes between them | blank (all `NaN`) |
+| with the fix | 180 of 200, no holes, 0.29 to 0.98 | 180 of 200, no holes, 0.43 to 0.95 |
+
+The app already had a one-line `VHF (Vertical Horizontal Filter)` of its own
+(`computeVHF` in `technical-indicators-wang.js`), computing the same ratio. It is
+still there as a separate menu entry; Prof. Wang's version is listed as **VHF2**
+and adds the smoothed `eVHF` line.
 
 ---
 

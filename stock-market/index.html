@@ -280,6 +280,10 @@
                 <span class="theme-toggle-label">Comfort Mode</span>
             </button>
             <div data-tl-theme-toggle></div>
+            <button id="lang-toggle-btn" type="button" class="theme-toggle-btn" title="Switch language">
+                <span class="theme-toggle-icon"><i data-lucide="languages" class="w-4 h-4"></i></span>
+                <span class="theme-toggle-label" id="lang-toggle-label">EN</span>
+            </button>
             <a href="zen.html" class="theme-toggle-btn" title="Focus-First floating-panel layout">
                 <i data-lucide="wand-2" class="w-4 h-4"></i>
                 <span class="theme-toggle-label">Zen Mode</span>
@@ -626,6 +630,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             try {
                 await ScriptLoader.loadTradingScripts([
+                    { name: 'i18n', src: 'js/i18n.js', description: 'Language strings (EN/中文)' },
                     { name: 'utils', src: '../src/js/core/utils.js', description: 'Core Utilities' },
                     { name: 'indicators', src: '../src/js/utils/indicators.js', description: 'Chart Indicators' },
                     { name: 'technical-indicators', src: '../src/js/core/technical-indicators.js', description: 'Technical Analysis' },

@@ -109,6 +109,20 @@
     });
   });
 
+  // Prof. Wang's 2026-09-18 redesign of DEMA: the same 2*EMA - EMA(EMA), but over
+  // the Typical Price (H+L+4C)/6 instead of the close, plus his smoothed eDEMA.
+  // Separate from 'DoubleEMA' above, which is the close-based one.
+  registry.register({
+    id: 'DEMA2', name: 'DEMA2', shortName: 'DEMA2',
+    category: 'Moving averages', placement: 'chart',
+    params: [{ key: 'esp', label: 'Smoothing', default: 9, min: 1 }],
+    outputs: [line('DEMA', '#f472b6'), line('eDEMA', '#38bdf8', { lineWidth: 1 })],
+    compute: (c, p) => {
+      const out = call('DEMA2', ...HLC(c), Math.round(p.esp)) || {};
+      return { DEMA: aligned(c, out.DEMA, 0), eDEMA: aligned(c, out.eDEMA, 0) };
+    },
+  });
+
   // Guppy: EMA1-5 short-term group, EMA6-10 long-term group, plus each group's average.
   registry.register({
     id: 'GuppyMA', name: 'Guppy Multiple MA', shortName: 'Guppy', category: 'Moving averages', placement: 'chart',

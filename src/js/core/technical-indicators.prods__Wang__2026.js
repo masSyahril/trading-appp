@@ -1117,9 +1117,11 @@ function VertHoriFilter(STK_close, VHF_day, esp) {  //原名稱:VHF
   const eVHF=[]; //自創新指標，名為eVHF，eVHF=（esp-1/esp+1*前一筆eVHF+2/(esp+1)*本筆VHF
   let sum=0;
   for(let i=1; i<STK_close.length-VHF_day+1; i++) { //i=1 to 1981, 例VHF_day=20
-    max_close=STK_close[i];  //令第一筆為max
-    min_close=STK_close[i];  //令第一筆為min
-    for(j=i++; j<=(i+VHF_day-1); j++) {   //例參數VHF_day=20，從2找到20
+    let max_close=STK_close[i];  //令第一筆為max (fix 2026-09-19: 加let)
+    let min_close=STK_close[i];  //令第一筆為min (fix 2026-09-19: 加let)
+    //fix 2026-09-19: 原為 for(j=i++;...)，i++在迴圈內把i多加了1，
+    //造成(a)外層每次跳2筆，VHF隔一筆就是空的；(b)第一圈i已變2使 if(i>1) 成立，eVHF第一筆種子被覆蓋成NaN。
+    for(let j=i; j<=(i+VHF_day-1); j++) {   //例參數VHF_day=20，從2找到20
       if (STK_close[j]>max_close) {
         max_close=STK_close[j]; }        //例參數為20，在1~20找max,min
       if (STK_close[j]<min_close) {
@@ -2852,7 +2854,7 @@ function HullMA(values, day, esp) {
   //每個WMA1權重為:1,2,3,4,5,...,(day/2=half_day)
   //例如day=10,則WMA1[]=5,6,...,2000
   let sum_wgt1=0;              //加總WMA1的總權重,要放分母
-for(let i=1; i<=half_day; i++) {   //i=1 to 5 (i=1 to day/2)  (fix 2026-09-19: was i<half_day, missed the last weight)
+  for(let i=1; i<=half_day; i++) {   //i=1 to 5 (i=1 to day/2)  (fix 2026-09-19: was i<half_day, missed the last weight)
     sum_wgt1=sum_wgt1+i;       //例如=1+2+3+4+5=15,加總WMA1的總權重,要放分母
   }
   let sum_close=0;   //分子=5天加權收盤價加總
@@ -2869,7 +2871,7 @@ for(let i=1; i<=half_day; i++) {   //i=1 to 5 (i=1 to day/2)  (fix 2026-09-19: w
   //每個WMA2權重為:1,2,3,4,5,...,day
   //例如day=10,則WMA2[]=10,11,...,2000
   let sum_wgt2=0;         //加總WMA2的總權重,要放分母
-for(let i=1; i<=day; i++) {   //i=1 to 10 (i=1 to day)  (fix 2026-09-19: was i<day, missed the last weight)
+  for(let i=1; i<=day; i++) {   //i=1 to 10 (i=1 to day)  (fix 2026-09-19: was i<day, missed the last weight)
     sum_wgt2=sum_wgt2+i;  //例如=1+2+...+10=55,加總WMA2的總權重,要放分母
   }  
   sum_close=0;   //分子=10天加權收盤價加總
@@ -2891,7 +2893,7 @@ for(let i=1; i<=day; i++) {   //i=1 to 10 (i=1 to day)  (fix 2026-09-19: was i<d
   //m=HMA的移動平均天數,例如:m=4
   let m=Math.ceil(Math.sqrt(day)); //開根號後再無條件進位,m=HMA的移動平均天數=4
   let sum_wgt=0;         //加總RawHMA的總權重,要放分母
-for(let i=1; i<=m; i++) { //i=1 to 4 (i=1 to m)  (fix 2026-09-19: was i<m, missed the last weight)
+  for(let i=1; i<=m; i++) { //i=1 to 4 (i=1 to m)  (fix 2026-09-19: was i<m, missed the last weight)
     sum_wgt=sum_wgt+i;      //例如=1+2+3+4=10,加總RawHMA的總權重,要放分母
   }
   let sum_tp;
@@ -10738,13 +10740,340 @@ function Flexible_KD(STK_high, STK_low, STK_close, KD_day, alpha, beta) {
 window.Flexible_KD = Flexible_KD;
 //----------------------------------------------------------------------
 
+//===Designed by Prof Wang,===2026-Sept-18======重新設計================
+//DEMA指標(Double Exponential Moving Average)
+//DEMA＝2*(N日EMA)－(N日EMA)的EMA。即：DEMA=2*EMA-EMA(EMA).
+//重新設計,以Typical Price(TP)代替Close, TP=(H+L+4C)/6.
+function DEMA2(STK_high, STK_low, STK_close, esp) {
+  //Menu Name: DEMA2         //指數平滑移動平均參數esp=9,10,...
+  const EMA=[], EMA_EMA=[];  //EMA[],EMA_EMA[]=1 to 2000
+  const DEMA=[], eDEMA=[];   //DEMA[], eDEMA[]=1 to 2000
+  const TP=[];        //Typical Price =1 to 2000
+  for(let i=1; i<=STK_high.length; i++) {  //=1 to 2000
+    TP[i] = (STK_high[i]+STK_low[i]+4*STK_close[i])/6;  //Typical Price
+    if(i===1) {   //初値
+      EMA[i]=TP[i]; 
+      EMA_EMA[i]=EMA[i]; 
+      DEMA[i]=2*EMA[i]-EMA_EMA[i]; //初値DEMA[1]=0
+      eDEMA[i]=DEMA[i]; }  
+    else {
+      EMA[i]=(esp-1)/(esp+1)*EMA[i-1]+2/(esp+1)*TP[i];
+      EMA_EMA[i]=(esp-1)/(esp+1)*EMA_EMA[i-1]+2/(esp+1)*EMA[i];
+      DEMA[i]=2*EMA[i]-EMA_EMA[i];
+      eDEMA[i]=(esp-1)/(esp+1)*eDEMA[i-1]+2/(esp+1)*DEMA[i];
+    }
+  }
+  return { DEMA, eDEMA };
+  //drawing the these figures in the K_Line area.
+  //DEMA[], eDEMA[]=1 to 2000. DEMA[1]=0, eDEMA[1]=0.
+}
+window.DEMA2 = DEMA2;
+//----------------------------------------------------------------------
+
+//===Designed by Prof Wang,===2026-Sept-18======完全自行創新==============
+//DEMA指標(Double Exponential Moving Average)
+//DEMA＝2*(N日EMA)－(N日EMA)的EMA。即：DEMA=2*EMA-EMA(EMA).
+//重新設計DEMA,以Typical Price(TP)代替Close, TP=(H+L+4C)/6.
+//將DEMA做KD化(完全自行創新新)。取名：指數移動平均乖離率隨機指標DEMAKD。
+function DEMA_KDlization(STK_high, STK_low, STK_close, esp, KD_num) {
+  //Menu Name: DEMA_KD       //esp=9,10,...//KD_num=9,10,11,...
+  const EMA=[], EMA_EMA=[];  //EMA[],EMA_EMA[]=1 to 2000
+  const DEMA=[], eDEMA=[];   //DEMA[], eDEMA[]=1 to 2000
+  const TP=[];        //Typical Price =1 to 2000
+  for(let i=1; i<=STK_high.length; i++) {  //=1 to 2000
+    TP[i] = (STK_high[i]+STK_low[i]+4*STK_close[i])/6;  //Typical Price
+    if(i===1) {   //初値
+      EMA[i]=TP[i]; 
+      EMA_EMA[i]=EMA[i]; 
+      DEMA[i]=2*EMA[i]-EMA_EMA[i]; //初値DEMA[1]=0
+      eDEMA[i]=DEMA[i]; }  
+    else {
+      EMA[i]=(esp-1)/(esp+1)*EMA[i-1]+2/(esp+1)*TP[i];
+      EMA_EMA[i]=(esp-1)/(esp+1)*EMA_EMA[i-1]+2/(esp+1)*EMA[i];
+      DEMA[i]=2*EMA[i]-EMA_EMA[i];
+      eDEMA[i]=(esp-1)/(esp+1)*eDEMA[i-1]+2/(esp+1)*DEMA[i];
+    }
+  }
+  //Calculate DEMA_KD_K[i] and DEMA_KD_D[i], =9 to 2000, if KD_num=9
+  //RSV=100*(DEMA[i]-min)/(max-min)
+  const DEMA_KD_K=[];    //DEMA_KD_K[]=8 to 2000, if KD_num=9
+  const DEMA_KD_D=[];    //DEMA_KD_D[]=8 to 2000, if KD_num=9
+  DEMA_KD_K[KD_num-1]=50;  DEMA_KD_D[KD_num-1]=50;  //初值[8]=50
+  let RSV=0;  //RSV=100*(DEMA[i]-min)/(max-min)
+  let max=0;  //max=Max([1]-->[9])
+  let min=0;  //min=Min([1]-->[9])
+  for(let i=KD_num; i<=STK_high.length; i++) {  //i=9 to 2000
+    max=DEMA[i-KD_num+1];  //max=Max([1]-->[9])
+    min=DEMA[i-KD_num+1];  //min=Min([1]-->[9])
+    for(let j=i-KD_num+2; j<=i; j++) {  //j=2 to 9, if KD_num=9
+      if(DEMA[j]>max) { max=DEMA[j]; }  //max=Max([2]-->[9])
+      if(DEMA[j]<min) { min=DEMA[j]; }  //min=Min([2]-->[9])
+      // 或：max=Math.max(max, DEMA[j]);  min=Math.min(min, DEMA[j]);  //注意min要用Math.min (fix 2026-09-19)
+    }
+    if(max===min) { RSV=50; }  //避免分母為0, RSV=50
+    else {
+      RSV=(DEMA[i]-min)/(max-min)*100; 
+    }
+    DEMA_KD_K[i]=(2/3)*DEMA_KD_K[i-1]+(1/3)*RSV; //可考慮再做一次平滑化
+    DEMA_KD_D[i]=(2/3)*DEMA_KD_D[i-1]+(1/3)*DEMA_KD_K[i]; //first turn=[9]
+  }
+  return { DEMA_KD_K, DEMA_KD_D };
+  //drawing the these figures in the small windows.
+  //if KD_num=9, DEMA_KD_K[], DEMA_KD_D[]=8 to 2000.
+  //if KD_num=9, DEMA_KD_K[8]=50, DEMA_KD_D[8]=50
+}
+window.DEMA_KDlization = DEMA_KDlization;
+//----------------------------------------------------------------------
+
+//===Designed by Prof Wang,===2026-Sept-18======完全自行創新==============
+// HLO高低價擺盪指標,全名為「High/Low Oscillator」,用來衡量每日價格波動的真實幅度。
+//1. TRt=MAX[(Ht-Lt), (Ht- Ct-1), (Lt-Ct-1)]
+//2. HLOt=(Ht-Ct-1)/TRt*100. 
+//將HLO做KD化(完全自行創新新)。取名：高低價擺盪隨機指標HLOKD。
+//HLOKD高低價擺盪隨機指標(High/Low Oscillator Stochastic Indicator)
+function HighLowOsc_KDlization(STK_high, STK_low, STK_close, esp, KD_num) {  //原名稱:HLO
+  // Menu Name= HighLowOsc(HLO)_KD       //esp=9,10,...//KD_num=9,10,11,...
+  const HLO=[], eHLO=[];   //自創新指標，eHLO[]為指數平滑化後
+  let TR=0;       //True Range, TR  (fix 2026-09-19: was const, so the assignment below threw)
+  HLO[1]=50;      //HLO[1]初值=50,  但真正值=2 to 2000
+  eHLO[1]=50;     //eHLO[1]初值=50, 但真正值=2 to 2000
+  for(let i=2; i<=STK_close.length; i++) {  //i=2 to 2000
+    TR=Math.max(STK_high[i]-STK_low[i], STK_high[i]-STK_close[i-1], Math.abs(STK_low[i]-STK_close[i-1]));
+    HLO[i]=(STK_high[i]-STK_close[i-1])/TR*100;
+    eHLO[i]=(esp-1)/(esp+1)*eHLO[i-1]+2/(esp+1)*HLO[i];  //自創新指標
+  }
+  //Calculate HLO_KD_K[i] and HLO_KD_D[i], =9 to 2000, if KD_num=9
+  //RSV=100*(HLO[i]-min)/(max-min)
+  const HLO_KD_K=[];  //HLO_KD_K[]=9 to 2000, if KD_num=9
+  const HLO_KD_D=[];  //HLO_KD_D[]=9 to 2000, if KD_num=9
+  HLO_KD_K[KD_num]=50;  HLO_KD_D[KD_num]=50;  //初值[9]=50
+  let RSV=0;  //RSV=100*(HLO[i]-min)/(max-min)
+  let max=0;  //max=Max([2]-->[10])
+  let min=0;  //min=Min([2]-->[10])
+  for(let i=KD_num+1; i<=STK_high.length; i++) {  //i=9+1 to 2000
+    max=HLO[i-KD_num+1];  //max=Max([2]-->[10])
+    min=HLO[i-KD_num+1];  //min=Min([2]-->[10])
+    for(let j=i-KD_num+2; j<=i; j++) {  //j=2+1 to 9+1, if KD_num=9
+      max=Math.max(max, HLO[j]);  min=Math.min(min, HLO[j]);  //fix 2026-09-19: min used Math.max
+    }
+    if(max===min) { RSV=50; }  //避免分母為0, RSV=50
+    else {
+      RSV=(HLO[i]-min)/(max-min)*100; 
+    }
+    HLO_KD_K[i]=(2/3)*HLO_KD_K[i-1]+(1/3)*RSV; //可考慮再做一次平滑化
+    HLO_KD_D[i]=(2/3)*HLO_KD_D[i-1]+(1/3)*HLO_KD_K[i]; //first turn=[10]
+  }
+  return { HLO_KD_K, HLO_KD_D };
+  //drawing the these figures in the small windows.
+  //if KD_num=9, HLO_KD_K[], HLO_KD_D[]=9 to 2000.
+  //if KD_num=9, HLO_KD_K[9]=50, HLO_KD_D[9]=50
+  //HLO[], eHLO[]=2,3,...,2000. HLO[1]初值=50,但真正值=2 to 2000
+}
+window.HighLowOsc_KDlization = HighLowOsc_KDlization;
+//----------------------------------------------------------------------
+
+//===Designed by Prof Wang,===2026-September-19======完全自行創新===========
+//VRMA移動平均2天前變動率 隨機指標(VRMA, Variant Rate of Moving Average Two Days Ago)
+//將VRMA做KD化(完全自行創新新)。VRMA移動平均2天前變動率隨機指標
+// (VRMA, Variant Rate of Moving Average Two Days Ago Stochastic Indicator)
+//VRMA=(MA(t)-MA(t-2))/MA(t-2))*100,其中MA為移動平均線,t為當日收盤價,t-2為2日前收盤價.
+function VariantRateMA_TwoDaysAgo_KD(STK_close, MA_day, KD_num) {
+  // Menu Name: VariRtMA_TwoDaysAgo_KD    //MA_day=5,10,...KD_num=9,...
+  const VarRtMA_TwoDaysAgo=[];            //例:MA_day=5日MA變動率
+  const MA = KingMA(STK_close, MA_day);   //MA_day=5, =5 to 2000
+  for(let i=MA_day+2; i<=STK_close.length; i++) {      //i=7 to 2000
+    VarRtMA_TwoDaysAgo[i]=(MA[i]-MA[i-2])/MA[i-2]*100; //=7 to 2000.
+  }  //if MA_day=5, then MA[]=5 to 2000, VarRtMA_TwoDaysAgo[]=7 to 2000
+  //Calculate _K[i] and _D[i], =14 to 2000, if KD_num=9,MA_day=5
+  //RSV=100*(VarRtMA_TwoDaysAgo[i]-min)/(max-min)
+  const VarRtMA_TwoDaysAgo_KD_K=[]; //_K[]=14 to 2000, if KD_num=9,MA_day=5
+  const VarRtMA_TwoDaysAgo_KD_D=[]; //_D[]=14 to 2000, if KD_num=9,MA_day=5
+  VarRtMA_TwoDaysAgo_KD_K[KD_num+MA_day]=50;  //初值[14]=50
+  VarRtMA_TwoDaysAgo_KD_D[KD_num+MA_day]=50;  //初值[14]=50
+  let RSV=0;  //RSV=100*(HLO[i]-min)/(max-min)
+  let max=0;  //max=Max([7]-->[15]), if KD_num=9,MA_day=5
+  let min=0;  //min=Min([7]-->[15]), if KD_num=9,MA_day=5
+  for(let i=KD_num+MA_day+1; i<=STK_close.length; i++) {  //i=9+5+1 to 2000  (fix 2026-09-19: was STK_high, which this function never receives)
+    max=VarRtMA_TwoDaysAgo[i-KD_num+1];  //max=Max([7]-->[15])
+    min=VarRtMA_TwoDaysAgo[i-KD_num+1];  //min=Min([7]-->[15])
+    for(let j=i-KD_num+2; j<=i; j++) {  //j=6+2 to 15, if KD_num=9,MA_day=5
+      max=Math.max(max, VarRtMA_TwoDaysAgo[j]);
+      min=Math.min(min, VarRtMA_TwoDaysAgo[j]);  //fix 2026-09-19: min used Math.max
+    }
+    if(max===min) { RSV=50; }  //避免分母為0, RSV=50
+    else {
+      RSV=(VarRtMA_TwoDaysAgo[i]-min)/(max-min)*100;  //first turn=[15]
+    }  //first turn=[15]
+    VarRtMA_TwoDaysAgo_KD_K[i]=(2/3)*VarRtMA_TwoDaysAgo_KD_K[i-1]+(1/3)*RSV; //可考慮再做一次平滑化
+    VarRtMA_TwoDaysAgo_KD_D[i]=(2/3)*VarRtMA_TwoDaysAgo_KD_D[i-1]+(1/3)*VarRtMA_TwoDaysAgo_KD_K[i];
+  }
+  return { VarRtMA_TwoDaysAgo_KD_K, VarRtMA_TwoDaysAgo_KD_D };
+  //drawing the these figures in the small windows.
+  //if KD_num=9, MA_day=5, then _K[], _D[]=14 to 2000.
+  //if KD_num=9, MA_day=5, then initial _K[14]=50, _D[14]=50.
+  //if MA_day=5, then MA[]=5 to 2000, VarRtMA_TwoDaysAgo[]=7 to 2000
+}
+window.VariantRateMA_TwoDaysAgo_KD = VariantRateMA_TwoDaysAgo_KD;
+//----------------------------------------------------------------------
+
+//===Designed by Prof Wang,===2026-September-19======完全自行創新===========
+//VRMA移動平均3天前變動率 隨機指標(VRMA, Variant Rate of Moving Average Three Days Ago)
+//將VRMA做KD化(完全自行創新新)。VRMA移動平均3天前變動率隨機指標
+// (VRMA, Variant Rate of Moving Average Three Days Ago Stochastic Indicator)
+//VRMA=(MA(t)-MA(t-3))/MA(t-3))*100,其中MA為移動平均,t為當日收盤價,t-3為3日前收盤價.
+function VariantRateMA_ThreeDaysAgo_KD(STK_close, MA_day, KD_num) {
+ // Menu Name: VariRtMA_ThreeDaysAgo_KD    //MA_day=5,10,...KD_num=9,...
+  const VarRtMA_ThreeDaysAgo=[];           //例:MA_day=5日MA變動率
+  const MA = KingMA(STK_close, MA_day);    //MA_day=5, =5 to 2000
+  for(let i=MA_day+3; i<=STK_close.length; i++) {        //i=8 to 2000
+    VarRtMA_ThreeDaysAgo[i]=(MA[i]-MA[i-3])/MA[i-3]*100; //=8 to 2000.
+  }  //if MA_day=5, then MA[]=5 to 2000, VarRtMA_ThreeDaysAgo[]=8 to 2000
+  //Calculate _K[i] and _D[i], =15 to 2000, if KD_num=9,MA_day=5
+  //RSV=100*(VarRtMA_TwoDaysAgo[i]-min)/(max-min)
+  const VarRtMA_ThreeDaysAgo_KD_K=[]; //_K[]=15 to 2000, if KD_num=9,MA_day=5
+  const VarRtMA_ThreeDaysAgo_KD_D=[]; //_D[]=15 to 2000, if KD_num=9,MA_day=5
+  VarRtMA_ThreeDaysAgo_KD_K[KD_num+MA_day+1]=50;  //初值[15]=50
+  VarRtMA_ThreeDaysAgo_KD_D[KD_num+MA_day+1]=50;  //初值[15]=50
+  let RSV=0;  //RSV=100*(VarRtMA_ThreeDaysAgo[i]-min)/(max-min)
+  let max=0;  //max=Max([8]-->[16]), if KD_num=9,MA_day=5
+  let min=0;  //min=Min([8]-->[16]), if KD_num=9,MA_day=5
+  for(let i=KD_num+MA_day+2; i<=STK_close.length; i++) {  //i=9+5+2 to 2000  (fix 2026-09-19: was STK_high, which this function never receives)
+    max=VarRtMA_ThreeDaysAgo[i-KD_num+1];  //max=Max([8]-->[16])
+    min=VarRtMA_ThreeDaysAgo[i-KD_num+1];  //min=Min([8]-->[16])
+    for(let j=i-KD_num+2; j<=i; j++) {     //j=9 to 15, if KD_num=9,MA_day=5
+      max=Math.max(max, VarRtMA_ThreeDaysAgo[j]);
+      min=Math.min(min, VarRtMA_ThreeDaysAgo[j]);  //fix 2026-09-19: min used Math.max
+    }
+    if(max===min) { RSV=50; }  //避免分母為0, RSV=50
+    else {
+      RSV=(VarRtMA_ThreeDaysAgo[i]-min)/(max-min)*100;  //first turn=[16]
+    }  //first turn=[15]
+    VarRtMA_ThreeDaysAgo_KD_K[i]=(2/3)*VarRtMA_ThreeDaysAgo_KD_K[i-1]+(1/3)*RSV; //可考慮再做一次平滑化
+    VarRtMA_ThreeDaysAgo_KD_D[i]=(2/3)*VarRtMA_ThreeDaysAgo_KD_D[i-1]+(1/3)*VarRtMA_ThreeDaysAgo_KD_K[i];
+  }
+  return { VarRtMA_ThreeDaysAgo_KD_K, VarRtMA_ThreeDaysAgo_KD_D };
+  //drawing the these figures in the small windows.
+  //if KD_num=9, MA_day=5, then _K[], _D[]=15 to 2000.
+  //if KD_num=9, MA_day=5, then initial _K[15]=50, _D[15]=50.
+  //if MA_day=5, then MA[]=5 to 2000, VarRtMA_ThreeDaysAgo[]=8 to 2000
+}
+window.VariantRateMA_ThreeDaysAgo_KD = VariantRateMA_ThreeDaysAgo_KD;
+//----------------------------------------------------------------------
+
+//===Designed by Prof Wang,===2026-September-19======完全自行創新===========
+//VREMA指數移動平均2天前變動率 隨機指標(VREMA, Variant Rate of Exponential MA Two Days Ago)
+//將VREMA做KD化(完全自行創新新)。VREMA指數移動平均2天前變動率隨機指標。Typical Price取代收盤價C.
+// (VRMA, Variant Rate of Exponential MA Two Days Ago Stochastic Indicator)
+//VREMA=(EMA(t)-EMA(t-2))/EMA(t-2))*100,其中EMA為指數移動平均,t為當日EMA,t-2為2日前EMA.
+function VariantRateEMA_TwoDaysAgo_KD(STK_high, STK_low, STK_close, esp, KD_num) {
+  // Menu Name: VariRtEMA_TwoDaysAgo_KD    //esp=9,10,...KD_num=9,...
+  //Calculate Typical Price,TP=(H+L+4C)/6, EMA[]
+  const TP = [];  //TP=Typical Price=(H+L+4C)/6, =[1] to [2000]
+  const EMA = []; //EMA=Exponential MA, =[1] to [2000]
+   const VarRtEMA_TwoDaysAgo=[];  //VarRtEMA_TwoDaysAgo[]=3 to 2000.
+  for(let i=1; i<=STK_close.length; i++) {  //i=1 to 2000
+    TP[i]=(STK_high[i]+STK_low[i]+4*STK_close[i])/6;
+    if(i===1) { 
+      EMA[i]=TP[i] }  //EMA[1]=TP[1]
+    else {            //i=2 to 2000
+      EMA[i]=(esp-1)/(esp+1)*EMA[i-1]+2/(esp+1)*TP[i];
+    }
+    if(i>=3) {  //i=3 to 2000
+      VarRtEMA_TwoDaysAgo[i]=(EMA[i]-EMA[i-2])/EMA[i-2]*100; //=3 to 2000.
+    }
+  }  // results[]=3 to 2000
+  //Calculate _K[i] and _D[i], =10 to 2000, if KD_num=9 
+  //RSV=100*(VarRtEMA_TwoDaysAgo[i]-min)/(max-min)
+  const VarRtEMA_TwoDaysAgo_KD_K=[]; //_K[]=10 to 2000, if KD_num=9,2天前EMA差
+  const VarRtEMA_TwoDaysAgo_KD_D=[]; //_D[]=10 to 2000, if KD_num=9,2天前EMA差
+  VarRtEMA_TwoDaysAgo_KD_K[KD_num+1]=50;  //初值[10]=50,2天前EMA差
+  VarRtEMA_TwoDaysAgo_KD_D[KD_num+1]=50;  //初值[10]=50,2天前EMA差
+  let RSV=0;  //RSV=100*(VarRtEMA_TwoDaysAgo[i]-min)/(max-min)
+  let max=0;  //max=Max([3]-->[11]), if KD_num=9,2天前EMA差
+  let min=0;  //min=Min([3]-->[11]), if KD_num=9,2天前EMA差
+  for(let i=KD_num+2; i<=STK_high.length; i++) {  //i=9+2 to 2000, 2天前EMA差
+    max=VarRtEMA_TwoDaysAgo[i-KD_num+1];  //max=Max([3]-->[11])
+    min=VarRtEMA_TwoDaysAgo[i-KD_num+1];  //min=Min([3]-->[11])
+    for(let j=i-KD_num+2; j<=i; j++) {  //j=4 to 11, if KD_num=9,2天前EMA差
+      max=Math.max(max, VarRtEMA_TwoDaysAgo[j]);
+      min=Math.min(min, VarRtEMA_TwoDaysAgo[j]);  //fix 2026-09-19: min used Math.max, so min===max and K/D sat flat at 50
+    }
+    if(max===min) { RSV=50; }  //避免分母為0, RSV=50
+    else {
+      RSV=(VarRtEMA_TwoDaysAgo[i]-min)/(max-min)*100;  //first turn=[11]
+    }  //first turn=[15]
+    VarRtEMA_TwoDaysAgo_KD_K[i]=(2/3)*VarRtEMA_TwoDaysAgo_KD_K[i-1]+(1/3)*RSV; //可考慮再做一次平滑化
+    VarRtEMA_TwoDaysAgo_KD_D[i]=(2/3)*VarRtEMA_TwoDaysAgo_KD_D[i-1]+(1/3)*VarRtEMA_TwoDaysAgo_KD_K[i];
+  }
+  return { VarRtEMA_TwoDaysAgo_KD_K, VarRtEMA_TwoDaysAgo_KD_D };
+  //drawing the these figures in the small windows.
+  //if KD_num=9, 2天前EMA差, then _K[], _D[]=10 to 2000.
+  //if KD_num=9, 2天前EMA差, then initial values _K[10]=50, _D[10]=50.
+  //if 2天前EMA差, then VarRtEMA_TwoDaysAgo[]=3 to 2000.
+}
+window.VariantRateEMA_TwoDaysAgo_KD = VariantRateEMA_TwoDaysAgo_KD;
+//----------------------------------------------------------------------
+
+
+//===Designed by Prof Wang,===2026-September-19======完全自行創新===========
+//VREMA指數移動平均3天前變動率 隨機指標(VREMA, Variant Rate of Exponential MA Three Days Ago)
+//將VREMA做KD化(完全自行創新新)。VREMA指數移動平均3天前變動率隨機指標。Typical Price取代收盤價C.
+// (VRMA, Variant Rate of Exponential MA Three Days Ago Stochastic Indicator)
+//VREMA=(EMA(t)-EMA(t-3))/EMA(t-3))*100,其中EMA為指數移動平均,t為當日EMA,t-3為前3日EMA.
+function VariantRateEMA_ThreeDaysAgo_KD(STK_high, STK_low, STK_close, esp, KD_num) {
+  // Menu Name: VariRtEMA_ThreeDaysAgo_KD    //esp=9,10,...KD_num=9,...
+  //Calculate Typical Price,TP=(H+L+4C)/6, EMA[]
+  const TP = [];  //TP=Typical Price=(H+L+4C)/6, =[1] to [2000]
+  const EMA = []; //EMA=Exponential MA, =[1] to [2000]
+  const VarRtEMA_ThreeDaysAgo=[];  //例:VarRtEMA_ThreeDaysAgo=4 to 2000.
+  for(let i=1; i<=STK_close.length; i++) { //i=1 to 2000
+    TP[i]=(STK_high[i]+STK_low[i]+4*STK_close[i])/6;
+    if(i===1) { 
+      EMA[i]=TP[i] }  //EMA[1]=TP[1]
+    else {            //i=2 to 2000
+      EMA[i]=(esp-1)/(esp+1)*EMA[i-1]+2/(esp+1)*TP[i];
+    }
+    if(i>=4) {  //i=4 to 2000
+      VarRtEMA_ThreeDaysAgo[i]=(EMA[i]-EMA[i-3])/EMA[i-3]*100; //=4 to 2000.
+    }
+  }  // results[]=4 to 2000
+  //Calculate _K[i] and _D[i], =11 to 2000, if KD_num=9, 3天前EMA差
+  //RSV=100*(VarRtEMA_ThreeDaysAgo[i]-min)/(max-min)
+  const VarRtEMA_ThreeDaysAgo_KD_K=[]; //_K[]=11 to 2000, if KD_num=9,3天前EMA差
+  const VarRtEMA_ThreeDaysAgo_KD_D=[]; //_D[]=11 to 2000, if KD_num=9,3天前EMA差
+  VarRtEMA_ThreeDaysAgo_KD_K[KD_num+2]=50;  //初值[11]=50,3天前EMA差
+  VarRtEMA_ThreeDaysAgo_KD_D[KD_num+2]=50;  //初值[11]=50,3天前EMA差
+  let RSV=0;  //RSV=100*(VarRtEMA_ThreeDaysAgo[i]-min)/(max-min)
+  let max=0;  //max=Max([4]-->[12]), if KD_num=9,3天前EMA差
+  let min=0;  //min=Min([4]-->[12]), if KD_num=9,3天前EMA差
+  for(let i=KD_num+3; i<=STK_high.length; i++) {  //i=9+3 to 2000, 3天前EMA差
+    max=VarRtEMA_ThreeDaysAgo[i-KD_num+1];  //max=Max([4]-->[12])
+    min=VarRtEMA_ThreeDaysAgo[i-KD_num+1];  //min=Min([4]-->[12])
+    for(let j=i-KD_num+2; j<=i; j++) {  //j=5 to 12, if KD_num=9,2天前EMA差
+      max=Math.max(max, VarRtEMA_ThreeDaysAgo[j]);
+      min=Math.min(min, VarRtEMA_ThreeDaysAgo[j]);  //fix 2026-09-19: min used Math.max, so min===max and K/D sat flat at 50
+    }
+    if(max===min) { RSV=50; }  //避免分母為0, RSV=50
+    else {
+      RSV=(VarRtEMA_ThreeDaysAgo[i]-min)/(max-min)*100;  //first turn=[12]
+    }  //first turn=[15]
+    VarRtEMA_ThreeDaysAgo_KD_K[i]=(2/3)*VarRtEMA_ThreeDaysAgo_KD_K[i-1]+(1/3)*RSV; //可考慮再做一次平滑化
+    VarRtEMA_ThreeDaysAgo_KD_D[i]=(2/3)*VarRtEMA_ThreeDaysAgo_KD_D[i-1]+(1/3)*VarRtEMA_ThreeDaysAgo_KD_K[i];
+  }
+  return { VarRtEMA_ThreeDaysAgo_KD_K, VarRtEMA_ThreeDaysAgo_KD_D };
+  //drawing the these figures in the small windows.
+  //if KD_num=9, 3天前EMA差, then _K[], _D[]=11 to 2000.
+  //if KD_num=9, 3天前EMA差, then initial values _K[11]=50, _D[11]=50.
+  //if 3天前EMA差, then VarRtEMA_ThreeDaysAgo[]=4 to 2000.
+}
+window.VariantRateEMA_ThreeDaysAgo_KD = VariantRateEMA_ThreeDaysAgo_KD;
+//-----------------------------------------------------------------------
 
 
 
 
 
 
-
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -10754,7 +11083,7 @@ window.Flexible_KD = Flexible_KD;
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
-
+//----------------------------------------------------------------------
 
 
 

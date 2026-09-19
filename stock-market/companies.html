@@ -19,41 +19,44 @@
         <div class="brand">TradeLite</div>
         <div class="actions">
           <div data-tl-theme-toggle></div>
-          <a href="./" class="secondary" title="Back to stock trading">← Back</a>
+          <button id="lang-toggle-btn" type="button" class="secondary" title="Switch language">
+            <span id="lang-toggle-label">EN</span>
+          </button>
+          <a href="./" class="secondary" data-i18n-title="companies.backToTrading" data-i18n="companies.back" title="Back to stock trading">← Back</a>
         </div>
       </header>
 
       <main class="main">
         <div class="panel">
-          <div class="panel-title">Major Companies</div>
+          <div class="panel-title" data-i18n="companies.title">Major Companies</div>
 
           <div class="toolbar">
             <div class="file-picker">
               <input id="file-input" type="file" accept=".csv,.xlsx,.xls,text/csv" />
-              <label for="file-input" class="file-label">Choose File</label>
-              <span id="file-name" class="file-name">No file chosen</span>
-              <button id="import" class="primary">Import CSV</button>
+              <label for="file-input" class="file-label" data-i18n="companies.chooseFile">Choose File</label>
+              <span id="file-name" class="file-name" data-i18n="companies.noFileChosen">No file chosen</span>
+              <button id="import" class="primary" data-i18n="companies.importCsv">Import CSV</button>
             </div>
-            <button id="load-sample" class="secondary" title="Populate the table with mock stock data">Load Sample Data</button>
-            <button id="refresh" class="secondary">Refresh</button>
-            <button id="clear-local" class="secondary" title="Remove locally imported data">Clear Local Data</button>
-            <small class="helper-text">Import your Nasdaq CSVs to populate this list, or load sample data for an instant preview. We’ll compute MACD in the chart.</small>
+            <button id="load-sample" class="secondary" title="Populate the table with mock stock data" data-i18n="companies.loadSample">Load Sample Data</button>
+            <button id="refresh" class="secondary" data-i18n="companies.refresh">Refresh</button>
+            <button id="clear-local" class="secondary" title="Remove locally imported data" data-i18n="companies.clearLocal">Clear Local Data</button>
+            <small class="helper-text" data-i18n="companies.helperText">Import your Nasdaq CSVs to populate this list, or load sample data for an instant preview. We’ll compute MACD in the chart.</small>
           </div>
 
           <div class="search-bar">
-            <input id="search-input" type="text" placeholder="Filter by symbol or name…" aria-label="Filter companies" />
+            <input id="search-input" type="text" placeholder="Filter by symbol or name…" aria-label="Filter companies" data-i18n-placeholder="companies.searchPlaceholder" data-i18n-aria-label="companies.filterAria" />
           </div>
 
           <div class="table-wrap">
             <table class="table" id="companies-table">
               <thead>
                 <tr>
-                  <th>Symbol</th>
-                  <th>Name</th>
-                  <th>Last</th>
-                  <th>Prev Close</th>
-                  <th>Change</th>
-                  <th>Actions</th>
+                  <th data-i18n="companies.thSymbol">Symbol</th>
+                  <th data-i18n="companies.thName">Name</th>
+                  <th data-i18n="companies.thLast">Last</th>
+                  <th data-i18n="companies.thPrevClose">Prev Close</th>
+                  <th data-i18n="companies.thChange">Change</th>
+                  <th data-i18n="companies.thActions">Actions</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -63,11 +66,12 @@
       </main>
 
       <footer class="footer">
-        <div>Demo app. Not investment advice.</div>
+        <div data-i18n="companies.footer">Demo app. Not investment advice.</div>
       </footer>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script defer src="js/i18n.js"></script>
     <script defer src="companies.prod.js"></script>
     <script defer src="../assets/theme/theme.js"></script>
   </body>

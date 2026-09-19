@@ -159,6 +159,15 @@ const WANG_PANEL_INDICATORS = {
   OSC2_KD:                 { name: 'OSC2_KD(C/MA)', type: 'oscillator', fn: 'OSC2_KDlization', inputs: ['close'], params: [['MA_day', 10], ['KD_num', 9]], lines: ['OSC2_KD_K', 'OSC2_KD_D'], minPeriod: 18 },
   // alpha/beta are passed as 1-9 and divided by 10 inside; 7 is closest to the classic KD's 2/3.
   Flexible_KD:             { name: 'Flexible_KD', type: 'oscillator', fn: 'Flexible_KD', inputs: ['high', 'low', 'close'], params: [['KD_day', 9], ['alpha', 7, { label: 'alpha (1-9 = 0.1-0.9)', min: 1, max: 9 }], ['beta', 7, { label: 'beta (1-9 = 0.1-0.9)', min: 1, max: 9 }]], lines: ['Flexible_KD_K', 'Flexible_KD_D'] },
+  // Prof. Wang's 2026-09-18/19 batch. DEMA2 itself is a price-chart overlay
+  // (src/js/indicators/defs/overlays.js 'DEMA2'); these are the KD-ised panes.
+  DEMA_KD:                 { name: 'DEMA_KD', type: 'oscillator', fn: 'DEMA_KDlization', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['DEMA_KD_K', 'DEMA_KD_D'] },
+  HLO_KD:                  { name: 'HighLowOsc(HLO)_KD', type: 'oscillator', fn: 'HighLowOsc_KDlization', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['HLO_KD_K', 'HLO_KD_D'], minPeriod: 10 },
+  VariRtMA_2DaysAgo_KD:    { name: 'VariRtMA_TwoDaysAgo_KD', type: 'momentum', fn: 'VariantRateMA_TwoDaysAgo_KD', inputs: ['close'], params: [['MA_day', 5], ['KD_num', 9]], lines: ['VarRtMA_TwoDaysAgo_KD_K', 'VarRtMA_TwoDaysAgo_KD_D'], minPeriod: 15 },
+  VariRtMA_3DaysAgo_KD:    { name: 'VariRtMA_ThreeDaysAgo_KD', type: 'momentum', fn: 'VariantRateMA_ThreeDaysAgo_KD', inputs: ['close'], params: [['MA_day', 5], ['KD_num', 9]], lines: ['VarRtMA_ThreeDaysAgo_KD_K', 'VarRtMA_ThreeDaysAgo_KD_D'], minPeriod: 16 },
+  VariRtEMA_2DaysAgo_KD:   { name: 'VariRtEMA_TwoDaysAgo_KD', type: 'momentum', fn: 'VariantRateEMA_TwoDaysAgo_KD', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['VarRtEMA_TwoDaysAgo_KD_K', 'VarRtEMA_TwoDaysAgo_KD_D'], minPeriod: 11 },
+  VariRtEMA_3DaysAgo_KD:   { name: 'VariRtEMA_ThreeDaysAgo_KD', type: 'momentum', fn: 'VariantRateEMA_ThreeDaysAgo_KD', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['VarRtEMA_ThreeDaysAgo_KD_K', 'VarRtEMA_ThreeDaysAgo_KD_D'], minPeriod: 12 },
+  VertHoriFilter:          { name: 'VHF2 (Vertical Horizontal Filter)', type: 'oscillator', fn: 'VertHoriFilter', inputs: ['close'], params: [['VHF_day', 20], ['esp', 9]], lines: ['VHF', 'eVHF'], minPeriod: 21 },
 };
 
 // A WANG_PANEL_INDICATORS param's third item: `true` (fractional) or { fractional, label, min, max }.
