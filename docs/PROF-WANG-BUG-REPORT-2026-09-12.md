@@ -4,9 +4,10 @@
 **Date:** 2026-09-12
 **Status:** fixes 1-3 (`VolRatio`, `IntradayMomentum`, `EOM_EMV`) were applied to the
 file on 2026-09-17, exactly as written below, each marked with a `fix 2026-09-17`
-comment; `npm test` no longer shows their three `[WARN]` lines. Fix 4 (`HullMA`) is
-still reported only. Fix 5 (`Flexible_KD`, added 2026-09-17 as `Flexible_KDlization`) was applied
-the same day. Line numbers below are from before the fixes (a line was added
+comment; `npm test` no longer shows their three `[WARN]` lines. Fix 4 (`HullMA`) was
+applied on 2026-09-19, marked with `fix 2026-09-19` comments (the three weight-sum
+loops now use `i<=` instead of `i<`). Fix 5 (`Flexible_KD`, added 2026-09-17 as `Flexible_KDlization`) was applied
+the same day as fixes 1-3. Line numbers below are from before the fixes (a line was added
 in `VolRatio`, so later lines are one further down). If a new copy of the file
 replaces this one, check that it includes these fixes.
 

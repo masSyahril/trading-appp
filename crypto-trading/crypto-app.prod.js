@@ -35,6 +35,7 @@
 
   let watchlistSocket = null;
   let chartSocket = null;
+  let chartLoadGen = 0; // fix 2026-09-19: bumped each loadCandlesAndSubscribe() call to detect/drop stale (superseded) symbol/timeframe switches
   let csvExportInProgress = false;
   let csvExportAbortController = null;
 
@@ -429,9 +430,19 @@
   }
 
   async function loadCandlesAndSubscribe(symbol, tf) {
+    const gen = ++chartLoadGen; // fix 2026-09-19: this call's generation id
     if (chartSocket) {
       try { chartSocket.close(); } catch (_) {}
       chartSocket = null;
+    }
+
+    // fix 2026-09-19: setupChart() catches its own errors and can leave candleSeries null (e.g. the
+    // charting library failed to load, or the container wasn't ready). Without this guard the next
+    // line threw here, uncaught, which aborted init() before renderPositions()/renderOrders()/
+    // setupEventHandlers() ran - silently disabling Buy/Sell/Place Order for the whole page.
+    if (!candleSeries) {
+      console.error('❌ Chart is not ready; skipping candle load for', symbol, tf);
+      return;
     }
 
     // Clear chart data
@@ -501,6 +512,7 @@
 
       if (response.ok) {
         const data = await response.json();
+        if (gen !== chartLoadGen) return; // fix 2026-09-19: a newer symbol/timeframe switch started while this fetch was in flight; drop this stale result instead of overwriting the chart
         chartData = data.map((k) => ({
           time: Math.floor(k[0] / 1000),
           open: parseFloat(k[1]),
@@ -537,6 +549,8 @@
     } catch (error) {
       console.error(`❌ Error loading ${symbol} candles:`, error);
     }
+
+    if (gen !== chartLoadGen) return; // fix 2026-09-19: a newer symbol/timeframe switch started; don't open/leak a socket for the stale one
 
     const wsUrl = `${BINANCE_WS_KLINE}/${symbol.toLowerCase()}@kline_${tf}`;
     chartSocket = new WebSocket(wsUrl);
@@ -945,17 +959,22 @@
     csvExportInProgress = true;
     csvExportAbortController = new AbortController();
     const { signal } = csvExportAbortController;
+    // fix 2026-09-19: pin the symbol for the whole export. currentSymbol/chartData are live globals
+    // that can change while fetch1mKlinesPaged() is still awaiting (it can take thousands of
+    // requests); re-reading them afterward could merge/name the file from two different symbols.
+    const exportSymbol = currentSymbol;
     setCsvExportUi(true);
 
     try {
-      const historical = await fetch1mKlinesPaged(currentSymbol, {
+      const historical = await fetch1mKlinesPaged(exportSymbol, {
         maxBars: Infinity,
         maxRequests: 6000,
         signal,
       });
       const byTime = new Map();
       for (const c of historical) byTime.set(c.time, c);
-      if (timeframe === '1m' && chartData.length) {
+      // fix 2026-09-19: only fold in the live chart buffer if it still belongs to the symbol/timeframe being exported
+      if (timeframe === '1m' && currentSymbol === exportSymbol && chartData.length) {
         for (const c of chartData) {
           byTime.set(c.time, {
             time: c.time,
@@ -977,9 +996,9 @@
       const csv = buildOhlcvCsv(rows);
       const stamp = new Date();
       const pad = (n) => String(n).padStart(2, '0');
-      const fname = `${currentSymbol}_1m_OHLCV_${stamp.getFullYear()}-${pad(stamp.getMonth() + 1)}-${pad(stamp.getDate())}_${pad(stamp.getHours())}${pad(stamp.getMinutes())}.csv`;
+      const fname = `${exportSymbol}_1m_OHLCV_${stamp.getFullYear()}-${pad(stamp.getMonth() + 1)}-${pad(stamp.getDate())}_${pad(stamp.getHours())}${pad(stamp.getMinutes())}.csv`;
       triggerCsvDownload(fname, csv);
-      console.log(`CSV export: ${rows.length} 1m bars for ${currentSymbol}`);
+      console.log(`CSV export: ${rows.length} 1m bars for ${exportSymbol}`);
     } catch (e) {
       if (e && e.name === 'AbortError') {
         console.log('CSV export cancelled.');
@@ -1060,6 +1079,22 @@
     });
   }
 
+  // fix 2026-09-19: #chart-toolbar (the floating 1m/5m/.../Reset bar) wraps to 2 rows on narrow
+  // screens and is taller there than the single-row desktop case a fixed scaleMargins.top was
+  // tuned for. Measure the toolbar's actual rendered height and reserve just enough headroom so
+  // candle wicks never get drawn underneath it, at any width.
+  function syncChartTopMargin() {
+    if (!chart) return;
+    try {
+      const toolbarEl = document.getElementById('chart-toolbar');
+      const chartH = el.chart ? el.chart.clientHeight : 0;
+      if (!toolbarEl || !chartH) return;
+      const toolbarH = toolbarEl.getBoundingClientRect().height;
+      const topFraction = Math.min(0.6, Math.max(0.16, (toolbarH + 12) / chartH));
+      chart.priceScale('right').applyOptions({ scaleMargins: { top: topFraction, bottom: 0 } });
+    } catch (e) {}
+  }
+
   function setupChart() {
     try {
       // Check if LightweightCharts is available
@@ -1083,8 +1118,11 @@
         rightPriceScale: {
           borderColor: readThemeVar('--cc-border', "#334155"),
           minimumWidth: (typeof MultiIndicatorSystem !== 'undefined' && MultiIndicatorSystem.PRICE_SCALE_ALIGN_WIDTH) || 56,
+          // fix 2026-09-19: was top:0, so candle wicks could be drawn right up to the very top of
+          // the chart - directly under #chart-toolbar (the floating 1m/5m/.../Reset bar, position:
+          // absolute top-1 over #chart). 0.16 reserves enough headroom to clear that toolbar.
           scaleMargins: {
-            top: 0,
+            top: 0.16,
             bottom: 0,
           },
         },
@@ -1117,7 +1155,8 @@
 
       try {
         const alignW = (typeof MultiIndicatorSystem !== 'undefined' && MultiIndicatorSystem.PRICE_SCALE_ALIGN_WIDTH) || 56;
-        chart.priceScale('right').applyOptions({ minimumWidth: alignW, scaleMargins: { top: 0, bottom: 0 } });
+        // fix 2026-09-19: keep in sync with the createChart() rightPriceScale.scaleMargins above
+        chart.priceScale('right').applyOptions({ minimumWidth: alignW, scaleMargins: { top: 0.16, bottom: 0 } });
       } catch (e) {}
 
       /* Asian-style candles: rising (close ≥ open) = red, falling = green */
@@ -1138,6 +1177,7 @@
             window.chartResizeTimeout = setTimeout(() => {
               try {
                 chart.resize(width, height);
+                syncChartTopMargin();
                 if (indicatorSystem && typeof indicatorSystem.syncIndicatorChartWidths === 'function') {
                   indicatorSystem.syncIndicatorChartWidths(el.chart);
                 }
@@ -1147,6 +1187,7 @@
         }
       });
       resizeObserver.observe(el.chart);
+      requestAnimationFrame(syncChartTopMargin);
     } catch (error) {
       console.error('❌ Failed to setup crypto chart:', error);
       // Show error message in chart container
@@ -1465,12 +1506,15 @@
       pos.qty = newQty;
     } else {
       // Reducing or flipping position
+      const oldSign = Math.sign(pos.qty); // fix 2026-09-19: capture before pos.qty is overwritten below
       const closingQty = Math.min(Math.abs(pos.qty), Math.abs(signedQty));
       const pnlPerUnit = (price - pos.avg) * Math.sign(pos.qty);
       pos.realized += pnlPerUnit * closingQty;
       pos.qty = newQty;
       
-      if (Math.sign(pos.qty) !== Math.sign(pos.qty + signedQty)) {
+      // fix 2026-09-19: was comparing sign(newQty) to sign(newQty + signedQty) (always equal, so a
+      // flip never reset avg price); now compares the pre-trade sign to the post-trade sign.
+      if (newQty !== 0 && Math.sign(newQty) !== oldSign) {
         pos.avg = price; // Reset avg price for flipped position
       }
       if (pos.qty === 0) pos.avg = 0;
@@ -1568,7 +1612,17 @@
   function loadLS(key, fallback) {
     try {
       const s = localStorage.getItem(key);
-      return s ? JSON.parse(s) : fallback;
+      if (!s) return fallback;
+      const parsed = JSON.parse(s);
+      // fix 2026-09-19: validate the parsed shape matches what the caller expects (array vs plain
+      // object). A corrupted or foreign-schema value in localStorage now falls back cleanly here
+      // instead of throwing later out of .forEach/.push/.map calls elsewhere in the app.
+      if (Array.isArray(fallback)) {
+        if (!Array.isArray(parsed)) return fallback;
+      } else if (fallback !== null && typeof fallback === "object") {
+        if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return fallback;
+      }
+      return parsed;
     } catch {
       return fallback;
     }

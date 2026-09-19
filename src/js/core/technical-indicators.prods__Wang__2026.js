@@ -2852,7 +2852,7 @@ function HullMA(values, day, esp) {
   //每個WMA1權重為:1,2,3,4,5,...,(day/2=half_day)
   //例如day=10,則WMA1[]=5,6,...,2000
   let sum_wgt1=0;              //加總WMA1的總權重,要放分母
-  for(let i=1; i<half_day; i++) {   //i=1 to 5 (i=1 to day/2)
+for(let i=1; i<=half_day; i++) {   //i=1 to 5 (i=1 to day/2)  (fix 2026-09-19: was i<half_day, missed the last weight)
     sum_wgt1=sum_wgt1+i;       //例如=1+2+3+4+5=15,加總WMA1的總權重,要放分母
   }
   let sum_close=0;   //分子=5天加權收盤價加總
@@ -2869,7 +2869,7 @@ function HullMA(values, day, esp) {
   //每個WMA2權重為:1,2,3,4,5,...,day
   //例如day=10,則WMA2[]=10,11,...,2000
   let sum_wgt2=0;         //加總WMA2的總權重,要放分母
-  for(let i=1; i<day; i++) {   //i=1 to 10 (i=1 to day)
+for(let i=1; i<=day; i++) {   //i=1 to 10 (i=1 to day)  (fix 2026-09-19: was i<day, missed the last weight)
     sum_wgt2=sum_wgt2+i;  //例如=1+2+...+10=55,加總WMA2的總權重,要放分母
   }  
   sum_close=0;   //分子=10天加權收盤價加總
@@ -2891,7 +2891,7 @@ function HullMA(values, day, esp) {
   //m=HMA的移動平均天數,例如:m=4
   let m=Math.ceil(Math.sqrt(day)); //開根號後再無條件進位,m=HMA的移動平均天數=4
   let sum_wgt=0;         //加總RawHMA的總權重,要放分母
-  for(let i=1; i<m; i++) { //i=1 to 4 (i=1 to m)
+for(let i=1; i<=m; i++) { //i=1 to 4 (i=1 to m)  (fix 2026-09-19: was i<m, missed the last weight)
     sum_wgt=sum_wgt+i;      //例如=1+2+3+4=10,加總RawHMA的總權重,要放分母
   }
   let sum_tp;
