@@ -162,9 +162,12 @@
 
   add({
     id: 'COSTMA', name: 'CostMA (Cost Moving Avg)', minBars: 2,
-    params: [['day', 'Period', 10]],
-    math: (M, c, p) => M.computeCostMAIndicator(c, p.day),
-    outputs: [line('costma', C.LINE1)],
+    params: [['day', 'Period', 10], ['esp', 'esp', 9]],
+    math: (M, c, p) => M.computeCostMAIndicator(c, p.day, p.esp),
+    outputs: [
+      line('costma', C.LINE1, 'CostMA'),
+      line('ecostma', C.LINE2, 'eCostMA'),
+    ],
   });
 
   add({

@@ -1619,33 +1619,36 @@ window.WilliamAccuDist = WilliamAccuDist;
 //===designed by Prof Wang, 2025-Dec-08==modified on 2026-April-11==
 //CostMA成本均線(CostMA, Cost Moving Average)
 //CostMA=10天內sum(Vol*P)/10天內sum(Vol),例：時間長度=10
-//P=average(H+L+C)
-function CostMA(STK_high, STK_low, STK_close, STK_vol, day_length) {
-  // Menu Name: CostMA  //day_length=加總之時間長度。例：day_length=10
-  const CostMA=[];   //成本均線
+//P=average(H+L+3C)/5
+function CostMA(STK_high, STK_low, STK_close, STK_vol, day_length, esp) {
+  // Menu Name: CostMA     //day_length=10,... //esp=9,10,...
+  // //day_length=加總之時間長度。例：day_length=10
+  const CostMA=[], eCostMA=[];   //成本均線, =10 to 2000
   let sum_Vol_P=0;   //分子加總
   let sum_Vol=0;     //分母加總
   let P=0;           //P=average(H+L+C)
-  for(let i=1; i<day_length; i++) {   //例:計算前10筆加總，i=1 to 10
-    P=(STK_high[i]+STK_low[i]+STK_close[i])/3;
+  for(let i=1; i<=day_length; i++) {   //例:計算前10筆加總，i=1 to 10
+    P=(STK_high[i]+STK_low[i]+3*STK_close[i])/5; //改Close加權
     sum_Vol_P=sum_Vol_P+STK_vol[i]*P;  //分子加總
     sum_Vol=sum_Vol+STK_vol[i];        //分母加總
   }
-  CostMA[day_length]=sum_Vol_P/sum_Vol;   //第1個成本均線，例:CostMA(10)
-  for(let i=day_length+1; i<STK_close.length; i++) {  //例:let i=11 to 2000
+  CostMA[day_length]=sum_Vol_P/sum_Vol;    //第1個成本均線，例:CostMA(10)
+  eCostMA[day_length]=CostMA[day_length];  //同上
+  for(let i=day_length+1; i<=STK_close.length; i++) {  //例:let i=11 to 2000
     //先扣除10天前的分子加總、分母加總
     P=(STK_high[i-day_length]+STK_low [i-day_length]+STK_close[i-day_length])/3;
     sum_Vol_P=sum_Vol_P-STK_vol[i-day_length]*P;  //先扣除10天前的分子加總
     sum_Vol=sum_Vol-STK_vol[i-day_length];        //先扣除10天前的分母加總
     //新的分子加總、新的分母加總
-    P=(STK_high[i]+STK_low[i]+STK_close[i])/3;
+    P=(STK_high[i]+STK_low[i]+3*STK_close[i])/5;
     sum_Vol_P=sum_Vol_P+STK_vol[i]*P;  //新的分子加總
     sum_Vol=sum_Vol+STK_vol[i];        //新的分母加總
     CostMA[i]=sum_Vol_P/sum_Vol;       //第2筆為11
+    eCostMA[i]=(esp-1)/(esp+1)*eCostMA[i-1]+2/(esp+1)*CostMA[i];
   }
-  return { CostMA };
+  return { CostMA, eCostMA };
   //drawing the CostMA[] figure in the small windows.
-  // if day_length=10 then CostMA[]=10,11,...,2000.
+  // if day_length=10 then CostMA[], eCostMA[]=10,11,...,2000.
 }
 window.CostMA = CostMA;
 //----------------------------------------------------------------------
@@ -11986,13 +11989,85 @@ function WilliamAD_Stochastic(STK_high, STK_low, STK_close, esp, KD_num) { //原
 }
 window.WilliamAD_Stochastic = WilliamAD_Stochastic;
 //----------------------------------------------------------------------
-
-
-
-
-
-
+//===Designed by Prof Wang,===2026-September-26======完全自行創新===========
+//CostMA成本均線(CostMA, Cost Moving Average)
+//CostMA=10天內sum(Vol*P)/10天內sum(Vol),例：時間長度=10
+//P=average(H+L+3C)/5
+//CostMA Stochastic成本均線隨機指標(Cost Moving Average Stochastic Indicator)
+function CostMA_Stochastic(STK_high, STK_low, STK_close, STK_vol, day_length, esp, KD_num) {
+  // Menu Name: CostMA Stochastic  //day_length=10,... //esp=9,10,...KD_num=9,...
+  // //day_length=加總之時間長度。例：day_length=10
+  const CostMA=[], eCostMA=[];   //成本均線, =10 to 2000
+  let sum_Vol_P=0;   //分子加總
+  let sum_Vol=0;     //分母加總
+  let P=0;           //P=average(H+L+C)
+  for(let i=1; i<=day_length; i++) {   //例:計算前10筆加總，i=1 to 10
+    P=(STK_high[i]+STK_low[i]+3*STK_close[i])/5; //改Close加權
+    sum_Vol_P=sum_Vol_P+STK_vol[i]*P;  //分子加總
+    sum_Vol=sum_Vol+STK_vol[i];        //分母加總
+  }
+  CostMA[day_length]=sum_Vol_P/sum_Vol;    //第1個成本均線，例:CostMA(10)
+  eCostMA[day_length]=CostMA[day_length];  //同上
+  for(let i=day_length+1; i<=STK_close.length; i++) {  //例:let i=11 to 2000
+    //先扣除10天前的分子加總、分母加總
+    P=(STK_high[i-day_length]+STK_low [i-day_length]+STK_close[i-day_length])/3;
+    sum_Vol_P=sum_Vol_P-STK_vol[i-day_length]*P;  //先扣除10天前的分子加總
+    sum_Vol=sum_Vol-STK_vol[i-day_length];        //先扣除10天前的分母加總
+    //新的分子加總、新的分母加總
+    P=(STK_high[i]+STK_low[i]+3*STK_close[i])/5;
+    sum_Vol_P=sum_Vol_P+STK_vol[i]*P;  //新的分子加總
+    sum_Vol=sum_Vol+STK_vol[i];        //新的分母加總
+    CostMA[i]=sum_Vol_P/sum_Vol;       //第2筆為11
+    eCostMA[i]=(esp-1)/(esp+1)*eCostMA[i-1]+2/(esp+1)*CostMA[i];
+  }
+//==========================Calculate _K[i] and _D[i]=============
+ let N=esp;  //let sum_day=MTM_n+ACC_n;  //=10+5
+  //Calculate _K[i] and _D[i], =18 to 2000, if KD_num=9, day=10
+  //RSV=100*(X[i]-min)/(max-min)
+  const CostMA_KD_K=[];  //_K[]=17 to 2000, if KD_num=9, day=10
+  const CostMA_KD_D=[];  //_D[]=同上
+  CostMA_KD_K[KD_num+day_length-2]=50;  //初值[17]=50,if KD_num=9, day=10
+  CostMA_KD_D[KD_num+day_length-2]=50;  //同上
+  let RSV=0;  //RSV=100*(X[i]-min)/(max-min)
+  let max=0;  //max=Max([1]-->[9]), if KD_num=9
+  let min=0;  //同上
+  for(let i=KD_num+day_length-1; i<=STK_high.length; i++) {  //i=18 to 2000
+    max=CostMA[i-KD_num+1];  //max=Max([10]-->[18])
+    min=CostMA[i-KD_num+1];  //min=Min(同上)
+    for(let j=i-KD_num+2; j<=i; j++) {   //j=11 to 9, if KD_num=9, day=10
+      max=Math.max(max, CostMA[j]);
+      min=Math.min(min, CostMA[j]);
+    }
+    if(max===min) { RSV=50; }  //避免分母為0, RSV=50
+    else {
+      RSV=(CostMA[i]-min)/(max-min)*100;  //first turn=[18]
+    }
+    let Alpha=(N-1)/(N+1);  // (1-Alpha)=2/(N+1)  //let N=esp;
+    //CostMA_KD_K[i]=(2/3)*CostMA_KD_K[i-1]+(1/3)*RSV; //可再做一次平滑化
+    //CostMA_KD_D[i]=(2/3)*CostMA_KD_D[i-1]+(1/3)*CostMA_KD_K[i];
+    //上述2列程式是舊的：(2/3, 1/3)。  下述2列程式是新的：(n-1)/(n+1), 2/(n+1) 。
+    CostMA_KD_K[i]=Alpha*CostMA_KD_K[i-1]+(1-Alpha)*RSV; //可再做一次平滑化
+    CostMA_KD_D[i]=Alpha*CostMA_KD_D[i-1]+(1-Alpha)*CostMA_KD_K[i];
+    //再做一次平滑化。<2026-Sept-20完全自行創新>
+    CostMA_KD_K[i]=Alpha*CostMA_KD_K[i-1]+(1-Alpha)*CostMA_KD_K[i];
+    //CostMA_KD_D[i]=Alpha*CostMA_KD_D[i-1]+(1-Alpha)*CostMA_KD_K[i]; //此處的再平滑,改用下式！
+    //上述__KD_D[]的方程式3個權重,可以改為: (n-3)/(n+1), 2/(n+1), 2/(n+1)。 //let N=esp;
+    CostMA_KD_D[i]=(N-3)/(N+1)*CostMA_KD_D[i-1]+2/(N+1)*CostMA_KD_K[i]+2/(N+1)*CostMA_KD_D[i];
+  }
+  return { CostMA_KD_K, CostMA_KD_D };
+  //drawing these figures in the small windows.
+  //if day_length=10, KD_num=9, then CostMA_KD_K[],CostMA_KD_D[]=17 to 2000
+  // but initial values CostMA_KD_K[17]=50, CostMA_KD_D[17]=50.
+  // if day_length=10 then CostMA[], eCostMA[]=10,11,...,2000.
+}
+window.CostMA_Stochastic = CostMA_Stochastic;
 //----------------------------------------------------------------------
+
+
+
+
+
+
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------

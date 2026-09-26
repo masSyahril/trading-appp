@@ -172,6 +172,8 @@
     Acceleration_Stochastic:  { name: 'Acceleration(ACC)Stochastic', type: 'momentum', fn: 'Acceleration_Stochastic', inputs: ['close'], params: [['MTM_n', 10], ['ACC_n', 5], ['esp', 9], ['KD_num', 9]], lines: ['ACC_KD_K', 'ACC_KD_D'], minPeriod: 23 },
     // KD of the smoothed Williams A/D line (eWAD); WAD/eWAD themselves are not returned.
     WilliamAD_Stochastic:     { name: 'WilliamAD_Stochastic', type: 'momentum', fn: 'WilliamAD_Stochastic', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['eWAD_KD_K', 'eWAD_KD_D'] },
+    // K/D start at bar day_length+KD_num-2 (17 with the defaults).
+    CostMA_Stochastic:        { name: 'CostMA Stochastic', type: 'volume', fn: 'CostMA_Stochastic', inputs: ['high', 'low', 'close', 'volume'], params: [['day_length', 10], ['esp', 9], ['KD_num', 9]], lines: ['CostMA_KD_K', 'CostMA_KD_D'], minPeriod: 18 },
   };
 
   const CATEGORY = { trend: 'Trend', momentum: 'Momentum', oscillator: 'Oscillators', volume: 'Volume', volatility: 'Volatility' };

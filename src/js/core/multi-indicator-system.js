@@ -192,6 +192,7 @@ const WANG_PANEL_INDICATORS = {
   KST_Stochastic:           { name: 'KST_Stochastic', type: 'momentum', fn: 'KST_Stochastic', inputs: ['close'], params: [['day1', 10], ['day2', 15], ['day3', 20], ['day4', 30], ['esp', 9], ['KD_num', 9]], lines: ['KST_KD_K', 'KST_KD_D'], minPeriod: 38 },
   Acceleration_Stochastic:  { name: 'Acceleration(ACC)Stochastic', type: 'momentum', fn: 'Acceleration_Stochastic', inputs: ['close'], params: [['MTM_n', 10], ['ACC_n', 5], ['esp', 9], ['KD_num', 9]], lines: ['ACC_KD_K', 'ACC_KD_D'], minPeriod: 23 },
   WilliamAD_Stochastic:     { name: 'WilliamAD_Stochastic', type: 'momentum', fn: 'WilliamAD_Stochastic', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['eWAD_KD_K', 'eWAD_KD_D'] },
+  CostMA_Stochastic:        { name: 'CostMA Stochastic', type: 'volume', fn: 'CostMA_Stochastic', inputs: ['high', 'low', 'close', 'volume'], params: [['day_length', 10], ['esp', 9], ['KD_num', 9]], lines: ['CostMA_KD_K', 'CostMA_KD_D'], minPeriod: 18 },
 };
 
 // A WANG_PANEL_INDICATORS param's third item: `true` (fractional) or { fractional, label, min, max }.
@@ -827,10 +828,10 @@ class MultiIndicatorSystem {
       COSTMA: {
         name: 'CostMA (Cost Moving Avg)',
         type: 'trend',
-        defaultParams: { day: 10 },
-        paramLabels: { day: 'Period' },
+        defaultParams: { day: 10, esp: 9 },
+        paramLabels: { day: 'Period', esp: 'esp' },
         minPeriod: 2,
-        compute: (data, params) => this.computeCostMAIndicator(data, params.day),
+        compute: (data, params) => this.computeCostMAIndicator(data, params.day, params.esp),
         render: (chart, data, colors, seriesMap) => this.renderCostMA(chart, data, colors, seriesMap)
       },
       VROC: {
@@ -5180,14 +5181,16 @@ class MultiIndicatorSystem {
   }
 
   // CostMA Indicator Computation
-  computeCostMAIndicator(data, day) {
+  computeCostMAIndicator(data, day, esp = 9) {
     const highs = data.map(d => d.high);
     const lows = data.map(d => d.low);
     const closes = data.map(d => d.close);
     const volumes = data.map(d => d.volume ?? d.vol ?? 0);
     if (typeof window.CostMA === 'function') {
-      const { CostMA } = window.CostMA(highs, lows, closes, volumes, day);
-      return { costma: CostMA };
+      const { CostMA, eCostMA } = window.CostMA(highs, lows, closes, volumes, day, esp);
+      // CostMA() loops to i<=length, so its arrays have one extra (NaN) slot at the end;
+      // the registry lines arrays up from the end, which would shift both lines a bar left.
+      return { costma: CostMA.slice(0, data.length), ecostma: eCostMA.slice(0, data.length) };
     }
     return { costma: computeCostMA(highs, lows, closes, volumes, day) };
   }
@@ -10526,7 +10529,7 @@ renderBollingerBands4SD(chart, data, colors, seriesMap) {
 
   renderCostMA(chart, data, colors, seriesMap) {
     if (!data || !data.costma) return;
-    this.renderMultiLine(chart, data, colors, seriesMap, ['costma'], ['CostMA']);
+    this.renderMultiLine(chart, data, colors, seriesMap, ['costma', 'ecostma'], ['CostMA', 'eCostMA']);
   }
 
   renderVROC(chart, data, colors, seriesMap) {
