@@ -86,8 +86,13 @@
   // [id, name, shortName, fn (or fallbacks), output field, inputs, shift, colour, default length]
   [
     ['KAMA', 'Adaptive MA (KAMA)', 'KAMA', 'AdaptiveMA', 'AdaptiveMA', 'hlc', 1, '#4ade80', 10],
-    ['HullMA', 'Hull MA', 'HMA', ['computeHullMA', 'HullMA'], 'HMA', 'hull', 1, '#fbbf24', 10],
-    ['DoubleEMA', 'Double EMA (DEMA)', 'DEMA', ['DEMA', 'computeDEMA'], 'DEMA', 'close', 1, '#e879f9', 20],
+    // DoubleEMA (fix 2026-09-26): was shift 1, which needed DEMA[STK_close.length] -
+    // an index the function never fills (its main loop stops one short), so the
+    // most recent bar always rendered blank. DEMA() is only ever called here with a
+    // plain 0-based close array (no dummy at index 0), so DEMA[i] already belongs to
+    // bar i - shift 0 is correct. KAMA above is still shift 1 and has not been checked
+    // against this same mismatch. (HullMA was, on 2026-09-26 - see its entry below.)
+    ['DoubleEMA', 'Double EMA (DEMA)', 'DEMA', ['DEMA', 'computeDEMA'], 'DEMA', 'close', 0, '#e879f9', 20],
     ['ZLEMA', 'Zero Lag EMA', 'ZLEMA', 'ZeroLagEMA', 'ZeroLag_EMA', 'hlc', 0, '#fb923c', 20],
     ['TEMA', 'Triple EMA', 'TEMA', 'TripleEMA', 'Triple_EMA', 'hlc', 0, '#facc15', 20],
     ['VIDYA', 'VIDYA', 'VIDYA', 'VariableIndexDynamicAvg', 'VIDYA', 'hlc', 0, '#2dd4bf', 10],
@@ -100,15 +105,56 @@
       params: [{ key: 'period', label: 'Length', default: period, min: 1 }],
       outputs: [line('value', color)],
       compute: (c, p) => {
-        const args = inputs === 'hlc' ? HLC(c)
-          : inputs === 'hull' ? [column(c, 'close'), p.period, 9]
-          : [column(c, 'close')];
-        const out = inputs === 'hull' ? call(fnName(), ...args) : call(fnName(), ...args, p.period);
+        const args = inputs === 'hlc' ? HLC(c) : [column(c, 'close')];
+        const out = call(fnName(), ...args, p.period);
         return { value: aligned(c, out && out[field], shift) };
       },
     });
   });
 
+  // Prof. Wang's HullMA. His comment: "Normally drawing the STK_close[], HMA[],
+  // eHMA[] figures in the K-Line area." It returns HMA and his smoothed eHMA, and
+  // both are drawn - the single-line entry above used to draw HMA alone, through
+  // computeHullMA() from Wang_design__HullMA _2026-01-18.js.
+  // shift 0 was verified against the `values` array the function also returns, which
+  // is the close it was handed: at shift 0 that matches the close on every one of 200
+  // test bars, at shift 1 on none of them and the most recent bar renders blank.
+  registry.register({
+    id: 'HullMA', name: 'Hull MA', shortName: 'HMA',
+    category: 'Moving averages', placement: 'chart',
+    params: [
+      { key: 'period', label: 'Length', default: 10, min: 1 },
+      { key: 'esp', label: 'Smoothing', default: 9, min: 1 },
+    ],
+    outputs: [line('HMA', '#fbbf24'), line('eHMA', '#38bdf8', { lineWidth: 1 })],
+    compute: (c, p) => {
+      const out = call('HullMA', column(c, 'close'), Math.round(p.period), Math.round(p.esp)) || {};
+      return { HMA: aligned(c, out.HMA, 0), eHMA: aligned(c, out.eHMA, 0) };
+    },
+  });
+  // HullMA_KD's last comment: "Normally drawing the HMA[], eHMA[] figures in the
+  // K-Line area." The function computes both, but used to return only the 0-100
+  // HMA_KD_K / HMA_KD_D, so nothing could draw them; it now returns all four.
+  // Split the same way as BollingerBandsNew, and named the same way round: the plain
+  // name is the price-chart entry, the suffixed one is the pane ('HullMA_KD_KD' in
+  // defs/wang.js, "HullMA_KD (K, D)"). The K/D have to stay in a pane - against a
+  // price axis 0-100 values would be a flat line along the bottom. KD_num and alpha
+  // only affect K/D, so this entry does not expose them.
+  // HMA/eHMA here are identical to the 'HullMA' entry for the same day and esp -
+  // HullMA_KD embeds the same Hull calculation.
+  registry.register({
+    id: 'HullMA_KD', name: 'HullMA_KD', shortName: 'HullMA_KD',
+    category: 'Moving averages', placement: 'chart',
+    params: [
+      { key: 'day', label: 'Length', default: 10, min: 1 },
+      { key: 'esp', label: 'Smoothing', default: 9, min: 1 },
+    ],
+    outputs: [line('HMA', '#fbbf24'), line('eHMA', '#38bdf8', { lineWidth: 1 })],
+    compute: (c, p) => {
+      const out = call('HullMA_KD', column(c, 'close'), Math.round(p.day), Math.round(p.esp), 9, 50) || {};
+      return { HMA: aligned(c, out.HMA, 0), eHMA: aligned(c, out.eHMA, 0) };
+    },
+  });
   // Prof. Wang's 2026-09-18 redesign of DEMA: the same 2*EMA - EMA(EMA), but over
   // the Typical Price (H+L+4C)/6 instead of the close, plus his smoothed eDEMA.
   // Separate from 'DoubleEMA' above, which is the close-based one.

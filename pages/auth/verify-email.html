@@ -62,7 +62,7 @@
       try {
         const res = await TLAuth.verifyEmail(token);
         statusText.textContent = '';
-        showAlert('success', res.message || 'Email verified.');
+        showAlert('success', res.message || t('auth.verifyEmail.successFallback'));
       } catch (err) {
         statusText.textContent = '';
         showAlert('error', err.message || t('auth.verifyEmail.genericError'));

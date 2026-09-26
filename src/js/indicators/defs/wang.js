@@ -7,8 +7,9 @@
  *   inputs      candle fields passed first, in the function's argument order
  *   params      the remaining arguments in order: [name, default, options?]
  *               options is `true` for a fractional value, or an object
- *               { fractional?, label?, min?, max? } (non-fractional values are
- *               day counts and get rounded)
+ *               { fractional?, label?, min?, max?, step? } (non-fractional values
+ *               are day counts and get rounded; `step` sets the input's increment,
+ *               e.g. 0.01 for a coefficient entered as 0.1, 0.11, 0.12 ... 0.9)
  *   lines       returned arrays drawn as lines; `titles` renames any in the legend
  *   histogram   returned array drawn as bars (coloured by `colorKey`'s
  *               "Green"/"Red"/"Blue" per bar if given, else by sign)
@@ -17,6 +18,12 @@
  *   volumeScale axis shows K/M/B (values in the millions)
  *   precision   decimals on the axis, for very small values
  *   minPeriod   fewest candles to draw on (default: the largest day count)
+ *   placement   'chart' for the rows whose comment says "normally drawing ... in
+ *               the K_Line area" - these are price-scale, so they go on the price
+ *               chart rather than in a pane. Default 'pane'.
+ *   chartOmit   lines to leave out when placement is 'chart': the ones that are
+ *               just the close again (the candles already show it). They are still
+ *               drawn on the crypto page, which puts every indicator in a panel.
  * The Wang functions loop from index 1 but are handed 0-based arrays, so
  * out[i] belongs to bar i - no shift.
  *
@@ -46,9 +53,9 @@
     ASI:                     { name: 'Accumulation Swing Index(ASI)', type: 'trend', fn: 'ASI', inputs: ['open', 'high', 'low', 'close'], params: [['ma_day', 10], ['esp', 9]], lines: ['ASI', 'ASIma', 'eASIma'] },
     TRIX:                    { name: 'TRIX', type: 'momentum', fn: 'TRIX', inputs: ['close'], params: [['esp', 9]], lines: ['TRIX', 'eTRIX'] },
     M4:                      { name: 'M4', type: 'oscillator', fn: 'M4', inputs: ['close'], params: [['esp', 9]], lines: ['M4', 'eM4'], minPeriod: 20 },
-    GannHiLo:                { name: 'Gann HiLo', type: 'trend', fn: 'GannHiLo', inputs: ['high', 'low', 'close'], params: [['ma_day', 10]], lines: ['K_Close', 'MA_High_Low'] },
+    GannHiLo:                { name: 'Gann HiLo', type: 'trend', fn: 'GannHiLo', inputs: ['high', 'low', 'close'], params: [['ma_day', 10]], lines: ['K_Close', 'MA_High_Low'], placement: 'chart', chartOmit: ['K_Close'] },
     NewMACD:                 { name: 'NewMACD', type: 'oscillator', fn: 'MAmacd', inputs: ['close'], params: [['ma_day1', 10], ['ma_day2', 20], ['esp', 9]], lines: ['DIF', 'MAmacd'], histogram: 'BarChart' },
-    VariantMA:               { name: 'Variant MA', type: 'trend', fn: 'VariantMA', inputs: ['close'], params: [['ma_day', 10], ['alpha', 5], ['esp', 9]], lines: ['values', 'VariantMA', 'eVariantMA'], titles: { values: 'Close' } },
+    VariantMA:               { name: 'Variant MA', type: 'trend', fn: 'VariantMA', inputs: ['close'], params: [['ma_day', 10], ['alpha', 5], ['esp', 9]], lines: ['values', 'VariantMA', 'eVariantMA'], titles: { values: 'Close' }, placement: 'chart', chartOmit: ['values'] },
     T3MA:                    { name: 'T3MA', type: 'trend', fn: 'T3MA', inputs: ['close'], params: [['esp', 9], ['va', 0.7, true]], lines: ['T1', 'T2', 'T3'] },
     ZeroLagMACD:             { name: 'ZeroLagMACD', type: 'oscillator', fn: 'ZeroLagMACD', inputs: ['close'], params: [['n12', 12], ['n24', 24], ['n9', 9]], lines: ['ZeroLagMACD', 'Zero_Lag_Signal_Line'] },
     PSY:                     { name: 'PSY', type: 'oscillator', fn: 'PSY', inputs: ['close'], params: [['psy_n', 10], ['esp', 9]], lines: ['PSY', 'ePSY'] },
@@ -63,12 +70,12 @@
     PriVolRiFaPtMu:          { name: 'PriVolRiFaPtMu', type: 'volume', fn: 'PriVolRiFaPtMu', inputs: ['close', 'volume'], params: [['esp', 9]], lines: ['PriVolRFPM', 'ePriVolRFPM'] },
     PriVolRiFaPtSum:         { name: 'PriVolRiseFallPctSum', type: 'volume', fn: 'PriVolRiFaPtSum', inputs: ['close', 'volume'], params: [], lines: ['PriRiseFallPct', 'VolRiseFallPct', 'PriVolRiseFallPctSum'] },
     VolWgtAvgPrice:          { name: 'VolWgtAvgPrice', type: 'volume', fn: 'VolWgtAvgPrice', inputs: ['high', 'low', 'close', 'volume'], params: [['period', 10], ['esp', 9]], lines: ['VolWgtAvgPrice', 'eVolWgtAvgPrice'] },
-    CDP:                     { name: 'CDP', type: 'trend', fn: 'CDP', inputs: ['high', 'low', 'close'], params: [], lines: ['AH', 'NH', 'CDP', 'NL', 'AL', 'Support', 'Pressure'] },
+    CDP:                     { name: 'CDP', type: 'trend', fn: 'CDP', inputs: ['high', 'low', 'close'], params: [], lines: ['AH', 'NH', 'CDP', 'NL', 'AL', 'Support', 'Pressure'], placement: 'chart' },
     GatorOsc:                { name: 'Gator Osc', type: 'oscillator', fn: 'GatorOscillator', inputs: ['high', 'low'], params: [], lines: [], histogram: 'Gator' },
     PVIRiseFall:             { name: 'PVIRiseFall', type: 'volume', fn: 'PVIRiseFall', inputs: ['close', 'volume'], params: [['day', 10], ['esp', 9]], lines: ['PVIRiseFall', 'ePVIRiseFall'] },
     RSIKD:                   { name: 'RSIKD', type: 'oscillator', fn: 'RSIKD', inputs: ['close'], params: [['KD_day', 9], ['RSI_day', 10]], lines: ['RSIKD_K', 'RSIKD_D'], minPeriod: 19 },
     newRSIKD:                { name: 'newRSIKD', type: 'oscillator', fn: 'newRSIKD', inputs: ['close'], params: [['KD_day', 9], ['RSI_day', 10], ['esp', 9]], lines: ['newRSIKD_K', 'newRSIKD_D'], minPeriod: 19 },
-    KeltnerChannels:         { name: 'Keltner Channels', type: 'volatility', fn: 'KeltnerChannels', inputs: ['high', 'low', 'close'], params: [['esp1', 10]], lines: ['upperEMA', 'middleEMA', 'lowerEMA'], withClose: true },
+    KeltnerChannels:         { name: 'Keltner Channels', type: 'volatility', fn: 'KeltnerChannels', inputs: ['high', 'low', 'close'], params: [['esp1', 10]], lines: ['upperEMA', 'middleEMA', 'lowerEMA'], withClose: true, placement: 'chart' },
     ChandeMomOsc:            { name: 'ChandeMomOsc', type: 'momentum', fn: 'ChandeMomOsc', inputs: ['close'], params: [['day', 10], ['esp', 9]], lines: ['CMO', 'eCMO'] },
     Arms_TRIN:               { name: 'Arms_TRIN', type: 'volume', fn: 'Arms_TRIN', inputs: ['close', 'volume'], params: [['day', 10], ['esp', 9]], lines: ['Arms', 'eArms'] },
     AvgRFR_FI:               { name: 'AvgRFR_FI', type: 'volume', fn: 'AvgRiseFallRatioFI', inputs: ['close', 'volume'], params: [['day', 10], ['esp', 9]], lines: ['AvgRiseFallRatioFI', 'eAvgRiseFallRatioFI'] },
@@ -128,7 +135,7 @@
     OSC1_KD:                 { name: 'OSC1_KD(C-MA)', type: 'oscillator', fn: 'OSC1_KDlization', inputs: ['close'], params: [['MA_day', 10], ['KD_num', 9]], lines: ['OSC1_KD_K', 'OSC1_KD_D'], minPeriod: 18 },
     OSC2_KD:                 { name: 'OSC2_KD(C/MA)', type: 'oscillator', fn: 'OSC2_KDlization', inputs: ['close'], params: [['MA_day', 10], ['KD_num', 9]], lines: ['OSC2_KD_K', 'OSC2_KD_D'], minPeriod: 18 },
     // alpha/beta are passed as 1-9 and divided by 10 inside; 7 is closest to the classic KD's 2/3.
-    Flexible_KD:             { name: 'Flexible_KD', type: 'oscillator', fn: 'Flexible_KD', inputs: ['high', 'low', 'close'], params: [['KD_day', 9], ['alpha', 7, { label: 'alpha (1-9 = 0.1-0.9)', min: 1, max: 9 }], ['beta', 7, { label: 'beta (1-9 = 0.1-0.9)', min: 1, max: 9 }]], lines: ['Flexible_KD_K', 'Flexible_KD_D'] },
+    Flexible_KD:             { name: 'Flexible_KD', type: 'oscillator', fn: 'Flexible_KD', inputs: ['high', 'low', 'close'], params: [['KD_day', 9], ['alpha', 70, { label: 'alpha 10-90', min: 10, max: 90 }], ['beta', 70, { label: 'beta 10-90', min: 10, max: 90 }]], lines: ['Flexible_KD_K', 'Flexible_KD_D'] },
     // Prof. Wang's 2026-09-18/19 batch. DEMA2 itself goes on the price chart
     // (defs/overlays.js 'DEMA2'); these are the KD-ised panes.
     DEMA_KD:                 { name: 'DEMA_KD', type: 'oscillator', fn: 'DEMA_KDlization', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['DEMA_KD_K', 'DEMA_KD_D'] },
@@ -138,6 +145,33 @@
     VariRtEMA_2DaysAgo_KD:   { name: 'VariRtEMA_TwoDaysAgo_KD', type: 'momentum', fn: 'VariantRateEMA_TwoDaysAgo_KD', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['VarRtEMA_TwoDaysAgo_KD_K', 'VarRtEMA_TwoDaysAgo_KD_D'], minPeriod: 11 },
     VariRtEMA_3DaysAgo_KD:   { name: 'VariRtEMA_ThreeDaysAgo_KD', type: 'momentum', fn: 'VariantRateEMA_ThreeDaysAgo_KD', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['VarRtEMA_ThreeDaysAgo_KD_K', 'VarRtEMA_ThreeDaysAgo_KD_D'], minPeriod: 12 },
     VertHoriFilter:          { name: 'VHF2 (Vertical Horizontal Filter)', type: 'oscillator', fn: 'VertHoriFilter', inputs: ['close'], params: [['VHF_day', 20], ['esp', 9]], lines: ['VHF', 'eVHF'], minPeriod: 21 },
+    // 2026-09-19/20/22/25 batch. Every one of these says "drawing ... in the small windows",
+    // so they are all panes. HullMA_KD's trailing comment mentions the K-Line area, but that
+    // line describes HMA[]/eHMA[], which it does not return - it returns only the 0-100 K/D.
+    VariRtMA_1DayAgo_KD:      { name: 'VariRtMA_OneDayAgo_KD', type: 'momentum', fn: 'VariantRateMA_OneDayAgo_KD', inputs: ['close'], params: [['MA_day', 5], ['KD_num', 9]], lines: ['VarRtMA_OneDayAgo_KD_K', 'VarRtMA_OneDayAgo_KD_D'], minPeriod: 14 },
+    VariRtEMA_1DayAgo_KD:     { name: 'VariRtEMA_OneDayAgo_KD', type: 'momentum', fn: 'VariantRateEMA_OneDayAgo_KD', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['VarRtEMA_OneDayAgo_KD_K', 'VarRtEMA_OneDayAgo_KD_D'], minPeriod: 10 },
+    VariRtEMA_4DaysAgo:       { name: 'VariRtEMA_FourDaysAgo', type: 'momentum', fn: 'VariantRateEMA_FourDaysAgo', inputs: ['high', 'low', 'close'], params: [['esp', 9]], lines: ['VarRtEMA_FourDaysAgo', 'eVarRtEMA_FourDaysAgo'], minPeriod: 6 },
+    VariRtEMA_4DaysAgo_KD:    { name: 'VariRtEMA_FourDaysAgo_KD', type: 'momentum', fn: 'VariantRateEMA_FourDaysAgo_KD', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['VarRtEMA_FourDaysAgo_KD_K', 'VarRtEMA_FourDaysAgo_KD_D'], minPeriod: 13 },
+    VariRtEMA_1DayAgo_KD_dbl: { name: 'VariRtEMA_OneDayAgo_KD_dbl', type: 'momentum', fn: 'VariantRateEMA_OneDayAgo_KD_double', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['VarRtEMA_OneDayAgo_KD_K', 'VarRtEMA_OneDayAgo_KD_D'], minPeriod: 10 },
+    VariRtEMA_2DaysAgo_KD_dbl:{ name: 'VariRtEMA_TwoDaysAgo_KD_dbl', type: 'momentum', fn: 'VariantRateEMA_TwoDaysAgo_KD_double', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['VarRtEMA_TwoDaysAgo_KD_K', 'VarRtEMA_TwoDaysAgo_KD_D'], minPeriod: 11 },
+    VariRtEMA_3DaysAgo_KD_dbl:{ name: 'VariRtEMA_ThreeDaysAgo_KD_dbl', type: 'momentum', fn: 'VariantRateEMA_ThreeDaysAgo_KD_double', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['VarRtEMA_ThreeDaysAgo_KD_K', 'VarRtEMA_ThreeDaysAgo_KD_D'], minPeriod: 12 },
+    VariRtEMA_4DaysAgo_KD_dbl:{ name: 'VariRtEMA_FourDaysAgo_KD_dbl', type: 'momentum', fn: 'VariantRateEMA_FourDaysAgo_KD_double', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['VarRtEMA_FourDaysAgo_KD_K', 'VarRtEMA_FourDaysAgo_KD_D'], minPeriod: 13 },
+    KD_dbl:                   { name: 'KD_dbl(TP)', type: 'oscillator', fn: 'KD_double', inputs: ['high', 'low', 'close'], params: [['KD_day', 9], ['esp', 9]], lines: ['double_KD_K', 'double_KD_D'], minPeriod: 10 },
+    // The K/D half of HullMA_KD. Its HMA/eHMA half is the price-chart entry 'HullMA_KD'
+    // in defs/overlays.js, which is what Prof. Wang's "drawing the HMA[], eHMA[] figures
+    // in the K-Line area" comment asks for. `esp` is argument 3 and only feeds eHMA[],
+    // so it does nothing for these two lines - the K/D smoothing uses `alpha`.
+    HullMA_KD_KD:             { name: 'HullMA_KD (K, D)', type: 'oscillator', fn: 'HullMA_KD', inputs: ['close'], params: [['day', 10], ['esp', 9, { label: 'esp (K/D ignore it)' }], ['KD_num', 9], ['alpha', 50, { label: 'alpha 50-90', min: 50, max: 90 }]], lines: ['HMA_KD_K', 'HMA_KD_D'], minPeriod: 21 },
+    // UOSC1 is a price difference (a few points) and UOSC2 a ratio (about 1.0); the professor
+    // split them into two functions so each gets its own pane scale. The older 'UOSC' entry
+    // draws both on one axis, which flattens UOSC2.
+    UOSC1:                    { name: 'UOSC1 sum(C-MA)', type: 'oscillator', fn: 'UOSC1', inputs: ['close'], params: [['MA_day', 10], ['UOSC_num', 10]], lines: ['UOSC1'], minPeriod: 20 },
+    UOSC2:                    { name: 'UOSC2 sum(C/MA)', type: 'oscillator', fn: 'UOSC2', inputs: ['close'], params: [['MA_day', 10], ['UOSC_num', 10]], lines: ['UOSC2'], precision: 4, minPeriod: 20 },
+    KST_Stochastic:           { name: 'KST_Stochastic', type: 'momentum', fn: 'KST_Stochastic', inputs: ['close'], params: [['day1', 10], ['day2', 15], ['day3', 20], ['day4', 30], ['esp', 9], ['KD_num', 9]], lines: ['KST_KD_K', 'KST_KD_D'], minPeriod: 38 },
+    // 2026-09-26. K/D start at bar MTM_n+ACC_n+KD_num-2 (22 with the defaults).
+    Acceleration_Stochastic:  { name: 'Acceleration(ACC)Stochastic', type: 'momentum', fn: 'Acceleration_Stochastic', inputs: ['close'], params: [['MTM_n', 10], ['ACC_n', 5], ['esp', 9], ['KD_num', 9]], lines: ['ACC_KD_K', 'ACC_KD_D'], minPeriod: 23 },
+    // KD of the smoothed Williams A/D line (eWAD); WAD/eWAD themselves are not returned.
+    WilliamAD_Stochastic:     { name: 'WilliamAD_Stochastic', type: 'momentum', fn: 'WilliamAD_Stochastic', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['eWAD_KD_K', 'eWAD_KD_D'] },
   };
 
   const CATEGORY = { trend: 'Trend', momentum: 'Momentum', oscillator: 'Oscillators', volume: 'Volume', volatility: 'Volatility' };
@@ -153,7 +187,9 @@
       : spec.precision ? { type: 'price', precision: spec.precision, minMove: 10 ** -spec.precision }
       : undefined;
     const fmt = priceFormat ? { priceFormat } : {};
-    const multi = spec.lines.length + (spec.histogram ? 1 : 0) + (spec.withClose ? 1 : 0) > 1;
+    const onChartPre = spec.placement === 'chart';
+    const nLines = onChartPre && spec.chartOmit ? spec.lines.filter(k => !spec.chartOmit.includes(k)).length : spec.lines.length;
+    const multi = nLines + (spec.histogram ? 1 : 0) + (spec.withClose && !onChartPre ? 1 : 0) > 1;
     const outputs = [];
     if (spec.histogram) {
       outputs.push({
@@ -164,8 +200,10 @@
         ...fmt,
       });
     }
-    if (spec.withClose) outputs.push({ key: 'Close', title: 'Close', color: '#cbd5e1', lineWidth: 1, ...fmt });
-    spec.lines.forEach((key, i) => outputs.push({
+    const onChart = spec.placement === 'chart';
+    if (spec.withClose && !onChart) outputs.push({ key: 'Close', title: 'Close', color: '#cbd5e1', lineWidth: 1, ...fmt });
+    const drawn = onChart && spec.chartOmit ? spec.lines.filter(k => !spec.chartOmit.includes(k)) : spec.lines;
+    drawn.forEach((key, i) => outputs.push({
       key,
       ...(multi ? { title: (spec.titles && spec.titles[key]) || key } : {}),
       color: LINE_COLORS[i % LINE_COLORS.length],
@@ -176,10 +214,10 @@
       id,
       name: spec.name,
       category: CATEGORY[spec.type] || 'Other',
-      placement: 'pane',
+      placement: spec.placement || 'pane',
       params: params.map((p) => {
         const o = paramOpts(p);
-        return { key: p[0], label: o.label || p[0], default: p[1], min: o.min, max: o.max };
+        return { key: p[0], label: o.label || p[0], default: p[1], min: o.min, max: o.max, step: o.step };
       }),
       minBars: spec.minPeriod || Math.max(2, ...params.filter(p => !paramOpts(p).fractional).map(p => p[1])),
       outputs,

@@ -110,7 +110,8 @@
       "submitting": "Signing in...",
       "forgotPassword": "Forgot your password?",
       "noAccount": "Don't have an account?",
-      "registerLink": "Register"
+      "registerLink": "Register",
+      "genericError": "Sign in failed."
     },
     "register": {
       "pageTitle": "Create Account - TradeLite",
@@ -124,7 +125,8 @@
       "submitting": "Creating account...",
       "haveAccount": "Already have an account?",
       "signInLink": "Sign in",
-      "successMessage": "Account created! Check your email for a verification link. Redirecting…"
+      "successMessage": "Account created! Check your email for a verification link. Redirecting…",
+      "genericError": "Could not create your account."
     },
     "forgotPassword": {
       "pageTitle": "Forgot Password - TradeLite",
@@ -149,7 +151,8 @@
       "backToSignIn": "Back to sign in",
       "missingToken": "This link is missing its reset token. Request a new one from the \"Forgot your password?\" page.",
       "redirecting": "Redirecting to sign in…",
-      "genericError": "Could not update your password."
+      "genericError": "Could not update your password.",
+      "successFallback": "Password updated."
     },
     "verifyEmail": {
       "pageTitle": "Verify Email - TradeLite",
@@ -158,7 +161,8 @@
       "missingToken": "This link is missing its verification token.",
       "genericError": "This link is invalid or has expired.",
       "goToTradeLite": "Go to TradeLite",
-      "signIn": "Sign in"
+      "signIn": "Sign in",
+      "successFallback": "Email verified."
     },
     "account": {
       "pageTitle": "Account Settings - TradeLite",

@@ -115,7 +115,10 @@
         originalEditOrderPrice(id);
         return;
       }
-      var next = prompt('New trigger price for ' + order.symbol + ' ' + order.type + ':', order.price);
+      var promptText = window.TradeFlowI18n
+        ? window.TradeFlowI18n.t('portfolio.promptNewTriggerPrice', { symbol: order.symbol, type: order.type })
+        : 'New trigger price for ' + order.symbol + ' ' + order.type + ':';
+      var next = prompt(promptText, order.price);
       if (next == null) return;
       var price = parseFloat(next);
       if (!isFinite(price)) return;

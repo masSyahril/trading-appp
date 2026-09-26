@@ -377,6 +377,52 @@
             updateSummaryCard();
             setInterval(updateSummaryCard, 2000);
             window.TradeFlowChart?.onSymbolChange?.(updateSummaryCard);
+
+            // Market status pill: previously a hardcoded "Market Open" label
+            // that was never actually updated (this dashboard never wired up
+            // an updater for it at all), so it claimed the market was open
+            // 24/7 regardless of the real time. NYSE regular session is
+            // 9:30-16:00 America/New_York, pre-market 4:00-9:30, after-hours
+            // 16:00-20:00 (no holiday calendar) - computed against the real
+            // IANA zone (not a fixed UTC offset) so it's correct across the
+            // EST/EDT daylight-saving switch. Self-contained (no dependency
+            // on window.TradeFlowChart) so it works from the first tick,
+            // before that seam is up.
+            const dashboardNyFormat = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'America/New_York', weekday: 'short',
+                hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+            });
+            function updateMarketStatusWidget() {
+                const now = new Date();
+                const p = Object.fromEntries(dashboardNyFormat.formatToParts(now).map(x => [x.type, x.value]));
+                const mins = Number(p.hour) * 60 + Number(p.minute);
+                const isWeekday = p.weekday !== 'Sat' && p.weekday !== 'Sun';
+
+                let labelKey, state, dotColor;
+                if (!isWeekday) { labelKey = 'market.closed'; state = 'closed'; dotColor = 'var(--tf-down)'; }
+                else if (mins >= 570 && mins < 960) { labelKey = 'market.open'; state = 'open'; dotColor = 'var(--tf-up)'; }
+                else if (mins >= 240 && mins < 570) { labelKey = 'market.preMarket'; state = 'ext'; dotColor = '#f59e0b'; }
+                else if (mins >= 960 && mins < 1200) { labelKey = 'market.afterHours'; state = 'ext'; dotColor = '#f59e0b'; }
+                else { labelKey = 'market.closed'; state = 'closed'; dotColor = 'var(--tf-down)'; }
+
+                const t = window.TradeFlowI18n ? window.TradeFlowI18n.t : (k) => k;
+                const textEl = document.getElementById('td-summary-status-text');
+                if (textEl) textEl.textContent = t(labelKey);
+                const dotEl = document.querySelector('#td-summary-status .td-status-dot');
+                if (dotEl) dotEl.style.background = dotColor;
+
+                const statusEl = document.getElementById('td-summary-status');
+                if (statusEl) {
+                    try {
+                        const locale = window.TradeFlowI18n ? window.TradeFlowI18n.intlLocale() : undefined;
+                        const localTime = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(now);
+                        statusEl.title = t('market.localTimeTooltip', { time: localTime });
+                    } catch (e) {}
+                    statusEl.setAttribute('data-state', state);
+                }
+            }
+            updateMarketStatusWidget();
+            setInterval(updateMarketStatusWidget, 15000);
         }
     </script>
 </body>

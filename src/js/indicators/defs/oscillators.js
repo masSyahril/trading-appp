@@ -215,7 +215,10 @@
   });
 
   add({
-    id: 'BOLLINGER4SD', name: 'Bollinger Bands 4SD', minBars: 10,
+    // "Normally drawing the upperBand, MA, lowerBand figures in the K_Line area" -
+    // price-scale (2026-09-26). Separate from the 'BB' entry, which uses this file's
+    // own bollinger() helper rather than Prof. Wang's BollingerBands().
+    id: 'BOLLINGER4SD', name: 'Bollinger Bands 4SD', minBars: 10, placement: 'chart',
     params: [['MA_day', 'MA_day', 10], ['SD_day', 'SD_day', 20]],
     math: (M, c, p) => M.computeBollingerBands(c, p.MA_day, p.SD_day),
     outputs: [
@@ -226,7 +229,9 @@
   });
 
   add({
-    id: 'Alligator', name: 'Alligator (Prof. Wang)', minBars: 10,
+    // "normally drawing these three indicators in K_Line area" - Lips/Teeth/Jaw are
+    // moving averages of the price, so they go on the price chart (2026-09-26).
+    id: 'Alligator', name: 'Alligator (Prof. Wang)', minBars: 10, placement: 'chart',
     params: [['day', 'Period', 10]],
     math: (M, c, p) => M.computeAlligatorIndicator(c, p.day),
     outputs: [

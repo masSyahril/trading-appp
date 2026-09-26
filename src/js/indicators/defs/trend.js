@@ -217,18 +217,23 @@
   });
 
   add({
-    id: 'MAone_MAtwo', name: 'MAone + MAtwo + Close', minBars: 10,
+    // KingMA/MAoneMAtwo: "drawing (MA1, MA2, STK_close) in the K_Line area". On the
+    // price chart the candles already are the close, so only MA1 and MA2 are drawn
+    // (2026-09-26). The sibling 'MAoneMAtwo with RR' stays a pane - it puts a risk/
+    // reward step line and histogram on a second scale, which a price axis cannot hold.
+    id: 'MAone_MAtwo', name: 'MAone + MAtwo', minBars: 10, placement: 'chart',
     params: [['day1', 'Period1', 5], ['day2', 'Period2', 10]],
     math: (M, c, p) => M.computeMAone_MAtwoIndicator(c, p.day1, p.day2),
     outputs: [
       line('line1', C.LINE1, 'MA1'),
       line('line2', C.LINE2, 'MA2'),
-      line('line3', C.LINE3, 'Close', { lineWidth: 1 }),
     ],
   });
 
   add({
-    id: 'ZeroLagHullMA', name: 'ZeroLagHullMA', minBars: 10,
+    // "Normally drawing the STK_close[], HMA[], eHMA[], ZeroLagHMA[] figures in the
+    // K-Line area" - price-scale, so it goes on the price chart (2026-09-26).
+    id: 'ZeroLagHullMA', name: 'ZeroLagHullMA', minBars: 10, placement: 'chart',
     params: [['day1', 'Day 1', 10], ['day2', 'Day 2', 15], ['esp', 'esp', 9]],
     math: (M, c, p) => M.computeZeroLagHullMAIndicator(c, p.day1, p.day2, p.esp),
     outputs: [
@@ -249,7 +254,8 @@
   });
 
   add({
-    id: 'Gaussian', name: 'Gaussian Filter', minBars: 10,
+    // "Normally drawing these two indicators in the K_Line area" (2026-09-26).
+    id: 'Gaussian', name: 'Gaussian Filter', minBars: 10, placement: 'chart',
     params: [['day', 'Period', 5], ['sigma', 'Sigma', 3], ['esp', 'Smooth', 9]],
     math: (M, c, p) => M.computeGaussianFilterIndicator(c, p.day, Math.min(p.sigma, 5), p.esp),
     outputs: [
@@ -297,7 +303,10 @@
   });
 
   add({
-    id: 'RainbowMA', name: 'Rainbow MA (overlay)', minBars: 10,
+    // RainbowOsc: 'Normally drawing these figures in the K_Line area' - MA1..MA9 are
+    // moving averages of the price, so they go on the price chart (2026-09-26).
+    // Its companion 'RainbowOscillator' stays a pane: that one swings about zero.
+    id: 'RainbowMA', name: 'Rainbow MA (overlay)', minBars: 10, placement: 'chart',
     params: [['num', 'Period', 10]],
     math: (M, c, p) => M.computeRainbowMA(c, p.num),
     outputs: [
@@ -311,7 +320,8 @@
   });
 
   add({
-    id: 'LinearReg', name: 'Linear Regression', minBars: 10,
+    // "drawing these figures in the K_Line area" - price-scale (2026-09-26).
+    id: 'LinearReg', name: 'Linear Regression', minBars: 10, placement: 'chart',
     params: [['N', 'Period', 10], ['K', 'Multiplier', 2]],
     math: (M, c, p) => M.computeLinearReg(c, p.N, p.K),
     outputs: [
@@ -322,7 +332,8 @@
   });
 
   add({
-    id: 'LinearRegTP', name: 'Linear Regression (TP)', minBars: 10,
+    // "drawing these figures in the K_Line area" - price-scale (2026-09-26).
+    id: 'LinearRegTP', name: 'Linear Regression (TP)', minBars: 10, placement: 'chart',
     params: [['N', 'Period', 10], ['K', 'Multiplier', 2]],
     math: (M, c, p) => M.computeLinearRegTP(c, p.N, p.K),
     outputs: [
@@ -333,14 +344,16 @@
   });
 
   add({
-    id: 'AdaptiveLaguerre', name: 'Adaptive Laguerre', minBars: 18,
+    // "drawing these figures in the K_Line area" - price-scale (2026-09-26).
+    id: 'AdaptiveLaguerre', name: 'Adaptive Laguerre', minBars: 18, placement: 'chart',
     params: [['day', 'Period', 10]],
     math: (M, c, p) => M.computeAdaptiveLaguerre(c, p.day),
     outputs: [line('ALF', C.LINE1)],
   });
 
   add({
-    id: 'HighLowBands', name: 'High Low Bands', minBars: 11,
+    // "drawing these figures in the K_Line area" - price-scale bands (2026-09-26).
+    id: 'HighLowBands', name: 'High Low Bands', minBars: 11, placement: 'chart',
     params: [['day', 'Period', 10], ['esp', 'Smooth', 10]],
     math: (M, c, p) => M.computeHighLowBands(c, p.day, p.esp),
     outputs: [
@@ -351,7 +364,8 @@
   });
 
   add({
-    id: 'StollerBands', name: 'Stoller Avg Rng Chnl', minBars: 10,
+    // "drawing these figures in the K_Line area" - price-scale bands (2026-09-26).
+    id: 'StollerBands', name: 'Stoller Avg Rng Chnl', minBars: 10, placement: 'chart',
     params: [['day', 'EMA Period', 10], ['esp', 'ATR Smooth', 9]],
     math: (M, c, p) => M.computeStollerBands(c, p.day, p.esp),
     outputs: [
@@ -362,7 +376,8 @@
   });
 
   add({
-    id: 'MA_Envelope', name: 'MA Envelope', minBars: 9,
+    // "Normally drawing these figures in the K_Line area" (2026-09-26).
+    id: 'MA_Envelope', name: 'MA Envelope', minBars: 9, placement: 'chart',
     params: [['esp', 'EMA Period', 9], ['kk', 'Band %', 3]],
     math: (M, c, p) => M.computeMA_Envelope(c, p.esp, p.kk),
     outputs: [

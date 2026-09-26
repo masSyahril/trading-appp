@@ -423,19 +423,32 @@
                 hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
             });
             function updateClockAndStatus() {
-                const p = Object.fromEntries(nyFormat.formatToParts(new Date()).map(x => [x.type, x.value]));
+                const now = new Date();
+                const p = Object.fromEntries(nyFormat.formatToParts(now).map(x => [x.type, x.value]));
                 const time = `${p.hour}:${p.minute}:${p.second}`;
                 setText('vt-chart-clock', time);
                 setText('vt-footer-clock', `${time} New York`);
                 const mins = Number(p.hour) * 60 + Number(p.minute);
                 const weekday = p.weekday !== 'Sat' && p.weekday !== 'Sun';
-                const [label, state] = !weekday ? ['Market closed', 'closed']
-                    : (mins >= 570 && mins < 960) ? ['Market open', 'open']
-                    : (mins >= 240 && mins < 570) ? ['Pre-market', 'ext']
-                    : (mins >= 960 && mins < 1200) ? ['After hours', 'ext']
-                    : ['Market closed', 'closed'];
-                setText('vt-market-text', label);
+                const [labelKey, state] = !weekday ? ['market.closed', 'closed']
+                    : (mins >= 570 && mins < 960) ? ['market.open', 'open']
+                    : (mins >= 240 && mins < 570) ? ['market.preMarket', 'ext']
+                    : (mins >= 960 && mins < 1200) ? ['market.afterHours', 'ext']
+                    : ['market.closed', 'closed'];
+                const t = window.TradeFlowI18n ? window.TradeFlowI18n.t : (k) => k;
+                setText('vt-market-text', t(labelKey));
                 $('vt-market')?.setAttribute('data-state', state);
+
+                // Hover tooltip: the viewer's own local wall-clock time, so
+                // someone outside the US doesn't have to convert New York
+                // time themselves to know when the session opens/closes for
+                // them.
+                try {
+                    const locale = window.TradeFlowI18n ? window.TradeFlowI18n.intlLocale() : undefined;
+                    const localTime = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(now);
+                    const footerClock = $('vt-footer-clock');
+                    if (footerClock) footerClock.title = t('market.localTimeTooltip', { time: localTime });
+                } catch (e) {}
             }
 
             function updateAvailable() {

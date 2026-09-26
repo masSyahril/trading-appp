@@ -110,7 +110,8 @@
       "submitting": "登入中…",
       "forgotPassword": "忘記密碼?",
       "noAccount": "還沒有帳號?",
-      "registerLink": "註冊"
+      "registerLink": "註冊",
+      "genericError": "登入失敗。"
     },
     "register": {
       "pageTitle": "建立帳號 - TradeLite",
@@ -124,7 +125,8 @@
       "submitting": "建立帳號中…",
       "haveAccount": "已經有帳號了嗎?",
       "signInLink": "登入",
-      "successMessage": "帳號建立成功!請查看您的電子郵件以取得驗證連結。即將跳轉…"
+      "successMessage": "帳號建立成功!請查看您的電子郵件以取得驗證連結。即將跳轉…",
+      "genericError": "無法建立您的帳號。"
     },
     "forgotPassword": {
       "pageTitle": "忘記密碼 - TradeLite",
@@ -149,7 +151,8 @@
       "backToSignIn": "返回登入",
       "missingToken": "此連結缺少重設權杖。請從「忘記密碼?」頁面重新申請。",
       "redirecting": "即將跳轉至登入頁面…",
-      "genericError": "無法更新您的密碼。"
+      "genericError": "無法更新您的密碼。",
+      "successFallback": "密碼已更新。"
     },
     "verifyEmail": {
       "pageTitle": "驗證電子郵件 - TradeLite",
@@ -158,7 +161,8 @@
       "missingToken": "此連結缺少驗證權杖。",
       "genericError": "此連結無效或已過期。",
       "goToTradeLite": "前往 TradeLite",
-      "signIn": "登入"
+      "signIn": "登入",
+      "successFallback": "電子郵件已驗證。"
     },
     "account": {
       "pageTitle": "帳戶設定 - TradeLite",
