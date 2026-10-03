@@ -63,7 +63,13 @@ const WANG_PANEL_INDICATORS = {
   VariantRateMA2DaysAgo:   { name: 'VariantRateMA2DaysAgo', type: 'momentum', fn: 'VariantRateMA2DaysAgo', inputs: ['close'], params: [['day1', 5], ['day2', 10]], lines: ['VarRtMA2DaysAgo1', 'VarRtMA2DaysAgo2'] },
   MAPVT:                   { name: 'MAPVT', type: 'volume', fn: 'MAPriceVolumTrend', inputs: ['close', 'volume'], params: [['ma_day', 10], ['esp', 9]], lines: ['MAPVT', 'eMAPVT'], volumeScale: true },
   CumulativeVolume:        { name: 'Cumulative Volume(CV)', type: 'volume', fn: 'CumulativeVolume', inputs: ['close', 'volume'], params: [['esp', 9]], lines: ['CumuVol', 'eCumuVol'], volumeScale: true },
-  NewCumulativeVolume:     { name: 'New Cumulative Volume', type: 'volume', fn: 'NewCumulativeVolume', inputs: ['close', 'volume'], params: [['ma_day', 10], ['esp', 9]], lines: ['MACumuVol', 'eMACumuVol'], volumeScale: true },
+  NewCumulativeVolume:     { name: 'Cumu Vol (CV_MA)', type: 'volume', fn: 'NewCumulativeVolume', inputs: ['close', 'volume'], params: [['ma_day', 10], ['esp', 9]], lines: ['MACumuVol', 'eMACumuVol'], volumeScale: true },
+  // 2026-10-03 (Prof. Wang's note of 09-27, items 5/6/7/9): these four were never in the menu.
+  // MoneyFlowIndex is his two-line MFI/eMFI; the one-line 'Money Flow Index (standard)' is the usual 14-day MFI.
+  MoneyFlowIndex:          { name: 'Money Flow Index(MFI)', type: 'volume', fn: 'MoneyFlowIndex', inputs: ['high', 'low', 'close', 'volume'], params: [['day', 10], ['esp', 9]], lines: ['MFI', 'eMFI'], minPeriod: 11 },
+  PositiveVolIndex:        { name: 'Positive Volume Index(PVI)', type: 'volume', fn: 'PositiveVolIndex', inputs: ['close', 'volume'], params: [['esp', 9]], lines: ['PVI', 'ePVI'] },
+  NegativeVolIndex:        { name: 'Negative Volume Index(NVI)', type: 'volume', fn: 'NegativeVolIndex', inputs: ['close', 'volume'], params: [['esp', 9]], lines: ['NVI', 'eNVI'] },
+  SimpleMA_vol:            { name: 'SimpleMA_vol', type: 'volume', fn: 'SimpleMA_vol', inputs: ['volume'], params: [['day', 10]], lines: ['MA_vol'], volumeScale: true },
   // MASS's EMA1/EMA2 are marked for the K_Line area, but they're averages of
   // (High-Low) - a few points, not a price - so only Mass/eMass are drawn.
   MASS:                    { name: 'MASS Index', type: 'volatility', fn: 'MASS', inputs: ['high', 'low'], params: [['esp', 9]], lines: ['Mass', 'eMass'] },
@@ -191,8 +197,37 @@ const WANG_PANEL_INDICATORS = {
   UOSC2:                    { name: 'UOSC2 sum(C/MA)', type: 'oscillator', fn: 'UOSC2', inputs: ['close'], params: [['MA_day', 10], ['UOSC_num', 10]], lines: ['UOSC2'], precision: 4, minPeriod: 20 },
   KST_Stochastic:           { name: 'KST_Stochastic', type: 'momentum', fn: 'KST_Stochastic', inputs: ['close'], params: [['day1', 10], ['day2', 15], ['day3', 20], ['day4', 30], ['esp', 9], ['KD_num', 9]], lines: ['KST_KD_K', 'KST_KD_D'], minPeriod: 38 },
   Acceleration_Stochastic:  { name: 'Acceleration(ACC)Stochastic', type: 'momentum', fn: 'Acceleration_Stochastic', inputs: ['close'], params: [['MTM_n', 10], ['ACC_n', 5], ['esp', 9], ['KD_num', 9]], lines: ['ACC_KD_K', 'ACC_KD_D'], minPeriod: 23 },
+  // 2026-09-27 to 10-03 batch. Every one of these says "drawing these figures in the
+  // small windows", so they are all panes - none belongs on the K-Line.
+  DPO_Stochastic:           { name: 'DPO Stochastic', type: 'oscillator', fn: 'DPO_Stochastic', inputs: ['close'], params: [['MA_day', 10], ['esp', 9], ['KD_num', 9]], lines: ['DPO_KD_K', 'DPO_KD_D'], minPeriod: 22 },
+  PVT_Stochastic:           { name: 'PVT Stochastic', type: 'volume', fn: 'PriceVolumTrend_Stochastic', inputs: ['close', 'volume'], params: [['esp', 9], ['KD_num', 9]], lines: ['PVT_KD_K', 'PVT_KD_D'], minPeriod: 9 },
+  MAPVT_Stochastic:         { name: 'MAPVT Stochastic', type: 'volume', fn: 'MAPriceVolumTrend_Stochastic', inputs: ['close', 'volume'], params: [['ma_day', 10], ['esp', 9], ['KD_num', 9]], lines: ['MAPVT_KD_K', 'MAPVT_KD_D'], minPeriod: 18 },
+  EMAPVT:                   { name: 'EMAPVT', type: 'volume', fn: 'EMAPriceVolumTrend', inputs: ['high', 'low', 'close', 'volume'], params: [['esp', 9]], lines: ['EMAPVT', 'eEMAPVT'], volumeScale: true, minPeriod: 2 },
+  EMAPVT_Stochastic:        { name: 'EMAPVT Stochastic', type: 'volume', fn: 'EMAPriceVolumTrend_Stochastic', inputs: ['high', 'low', 'close', 'volume'], params: [['esp', 9], ['KD_num', 9]], lines: ['EMAPVT_KD_K', 'EMAPVT_KD_D'], minPeriod: 9 },
+  CumuVol_Stochastic:       { name: 'CumuVol(CV) Stochastic', type: 'volume', fn: 'CumulativeVolume_Stochastic', inputs: ['close', 'volume'], params: [['esp', 9], ['KD_num', 9]], lines: ['CumuVol_KD_K', 'CumuVol_KD_D'], minPeriod: 9 },
+  CumuVol_esp_Stochastic:   { name: 'CumuVol(CV_esp) Stochastic', type: 'volume', fn: 'CumulativeVolume_esp_Stochastic', inputs: ['close', 'volume'], params: [['esp', 9], ['KD_num', 9]], lines: ['eCumuVol_KD_K', 'eCumuVol_KD_D'], minPeriod: 9 },
+  CumuVol_EMA:              { name: 'Cumu Vol (CV_EMA_TP)', type: 'volume', fn: 'CumulativeVolume_EMA', inputs: ['high', 'low', 'close', 'volume'], params: [['esp', 9]], lines: ['EMA_CV', 'eEMA_CV'], minPeriod: 2 },
+  MFI_Stochastic:           { name: 'MFI Stochastic', type: 'volume', fn: 'MoneyFlowIndex_Stochastic', inputs: ['high', 'low', 'close', 'volume'], params: [['day', 10], ['esp', 9], ['KD_num', 9]], lines: ['MFI_KD_K', 'MFI_KD_D'], minPeriod: 18 },
+  PVI_EMA:                  { name: 'Positive Vol Index(PVI_EMA)', type: 'volume', fn: 'PositiveVolIndex_EMA', inputs: ['high', 'low', 'close', 'volume'], params: [['esp', 9]], lines: ['PVI_EMA', 'ePVI_EMA'], minPeriod: 2 },
+  NVI_EMA:                  { name: 'Negative Vol Index(NVI_EMA)', type: 'volume', fn: 'NegativeVolIndex_EMA', inputs: ['high', 'low', 'close', 'volume'], params: [['esp', 9]], lines: ['NVI_EMA', 'eNVI_EMA'], minPeriod: 2 },
+  PriceOSC_Stochastic:      { name: 'Price Osc Stochastic', type: 'oscillator', fn: 'PriceOSC_Stochastic', inputs: ['close'], params: [['short_day', 5], ['long_day', 10], ['esp', 9], ['KD_num', 9]], lines: ['PriceOSC_KD_K', 'PriceOSC_KD_D'], minPeriod: 18 },
+  ChaikinOSC_Stochastic:    { name: 'ChaikinOSC Stochastic', type: 'volume', fn: 'ChaikinOSC_Stochastic', inputs: ['high', 'low', 'close', 'volume'], params: [['short_day', 5], ['long_day', 10], ['esp', 9], ['KD_num', 9]], lines: ['ChaikinOSC_KD_K', 'ChaikinOSC_KD_D'], minPeriod: 9 },
   WilliamAD_Stochastic:     { name: 'WilliamAD_Stochastic', type: 'momentum', fn: 'WilliamAD_Stochastic', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['eWAD_KD_K', 'eWAD_KD_D'] },
   CostMA_Stochastic:        { name: 'CostMA Stochastic', type: 'volume', fn: 'CostMA_Stochastic', inputs: ['high', 'low', 'close', 'volume'], params: [['day_length', 10], ['esp', 9], ['KD_num', 9]], lines: ['CostMA_KD_K', 'CostMA_KD_D'], minPeriod: 18 },
+  // 2026-10-03. Both comments say "drawing these figures in the small windows", so both are panes.
+  // Each computes ADL[] and eADL[] internally but returns only its K/D pair, so there is no price line to place.
+  ADL_Stochastic:           { name: 'AccuDistLine(ADL) Stochastic', type: 'volume', fn: 'AccuDistLine_Stochastic', inputs: ['high', 'low', 'close', 'volume'], params: [['esp', 9], ['KD_num', 9]], lines: ['ADL_KD_K', 'ADL_KD_D'], minPeriod: 9 },
+  eADL_Stochastic:          { name: 'AccuDistLine(eADL) Stochastic', type: 'volume', fn: 'AccuDistLine_eADL_Stochastic', inputs: ['high', 'low', 'close', 'volume'], params: [['esp', 9], ['KD_num', 9]], lines: ['eADL_KD_K', 'eADL_KD_D'], minPeriod: 9 },
+  // 2026-10-03. Both say "drawing these figures in the small windows", so both are panes.
+  // ASI_MA is the stochastic of ASIma[] (the moving average); ASI_EMA is the stochastic of
+  // eASIma[] (its exponential smoothing). Neither returns ASI/ASIma/eASIma themselves.
+  ASI_MA_Stochastic:        { name: 'ASI_MA Stochastic', type: 'momentum', fn: 'ASI_MA_Stochastic', inputs: ['open', 'high', 'low', 'close'], params: [['ma_day', 10], ['esp', 9], ['KD_num', 9]], lines: ['ASI_MA_KD_K', 'ASI_MA_KD_D'], minPeriod: 19 },
+  ASI_EMA_Stochastic:       { name: 'ASI_EMA Stochastic', type: 'momentum', fn: 'ASI_EMA_Stochastic', inputs: ['open', 'high', 'low', 'close'], params: [['ma_day', 10], ['esp', 9], ['KD_num', 9]], lines: ['ASI_EMA_KD_K', 'ASI_EMA_KD_D'], minPeriod: 19 },
+  // 2026-10-03. "drawing these figures in the small windows", so a pane.
+  // The KD here is of ASI[] itself, not of ASIma/eASIma - and ASI[] does not depend on
+  // ma_day (both loops use the same recurrence; ma_day only sets where they split), so
+  // ma_day cannot move these two lines. Labelled so the user is not misled, as HullMA_KD's esp is.
+  ASI_Stochastic:           { name: 'ASI Stochastic', type: 'momentum', fn: 'ASI_Stochastic', inputs: ['open', 'high', 'low', 'close'], params: [['ma_day', 10, { label: 'ma_day (K/D ignore it)' }], ['esp', 9], ['KD_num', 9]], lines: ['ASI_KD_K', 'ASI_KD_D'], minPeriod: 10 },
 };
 
 // A WANG_PANEL_INDICATORS param's third item: `true` (fractional) or { fractional, label, min, max }.
@@ -670,7 +705,7 @@ class MultiIndicatorSystem {
         render: (chart, data, colors, seriesMap) => this.renderVAO(chart, data, colors, seriesMap)
       },
       MFI: {
-        name: 'Money Flow Index',
+        name: 'Money Flow Index (standard)',
         type: 'volume',
         defaultParams: { period: 14 },
         paramLabels: { period: 'Period' },
@@ -684,7 +719,7 @@ class MultiIndicatorSystem {
         name: 'HLO (High/Low Oscillator)',
         type: 'oscillator',
         defaultParams: { period: 14 },
-        paramLabels: { period: 'Period' },
+        paramLabels: { period: 'Smoothing (esp)' },
         minPeriod: 2,
         compute: (data, params) => this.computeHLOIndicator(data, params.period),
         render: (chart, data, colors, seriesMap) => this.renderHLO(chart, data, colors, seriesMap)
@@ -855,10 +890,10 @@ class MultiIndicatorSystem {
       DPO: {
         name: 'DPO (Detrended Price Osc)',
         type: 'oscillator',
-        defaultParams: { MA_day: 10 },
-        paramLabels: { MA_day: 'MA Period' },
+        defaultParams: { MA_day: 10, esp: 9 },
+        paramLabels: { MA_day: 'MA Period', esp: 'Smooth' },
         minPeriod: 10,
-        compute: (data, params) => this.computeDPOIndicator(data, params.MA_day),
+        compute: (data, params) => this.computeDPOIndicator(data, params.MA_day, params.esp),
         render: (chart, data, colors, seriesMap) => this.renderDPO(chart, data, colors, seriesMap)
       },
       EOM: {
@@ -1203,7 +1238,7 @@ class MultiIndicatorSystem {
           render: (chart, data, colors, seriesMap) => this.renderEfficiencyRatio(chart, data, colors, seriesMap)
         },
         AccuDistLine: {
-          name: 'Accum Dist Line',
+          name: 'AccuDistLine(ADL)',
           type: 'volume',
           defaultParams: { esp: 9 },
           paramLabels: { esp: 'Smooth' },
@@ -3922,11 +3957,11 @@ class MultiIndicatorSystem {
     };
   }
   
+  // Wang's KD_KD smooths K and D by 2/3-1/3, i.e. a fixed %D of 3 - the only value this
+  // indicator offers (it is not editable), so dPeriod is not passed on.
   computeStochastic(data, kPeriod = 14, dPeriod = 3) {
-    const highs = data.map(d => d.high);
-    const lows = data.map(d => d.low);
-    const closes = data.map(d => d.close);
-    return computeStochastic(highs, lows, closes, kPeriod, dPeriod);
+    const { highs, lows, closes } = this.wangInputs(data);
+    return this.wangLines('KD_KD', [highs, lows, closes, kPeriod], { k: 'KD_K', d: 'KD_D' }, data.length);
   }
 
   // Wang KD - Uses Wang's KD computation method
@@ -3990,157 +4025,101 @@ class MultiIndicatorSystem {
   }
 
   // Wang Williams %R - Uses Wang's Williams %R computation method
-  computeWangWilliamsR(data, period = 14) {
-    if (!data || data.length < period) {
-      console.warn('Wang %R: Insufficient data', { dataLength: data?.length, period });
-      return [];
-    }
-
-    const highs = data.map(d => d.high);
-    const lows = data.map(d => d.low);
-    const closes = data.map(d => d.close);
-
-    // Use WangIndicators if available
-    if (typeof window !== 'undefined' && window.WangIndicators && window.WangIndicators.computeWilliamsR) {
-      const result = window.WangIndicators.computeWilliamsR(highs, lows, closes, period);
-      // Convert to -100 to 0 scale (standard Williams %R) but preserve array alignment
-      const wrValues = result.map(v => {
-        if (v === null || isNaN(v) || !isFinite(v)) return null;
-        return v - 100; // Convert from 0-100 to -100 to 0 scale
-      });
-      console.log(`Wang %R computed: length=${wrValues.length}`);
-      return wrValues;
-    }
-
-    // Fallback implementation
-    const wr = new Array(closes.length).fill(null);
-    
-    for (let i = period - 1; i < closes.length; i++) {
-      let maxH = -Infinity;
-      let minL = Infinity;
-      
-      for (let j = 0; j < period; j++) {
-        if (highs[i - j] > maxH) maxH = highs[i - j];
-        if (lows[i - j] < minL) minL = lows[i - j];
-      }
-      
-      if (maxH === minL) {
-        wr[i] = 0; // Will be converted to -100
-      } else {
-        wr[i] = ((maxH - closes[i]) / (maxH - minL)) * 100;
-      }
-    }
-
-    // Convert to -100 to 0 scale but preserve array alignment
-    const wrValues = wr.map(v => {
-      if (v === null || isNaN(v) || !isFinite(v)) return null;
-      return v - 100; // Convert from 0-100 to -100 to 0 scale
-    });
-    
-    console.log(`Wang %R computed (fallback): length=${wrValues.length}`);
-    return wrValues;
+  // Calls Prof. Wang's window[fnName](...args) (technical-indicators.prods__Wang__2026.js)
+  // and returns { appKey: values } for each [appKey, wangKey] in `pick`, cut to `len` bars
+  // with non-finite values as null - the cut also drops the extra slot his loops that run
+  // to i<=length leave at the end. His file is the only source for these indicators: there
+  // is no fallback formula, so a missing or broken function draws blank lines and logs an
+  // error instead of quietly drawing different math.
+  wangLines(fnName, args, pick, len) {
+    return this.wangPick(this.wangCall(fnName, args), pick, len);
   }
 
-  // New KD Indicator - Computes K2 and D2 using exponential smoothing
-  // Simplified implementation based on the original algorithm
-  computeNewKD(data, kdDay = 9, kd2Day = 9) {
-    if (!data || data.length < kdDay) {
-      console.warn('New KD: Insufficient data', { dataLength: data?.length, kdDay, kd2Day });
-      return { K: [], D: [], K2: [], D2: [] };
+  // The raw result of window[fnName](...args), or {} (with a console error) if it is
+  // missing or throws. For results that are not all arrays (KingMA returns one array;
+  // BBI3 also returns RR numbers).
+  wangCall(fnName, args) {
+    const fn = typeof window !== 'undefined' ? window[fnName] : null;
+    if (typeof fn !== 'function') {
+      console.error(`Prof. Wang's ${fnName}() is not loaded`);
+      return {};
     }
-
-    const highs = data.map(d => d.high);
-    const lows = data.map(d => d.low);
-    const closes = data.map(d => d.close);
-    const n = closes.length;
-
-    // Initialize arrays
-    const KD_K = new Array(n).fill(null);
-    const KD_D = new Array(n).fill(null);
-    const K2 = new Array(n).fill(null);
-    const D2 = new Array(n).fill(null);
-
-    // Compute traditional KD first
-    // Start from index kdDay-1 (first valid KD calculation)
-    for (let i = kdDay - 1; i < n; i++) {
-      // Find max high and min low in the period window [i-kdDay+1 to i]
-      let KD_max = -Infinity;
-      let KD_min = Infinity;
-
-      for (let j = i - kdDay + 1; j <= i; j++) {
-        if (j >= 0 && j < n) {
-          if (highs[j] > KD_max) KD_max = highs[j];
-          if (lows[j] < KD_min) KD_min = lows[j];
-        }
-      }
-
-      // Calculate RSV
-      let RSV;
-      if (KD_max === KD_min) {
-        RSV = 100;
-      } else {
-        RSV = ((closes[i] - KD_min) / (KD_max - KD_min)) * 100;
-      }
-
-      // Initialize KD values at first valid point
-      if (i === kdDay - 1) {
-        KD_K[i] = 50;
-        KD_D[i] = 50;
-      } else {
-        // Traditional KD: K = 2/3 * K_prev + 1/3 * RSV
-        KD_K[i] = (2/3) * KD_K[i - 1] + (1/3) * RSV;
-        // D = 2/3 * D_prev + 1/3 * K
-        KD_D[i] = (2/3) * KD_D[i - 1] + (1/3) * KD_K[i];
-      }
-
-      // Compute K2 and D2 using exponential smoothing
-      if (i === kdDay - 1) {
-        // Initialize K2 and D2 equal to KD values
-        K2[i] = KD_K[i];
-        D2[i] = KD_D[i];
-      } else {
-        // K2 = (n-1)/(n+1) * K2_prev + 2/(n+1) * KD_K
-        const k2Factor = (kd2Day - 1) / (kd2Day + 1);
-        const k2NewFactor = 2 / (kd2Day + 1);
-        K2[i] = k2Factor * K2[i - 1] + k2NewFactor * KD_K[i];
-        D2[i] = k2Factor * D2[i - 1] + k2NewFactor * KD_D[i];
-      }
+    try {
+      return fn(...args) || {};
+    } catch (e) {
+      console.error(`Prof. Wang's ${fnName}() threw:`, e);
+      return {};
     }
+  }
 
-    // Return all 4 arrays aligned with chartData (preserve nulls for alignment)
-    // K and D from original KD, K2 and D2 from exponential smoothing
-    console.log(`New KD computed: K length=${KD_K.length}, D length=${KD_D.length}, K2 length=${K2.length}, D2 length=${D2.length}, n=${n}`);
-    
-    // Get valid counts for logging
-    const validK = KD_K.filter(v => v !== null && !isNaN(v) && isFinite(v));
-    const validD = KD_D.filter(v => v !== null && !isNaN(v) && isFinite(v));
-    const validK2 = K2.filter(v => v !== null && !isNaN(v) && isFinite(v));
-    const validD2 = D2.filter(v => v !== null && !isNaN(v) && isFinite(v));
-    
-    if (validK.length > 0) {
-      console.log(`New KD sample: K[0]=${validK[0].toFixed(2)}, D[0]=${validD[0].toFixed(2)}, K2[0]=${validK2[0].toFixed(2)}, D2[0]=${validD2[0].toFixed(2)}`);
-    }
-    
+  wangPick(raw, pick, len) {
+    const out = {};
+    Object.entries(pick).forEach(([key, src]) => {
+      const values = Array.isArray(raw) && src == null ? raw : raw[src];
+      out[key] = new Array(len).fill(null);
+      if (!Array.isArray(values)) return;
+      for (let i = 0; i < len; i++) {
+        const v = values[i];
+        out[key][i] = v != null && Number.isFinite(v) ? v : null;
+      }
+    });
+    return out;
+  }
+
+  // Candle fields as the plain arrays the Wang functions take.
+  wangInputs(data) {
     return {
-      K: KD_K,   // Original KD K line
-      D: KD_D,   // Original KD D line
-      K2: K2,    // Exponential smoothed K2 line
-      D2: D2     // Exponential smoothed D2 line
+      opens: data.map(d => d.open),
+      highs: data.map(d => d.high),
+      lows: data.map(d => d.low),
+      closes: data.map(d => d.close),
+      volumes: data.map(d => d.volume ?? d.vol ?? 0),
     };
   }
 
+  // BBI3/BBI4/BBI5 and their RR twins (which draw the same thing): the BBI line and its
+  // RR / Acc_RR / BS_times trade stats from Wang's BBI<n>(), the dashed MA lines from
+  // his KingMA().
+  wangBBI(data, days) {
+    const { closes } = this.wangInputs(data);
+    const len = data.length;
+    const n = days.length;
+    const raw = this.wangCall('BBI' + n, [closes, ...days]);
+    const out = this.wangPick(raw, { ['bbi' + n]: 'BBI' + n }, len);
+    days.forEach((day, i) => Object.assign(out, this.wangPick(this.wangCall('KingMA', [closes, day]), { ['ma' + (i + 1)]: null }, len)));
+    out.RR = Number.isFinite(raw.RR) ? raw.RR : 0;
+    out.Acc_RR = Number.isFinite(raw.Acc_RR) ? raw.Acc_RR : 0;
+    out.BS_times = Number.isFinite(raw.BS_times) ? raw.BS_times : 0;
+    return out;
+  }
+
+  // Wang's WilliamR() is (Hn-C)/(Hn-Ln)*100 on 0..100; drawn as before, shifted to -100..0.
+  computeWangWilliamsR(data, period = 14) {
+    const { highs, lows, closes } = this.wangInputs(data);
+    const { wr } = this.wangLines('WilliamR', [highs, lows, closes, period], { wr: 'WilliamR' }, data.length);
+    return wr.map(v => (v == null ? null : v - 100));
+  }
+
+  // K/D from Wang's KD_KD; K2/D2 (K and D smoothed again by kd2Day) from his KD_K2D2.
+  computeNewKD(data, kdDay = 9, kd2Day = 9) {
+    const { highs, lows, closes } = this.wangInputs(data);
+    const len = data.length;
+    return {
+      ...this.wangLines('KD_KD', [highs, lows, closes, kdDay], { K: 'KD_K', D: 'KD_D' }, len),
+      ...this.wangLines('KD_K2D2', [highs, lows, closes, kdDay, kd2Day], { K2: 'KD_K2', D2: 'KD_D2' }, len),
+    };
+  }
+
+  // Standard Williams %R (-100..0): minus Wang's WilliamR, which is (Hn-C)/(Hn-Ln)*100.
   computeWilliamsR(data, period = 14) {
-    const highs = data.map(d => d.high);
-    const lows = data.map(d => d.low);
-    const closes = data.map(d => d.close);
-    return computeWilliamsR(highs, lows, closes, period);
+    const { highs, lows, closes } = this.wangInputs(data);
+    const { wr } = this.wangLines('WilliamR', [highs, lows, closes, period], { wr: 'WilliamR' }, data.length);
+    return wr.map(v => (v == null ? null : -v));
   }
 
   computeCCI(data, period = 20) {
-    const highs = data.map(d => d.high);
-    const lows = data.map(d => d.low);
-    const closes = data.map(d => d.close);
-    return computeCCI(highs, lows, closes, period);
+    const { highs, lows, closes } = this.wangInputs(data);
+    return this.wangLines('CCI', [highs, lows, closes, period], { cci: 'CCI' }, data.length).cci;
   }
 
   computeMFI(data, period = 14) {
@@ -4218,28 +4197,16 @@ class MultiIndicatorSystem {
     return computeADX(highs, lows, closes, period);
   }
 
+  // Wang's Momentum(): MTM = C(t)/C(t-n+1)*100.
   computeMomentum(data, period = 10) {
-    const closes = data.map(d => d.close);
-    const momentum = [];
-    
-    for (let i = period; i < closes.length; i++) {
-      momentum.push(closes[i] - closes[i - period]);
-    }
-    
-    return momentum;
+    const { closes } = this.wangInputs(data);
+    return this.wangLines('Momentum', [closes, period, 9], { mtm: 'MTM' }, data.length).mtm;
   }
 
+  // Wang's ROC(): (C(t)-C(t-n+1))/C(t-n+1)*100.
   computeROC(data, period = 10) {
-    const closes = data.map(d => d.close);
-    const roc = [];
-    
-    for (let i = period; i < closes.length; i++) {
-      const current = closes[i];
-      const past = closes[i - period];
-      roc.push(((current - past) / past) * 100);
-    }
-    
-    return roc;
+    const { closes } = this.wangInputs(data);
+    return this.wangLines('ROC', [closes, period, 9], { roc: 'ROC' }, data.length).roc;
   }
 
   computeCoppockCurve(data, short_day = 10, long_day = 20, weight_day = 10) {
@@ -4276,25 +4243,11 @@ class MultiIndicatorSystem {
     return { volumes, volMA };
   }
 
+  // Wang's OBV() weights each day's volume by where the close sits in the day's range,
+  // (2C-H-L)/(H-L), instead of adding or subtracting all of it.
   computeOBV(data) {
-    const obv = [0];
-
-    for (let i = 1; i < data.length; i++) {
-      const prevObv = obv[i - 1];
-      const volume = data[i].volume || 0;
-      const close = data[i].close;
-      const prevClose = data[i - 1].close;
-
-      if (close > prevClose) {
-        obv.push(prevObv + volume);
-      } else if (close < prevClose) {
-        obv.push(prevObv - volume);
-      } else {
-        obv.push(prevObv);
-      }
-    }
-
-    return obv;
+    const { highs, lows, closes, volumes } = this.wangInputs(data);
+    return this.wangLines('OBV', [highs, lows, closes, volumes, 9], { obv: 'OBV' }, data.length).obv;
   }
 
   computeMA(data, period = 20, type = 'SMA') {
@@ -4328,19 +4281,15 @@ class MultiIndicatorSystem {
   }
 
   computeARBRIndicator(data, period = 26) {
-    const highs = data.map(d => d.high);
-    const lows = data.map(d => d.low);
-    const opens = data.map(d => d.open);
-    const closes = data.map(d => d.close);
-    return computeARBR(highs, lows, opens, closes, period);
+    const { opens, highs, lows, closes } = this.wangInputs(data);
+    // Wang's AR/BR are ratios (1 = neutral); drawn as percentages like before, so the 100 level still applies.
+    const { ar, br } = this.wangLines('ARBR', [opens, highs, lows, closes, period], { ar: 'AR', br: 'BR' }, data.length);
+    const pct = (v) => (v == null ? null : v * 100);
+    return { ar: ar.map(pct), br: br.map(pct) };
   }
 
   computeSYARBRIndicator(data, period = 26) {
-    const highs = data.map(d => d.high);
-    const lows = data.map(d => d.low);
-    const opens = data.map(d => d.open);
-    const closes = data.map(d => d.close);
-    return computeARBR(highs, lows, opens, closes, period);
+    return this.computeARBRIndicator(data, period);
   }
 
   computeCRIndicator(data, period = 26) {
@@ -4349,18 +4298,12 @@ class MultiIndicatorSystem {
     return computeCR(highs, lows, period);
   }
 
+  // Wang's CR() is one period; called once per line.
   computeDualCR(data, periodA = 10, periodB = 26) {
-    const highs = data.map(d => d.high);
-    const lows = data.map(d => d.low);
-    const crA = computeCR(highs, lows, periodA);
-    const crB = computeCR(highs, lows, periodB);
-    
-    return {
-      crA: crA,
-      crB: crB,
-      periodA: periodA,
-      periodB: periodB
-    };
+    const { highs, lows, closes } = this.wangInputs(data);
+    // Wang's CR is a ratio (1 = neutral); drawn as a percentage like before, so the 100 level still applies.
+    const cr = (period) => this.wangLines('CR', [highs, lows, closes, period, 9], { cr: 'CR' }, data.length).cr.map(v => (v == null ? null : v * 100));
+    return { crA: cr(periodA), crB: cr(periodB), periodA, periodB };
   }
 
   computeBBIIndicator(data, periods = { short: 3, shortMed: 6, medLong: 12, long: 24 }) {
@@ -4540,591 +4483,58 @@ class MultiIndicatorSystem {
 
   // New Indicator Compute Methods
   computeBBI3(data, day1, day2, day3) {
-    const closes = data.map(d => d.close);
-    const MA1 = this.computeSMA(closes, day1);
-    const MA2 = this.computeSMA(closes, day2);
-    const MA3 = this.computeSMA(closes, day3);
-    
-    const maxDay = Math.max(day1, day2, day3);
-    const result = [];
-    const startIndex = maxDay - 1;
-    
-    // Calculate the index offsets for each MA array
-    const offset1 = startIndex - (day1 - 1);
-    const offset2 = startIndex - (day2 - 1);
-    const offset3 = startIndex - (day3 - 1);
-    
-    for (let i = 0; i < closes.length - startIndex; i++) {
-      const ma1Val = MA1[offset1 + i];
-      const ma2Val = MA2[offset2 + i];
-      const ma3Val = MA3[offset3 + i];
-      
-      if (ma1Val !== undefined && ma2Val !== undefined && ma3Val !== undefined) {
-        result.push((ma1Val + ma2Val + ma3Val) / 3);
-      }
-    }
-    
-    // Compute RR (Rate-of-Return), Acc_RR (Accumulate Rate-of-Return), and BS_times (Buy/Sell times)
-    // Designed by Prof Wang 2026-Nov-30
-    let RR = 0;
-    let Acc_RR = 0;
-    let buy_price = 0;
-    let BS_times = 0; // Buy and Sell times - cumulative buy/sell count
-    
-    // Check if buy point already occurred at start
-    if (result.length > 0 && closes.length > startIndex) {
-      const bbiStart = result[0];
-      const closeStart = closes[startIndex];
-      if (bbiStart < closeStart) {
-        buy_price = closeStart;
-      }
-    }
-    
-    // Calculate buy/sell signals and returns
-    for (let i = 1; i < result.length; i++) {
-      const bbiPrev = result[i - 1];
-      const bbiCurr = result[i];
-      const closePrev = closes[startIndex + i - 1];
-      const closeCurr = closes[startIndex + i];
-      
-      // Buy signal: BBI crosses below price (price crosses above BBI)
-      if (bbiPrev > closePrev && bbiCurr < closeCurr) {
-        buy_price = closeCurr;
-      }
-      // Sell signal: BBI crosses above price (price crosses below BBI)
-      else if (bbiPrev < closePrev && bbiCurr > closeCurr) {
-        if (buy_price > 0) {
-          RR = (closeCurr - buy_price) / buy_price * 100;
-          Acc_RR = Acc_RR + RR;
-          BS_times = BS_times + 1;
-        }
-      }
-    }
-    
-    return { 
-      bbi3: result, 
-      ma1: MA1, 
-      ma2: MA2, 
-      ma3: MA3, 
-      startIndex,
-      RR: RR,
-      Acc_RR: Acc_RR,
-      BS_times: BS_times
-    };
+    return this.wangBBI(data, [day1, day2, day3]);
   }
 
   computeBBI4(data, day1, day2, day3, day4) {
-    const closes = data.map(d => d.close);
-    const MA1 = this.computeSMA(closes, day1);
-    const MA2 = this.computeSMA(closes, day2);
-    const MA3 = this.computeSMA(closes, day3);
-    const MA4 = this.computeSMA(closes, day4);
-    
-    const maxDay = Math.max(day1, day2, day3, day4);
-    const result = [];
-    const startIndex = maxDay - 1;
-    
-    const offset1 = startIndex - (day1 - 1);
-    const offset2 = startIndex - (day2 - 1);
-    const offset3 = startIndex - (day3 - 1);
-    const offset4 = startIndex - (day4 - 1);
-    
-    for (let i = 0; i < closes.length - startIndex; i++) {
-      const ma1Val = MA1[offset1 + i];
-      const ma2Val = MA2[offset2 + i];
-      const ma3Val = MA3[offset3 + i];
-      const ma4Val = MA4[offset4 + i];
-      
-      if (ma1Val !== undefined && ma2Val !== undefined && ma3Val !== undefined && ma4Val !== undefined) {
-        result.push((ma1Val + ma2Val + ma3Val + ma4Val) / 4);
-      }
-    }
-    
-    // Compute RR (Rate-of-Return), Acc_RR (Accumulate Rate-of-Return), and BS_times (Buy/Sell times)
-    // Designed by Prof Wang 2026-Jan-12
-    let RR = 0;
-    let Acc_RR = 0;
-    let buy_price = 0;
-    let BS_times = 0; // Buy and Sell times - cumulative buy/sell count
-    
-    // Check if buy point already occurred at start
-    if (result.length > 0 && closes.length > startIndex) {
-      const bbiStart = result[0];
-      const closeStart = closes[startIndex];
-      if (bbiStart < closeStart) {
-        buy_price = closeStart;
-      }
-    }
-    
-    // Calculate buy/sell signals and returns
-    for (let i = 1; i < result.length; i++) {
-      const bbiPrev = result[i - 1];
-      const bbiCurr = result[i];
-      const closePrev = closes[startIndex + i - 1];
-      const closeCurr = closes[startIndex + i];
-      
-      // Buy signal: BBI crosses below price (price crosses above BBI)
-      if (bbiPrev > closePrev && bbiCurr < closeCurr) {
-        buy_price = closeCurr;
-      }
-      // Sell signal: BBI crosses above price (price crosses below BBI)
-      else if (bbiPrev < closePrev && bbiCurr > closeCurr) {
-        if (buy_price > 0) {
-          RR = (closeCurr - buy_price) / buy_price * 100;
-          Acc_RR = Acc_RR + RR;
-          BS_times = BS_times + 1;
-        }
-      }
-    }
-    
-    return { 
-      bbi4: result, 
-      ma1: MA1, 
-      ma2: MA2, 
-      ma3: MA3, 
-      ma4: MA4, 
-      startIndex,
-      RR: RR,
-      Acc_RR: Acc_RR,
-      BS_times: BS_times
-    };
+    return this.wangBBI(data, [day1, day2, day3, day4]);
   }
 
   computeBBI5(data, day1, day2, day3, day4, day5) {
-    const closes = data.map(d => d.close);
-    const MA1 = this.computeSMA(closes, day1);
-    const MA2 = this.computeSMA(closes, day2);
-    const MA3 = this.computeSMA(closes, day3);
-    const MA4 = this.computeSMA(closes, day4);
-    const MA5 = this.computeSMA(closes, day5);
-    
-    const maxDay = Math.max(day1, day2, day3, day4, day5);
-    const result = [];
-    const startIndex = maxDay - 1;
-    
-    const offset1 = startIndex - (day1 - 1);
-    const offset2 = startIndex - (day2 - 1);
-    const offset3 = startIndex - (day3 - 1);
-    const offset4 = startIndex - (day4 - 1);
-    const offset5 = startIndex - (day5 - 1);
-    
-    for (let i = 0; i < closes.length - startIndex; i++) {
-      const ma1Val = MA1[offset1 + i];
-      const ma2Val = MA2[offset2 + i];
-      const ma3Val = MA3[offset3 + i];
-      const ma4Val = MA4[offset4 + i];
-      const ma5Val = MA5[offset5 + i];
-      
-      if (ma1Val !== undefined && ma2Val !== undefined && ma3Val !== undefined && 
-          ma4Val !== undefined && ma5Val !== undefined) {
-        result.push((ma1Val + ma2Val + ma3Val + ma4Val + ma5Val) / 5);
-      }
-    }
-    
-    // Compute RR (Rate-of-Return), Acc_RR (Accumulate Rate-of-Return), and BS_times (Buy/Sell times)
-    // Designed by Prof Wang 2026-Jan-12
-    let RR = 0;
-    let Acc_RR = 0;
-    let buy_price = 0;
-    let BS_times = 0; // Buy and Sell times - cumulative buy/sell count
-    
-    // Check if buy point already occurred at start
-    if (result.length > 0 && closes.length > startIndex) {
-      const bbiStart = result[0];
-      const closeStart = closes[startIndex];
-      if (bbiStart < closeStart) {
-        buy_price = closeStart;
-      }
-    }
-    
-    // Calculate buy/sell signals and returns
-    for (let i = 1; i < result.length; i++) {
-      const bbiPrev = result[i - 1];
-      const bbiCurr = result[i];
-      const closePrev = closes[startIndex + i - 1];
-      const closeCurr = closes[startIndex + i];
-      
-      // Buy signal: BBI crosses below price (price crosses above BBI)
-      if (bbiPrev > closePrev && bbiCurr < closeCurr) {
-        buy_price = closeCurr;
-      }
-      // Sell signal: BBI crosses above price (price crosses below BBI)
-      else if (bbiPrev < closePrev && bbiCurr > closeCurr) {
-        if (buy_price > 0) {
-          RR = (closeCurr - buy_price) / buy_price * 100;
-          Acc_RR = Acc_RR + RR;
-          BS_times = BS_times + 1;
-        }
-      }
-    }
-    
-    return { 
-      bbi5: result, 
-      ma1: MA1, 
-      ma2: MA2, 
-      ma3: MA3, 
-      ma4: MA4, 
-      ma5: MA5, 
-      startIndex,
-      RR: RR,
-      Acc_RR: Acc_RR,
-      BS_times: BS_times
-    };
+    return this.wangBBI(data, [day1, day2, day3, day4, day5]);
   }
 
   // New BBI indicators with Rate of Return (separate from BBI3/BBI4/BBI5)
   computeBBI3RR(data, day1, day2, day3) {
-    const closes = data.map(d => d.close);
-    const MA1 = this.computeSMA(closes, day1);
-    const MA2 = this.computeSMA(closes, day2);
-    const MA3 = this.computeSMA(closes, day3);
-    
-    const maxDay = Math.max(day1, day2, day3);
-    const result = [];
-    const startIndex = maxDay - 1;
-    
-    // Calculate the index offsets for each MA array
-    const offset1 = startIndex - (day1 - 1);
-    const offset2 = startIndex - (day2 - 1);
-    const offset3 = startIndex - (day3 - 1);
-    
-    for (let i = 0; i < closes.length - startIndex; i++) {
-      const ma1Val = MA1[offset1 + i];
-      const ma2Val = MA2[offset2 + i];
-      const ma3Val = MA3[offset3 + i];
-      
-      if (ma1Val !== undefined && ma2Val !== undefined && ma3Val !== undefined) {
-        result.push((ma1Val + ma2Val + ma3Val) / 3);
-      }
-    }
-    
-    // Compute RR (Rate-of-Return), Acc_RR (Accumulate Rate-of-Return), and BS_times (Buy/Sell times)
-    // Designed by Prof Wang 2026-Nov-30
-    let RR = 0;
-    let Acc_RR = 0;
-    let buy_price = 0;
-    let BS_times = 0; // Buy and Sell times - cumulative buy/sell count
-    
-    // Check if buy point already occurred at start
-    if (result.length > 0 && closes.length > startIndex) {
-      const bbiStart = result[0];
-      const closeStart = closes[startIndex];
-      if (bbiStart < closeStart) {
-        buy_price = closeStart;
-      }
-    }
-    
-    // Calculate buy/sell signals and returns
-    for (let i = 1; i < result.length; i++) {
-      const bbiPrev = result[i - 1];
-      const bbiCurr = result[i];
-      const closePrev = closes[startIndex + i - 1];
-      const closeCurr = closes[startIndex + i];
-      
-      // Buy signal: BBI crosses below price (price crosses above BBI)
-      if (bbiPrev > closePrev && bbiCurr < closeCurr) {
-        buy_price = closeCurr;
-      }
-      // Sell signal: BBI crosses above price (price crosses below BBI)
-      else if (bbiPrev < closePrev && bbiCurr > closeCurr) {
-        if (buy_price > 0) {
-          RR = (closeCurr - buy_price) / buy_price * 100;
-          Acc_RR = Acc_RR + RR;
-          BS_times = BS_times + 1;
-        }
-      }
-    }
-    
-    return { 
-      bbi3: result, 
-      ma1: MA1, 
-      ma2: MA2, 
-      ma3: MA3, 
-      startIndex,
-      RR: RR,
-      Acc_RR: Acc_RR,
-      BS_times: BS_times
-    };
+    return this.wangBBI(data, [day1, day2, day3]);
   }
 
   computeBBI4RR(data, day1, day2, day3, day4) {
-    const closes = data.map(d => d.close);
-    const MA1 = this.computeSMA(closes, day1);
-    const MA2 = this.computeSMA(closes, day2);
-    const MA3 = this.computeSMA(closes, day3);
-    const MA4 = this.computeSMA(closes, day4);
-    
-    const maxDay = Math.max(day1, day2, day3, day4);
-    const result = [];
-    const startIndex = maxDay - 1;
-    
-    const offset1 = startIndex - (day1 - 1);
-    const offset2 = startIndex - (day2 - 1);
-    const offset3 = startIndex - (day3 - 1);
-    const offset4 = startIndex - (day4 - 1);
-    
-    for (let i = 0; i < closes.length - startIndex; i++) {
-      const ma1Val = MA1[offset1 + i];
-      const ma2Val = MA2[offset2 + i];
-      const ma3Val = MA3[offset3 + i];
-      const ma4Val = MA4[offset4 + i];
-      
-      if (ma1Val !== undefined && ma2Val !== undefined && ma3Val !== undefined && ma4Val !== undefined) {
-        result.push((ma1Val + ma2Val + ma3Val + ma4Val) / 4);
-      }
-    }
-    
-    // Compute RR (Rate-of-Return), Acc_RR (Accumulate Rate-of-Return), and BS_times (Buy/Sell times)
-    // Designed by Prof Wang 2026-Jan-12
-    let RR = 0;
-    let Acc_RR = 0;
-    let buy_price = 0;
-    let BS_times = 0; // Buy and Sell times - cumulative buy/sell count
-    
-    // Check if buy point already occurred at start
-    if (result.length > 0 && closes.length > startIndex) {
-      const bbiStart = result[0];
-      const closeStart = closes[startIndex];
-      if (bbiStart < closeStart) {
-        buy_price = closeStart;
-      }
-    }
-    
-    // Calculate buy/sell signals and returns
-    for (let i = 1; i < result.length; i++) {
-      const bbiPrev = result[i - 1];
-      const bbiCurr = result[i];
-      const closePrev = closes[startIndex + i - 1];
-      const closeCurr = closes[startIndex + i];
-      
-      // Buy signal: BBI crosses below price (price crosses above BBI)
-      if (bbiPrev > closePrev && bbiCurr < closeCurr) {
-        buy_price = closeCurr;
-      }
-      // Sell signal: BBI crosses above price (price crosses below BBI)
-      else if (bbiPrev < closePrev && bbiCurr > closeCurr) {
-        if (buy_price > 0) {
-          RR = (closeCurr - buy_price) / buy_price * 100;
-          Acc_RR = Acc_RR + RR;
-          BS_times = BS_times + 1;
-        }
-      }
-    }
-    
-    return { 
-      bbi4: result, 
-      ma1: MA1, 
-      ma2: MA2, 
-      ma3: MA3, 
-      ma4: MA4, 
-      startIndex,
-      RR: RR,
-      Acc_RR: Acc_RR,
-      BS_times: BS_times
-    };
+    return this.wangBBI(data, [day1, day2, day3, day4]);
   }
 
   computeBBI5RR(data, day1, day2, day3, day4, day5) {
-    const closes = data.map(d => d.close);
-    const MA1 = this.computeSMA(closes, day1);
-    const MA2 = this.computeSMA(closes, day2);
-    const MA3 = this.computeSMA(closes, day3);
-    const MA4 = this.computeSMA(closes, day4);
-    const MA5 = this.computeSMA(closes, day5);
-    
-    const maxDay = Math.max(day1, day2, day3, day4, day5);
-    const result = [];
-    const startIndex = maxDay - 1;
-    
-    const offset1 = startIndex - (day1 - 1);
-    const offset2 = startIndex - (day2 - 1);
-    const offset3 = startIndex - (day3 - 1);
-    const offset4 = startIndex - (day4 - 1);
-    const offset5 = startIndex - (day5 - 1);
-    
-    for (let i = 0; i < closes.length - startIndex; i++) {
-      const ma1Val = MA1[offset1 + i];
-      const ma2Val = MA2[offset2 + i];
-      const ma3Val = MA3[offset3 + i];
-      const ma4Val = MA4[offset4 + i];
-      const ma5Val = MA5[offset5 + i];
-      
-      if (ma1Val !== undefined && ma2Val !== undefined && ma3Val !== undefined && 
-          ma4Val !== undefined && ma5Val !== undefined) {
-        result.push((ma1Val + ma2Val + ma3Val + ma4Val + ma5Val) / 5);
-      }
-    }
-    
-    // Compute RR (Rate-of-Return), Acc_RR (Accumulate Rate-of-Return), and BS_times (Buy/Sell times)
-    // Designed by Prof Wang 2026-Jan-12
-    let RR = 0;
-    let Acc_RR = 0;
-    let buy_price = 0;
-    let BS_times = 0; // Buy and Sell times - cumulative buy/sell count
-    
-    // Check if buy point already occurred at start
-    if (result.length > 0 && closes.length > startIndex) {
-      const bbiStart = result[0];
-      const closeStart = closes[startIndex];
-      if (bbiStart < closeStart) {
-        buy_price = closeStart;
-      }
-    }
-    
-    // Calculate buy/sell signals and returns
-    for (let i = 1; i < result.length; i++) {
-      const bbiPrev = result[i - 1];
-      const bbiCurr = result[i];
-      const closePrev = closes[startIndex + i - 1];
-      const closeCurr = closes[startIndex + i];
-      
-      // Buy signal: BBI crosses below price (price crosses above BBI)
-      if (bbiPrev > closePrev && bbiCurr < closeCurr) {
-        buy_price = closeCurr;
-      }
-      // Sell signal: BBI crosses above price (price crosses below BBI)
-      else if (bbiPrev < closePrev && bbiCurr > closeCurr) {
-        if (buy_price > 0) {
-          RR = (closeCurr - buy_price) / buy_price * 100;
-          Acc_RR = Acc_RR + RR;
-          BS_times = BS_times + 1;
-        }
-      }
-    }
-    
-    return { 
-      bbi5: result, 
-      ma1: MA1, 
-      ma2: MA2, 
-      ma3: MA3, 
-      ma4: MA4, 
-      ma5: MA5, 
-      startIndex,
-      RR: RR,
-      Acc_RR: Acc_RR,
-      BS_times: BS_times
-    };
+    return this.wangBBI(data, [day1, day2, day3, day4, day5]);
   }
 
   computeOSC(data, period) {
-    const closes = data.map(d => d.close);
-    const MA = this.computeSMA(closes, period);
-    
-    const osc1 = []; // Price - MA (absolute difference)
-    const osc2 = []; // Price / MA (ratio)
-    const startIndex = period - 1;
-    
-    for (let i = 0; i < MA.length; i++) {
-      const price = closes[startIndex + i];
-      const ma = MA[i];
-      
-      osc1.push(price - ma);
-      osc2.push(ma !== 0 ? (price / ma) : 1);
-    }
-    
-    return { osc1, osc2, startIndex };
+    const { closes } = this.wangInputs(data);
+    return this.wangLines('OSC', [closes, period], { osc1: 'OSC1', osc2: 'OSC2' }, data.length);
   }
 
+  // Wang's BIAS() is one period; called once per line.
   computeBIAS(data, day1, day2) {
-    const closes = data.map(d => d.close);
-    const MA1 = this.computeSMA(closes, day1);
-    const MA2 = this.computeSMA(closes, day2);
-    
-    const bias1 = [];
-    const bias2 = [];
-    
-    // BIAS1 = (Close / MA1 - 1) * 100
-    for (let i = 0; i < MA1.length; i++) {
-      const price = closes[day1 - 1 + i];
-      const ma = MA1[i];
-      bias1.push(ma !== 0 ? ((price / ma) - 1) * 100 : 0);
-    }
-    
-    // BIAS2 = (Close / MA2 - 1) * 100
-    for (let i = 0; i < MA2.length; i++) {
-      const price = closes[day2 - 1 + i];
-      const ma = MA2[i];
-      bias2.push(ma !== 0 ? ((price / ma) - 1) * 100 : 0);
-    }
-    
-    return { bias1, bias2, startIndex1: day1 - 1, startIndex2: day2 - 1 };
+    const { closes } = this.wangInputs(data);
+    const bias = (day) => this.wangLines('BIAS', [closes, day, 9], { bias: 'BIAS' }, data.length).bias;
+    return { bias1: bias(day1), bias2: bias(day2) };
   }
 
   computeMBIAS(data, day1, day2) {
-    const closes = data.map(d => d.close);
-    const MA1 = this.computeSMA(closes, day1);
-    const MA2 = this.computeSMA(closes, day2);
-    
-    const mbias = [];
-    const maxDay = Math.max(day1, day2);
-    const startIndex = maxDay - 1;
-    
-    // Calculate offset for alignment
-    const offset1 = startIndex - (day1 - 1);
-    const offset2 = startIndex - (day2 - 1);
-    
-    // MBIAS = MA_short - MA_long (typically MA1 - MA2 if day1 < day2)
-    const minLength = Math.min(MA1.length - offset1, MA2.length - offset2);
-    
-    for (let i = 0; i < minLength; i++) {
-      const ma1Val = MA1[offset1 + i];
-      const ma2Val = MA2[offset2 + i];
-      
-      if (ma1Val !== undefined && ma2Val !== undefined) {
-        mbias.push(ma1Val - ma2Val);
-      }
-    }
-    
-    return { mbias, startIndex };
+    const { closes } = this.wangInputs(data);
+    return this.wangLines('MABIAS', [closes, day1, day2, 9], { mbias: 'MABIAS' }, data.length);
   }
 
   computeUOSC(data, maPeriod, oscPeriod) {
-    const closes = data.map(d => d.close);
-    const MA = this.computeSMA(closes, maPeriod);
-    
-    // First compute OSC values
-    const osc1 = [];
-    const osc2 = [];
-    const oscStartIndex = maPeriod - 1;
-    
-    for (let i = 0; i < MA.length; i++) {
-      const price = closes[oscStartIndex + i];
-      const ma = MA[i];
-      
-      osc1.push(price - ma);
-      osc2.push(ma !== 0 ? (price / ma) : 1);
-    }
-    
-    // Then compute moving average of OSC values (UOSC)
-    const uosc1 = [];
-    const uosc2 = [];
-    
-    if (osc1.length >= oscPeriod) {
-      for (let i = oscPeriod - 1; i < osc1.length; i++) {
-        let sum1 = 0;
-        let sum2 = 0;
-        
-        for (let j = 0; j < oscPeriod; j++) {
-          sum1 += osc1[i - j];
-          sum2 += osc2[i - j];
-        }
-        
-        uosc1.push(sum1 / oscPeriod);
-        uosc2.push(sum2 / oscPeriod);
-      }
-    }
-    
-    return { 
-      uosc1, 
-      uosc2, 
-      startIndex: oscStartIndex + (oscPeriod - 1) 
-    };
+    const { closes } = this.wangInputs(data);
+    return this.wangLines('UOSC', [closes, maPeriod, oscPeriod], { uosc1: 'UOSC1', uosc2: 'UOSC2' }, data.length);
   }
 
   // MTM Indicator Computation
+  // Wang's Momentum() is one period; called once per line.
   computeMTMIndicator(data, day1, day2) {
-    const closes = data.map(d => d.close);
-    return computeMTM(closes, day1, day2);
+    const { closes } = this.wangInputs(data);
+    const mtm = (day) => this.wangLines('Momentum', [closes, day, 9], { mtm: 'MTM' }, data.length).mtm;
+    return { MTM1: mtm(day1), MTM2: mtm(day2) };
   }
 
   // ROC Indicator Computation
@@ -5216,10 +4626,10 @@ class MultiIndicatorSystem {
   }
 
   // DPO Indicator Computation
-  computeDPOIndicator(data, MA_day) {
+  computeDPOIndicator(data, MA_day, esp = 9) {
     const closes = data.map(d => d.close);
     if (typeof window.DPO === 'function') {
-      return window.DPO(closes, MA_day, 9);
+      return window.DPO(closes, MA_day, esp);  // esp was hardcoded 9 (Prof. Wang's note 2026-09-27, item 1)
     }
     return computeDPO(closes, MA_day);
   }
@@ -5246,7 +4656,10 @@ class MultiIndicatorSystem {
     const closes = data.map(d => d.close);
     const volumes = data.map(d => d.volume ?? d.vol ?? 0);
     if (typeof window.PriceVolumTrend === 'function') {
-      return window.PriceVolumTrend(closes, volumes, 9);
+      // PriceVolumTrend() loops to i<=length (one extra NaN slot); trim it so the
+      // registry's end-alignment does not shift both lines a bar left.
+      const { PVT, ePVT } = window.PriceVolumTrend(closes, volumes, 9);
+      return { PVT: PVT.slice(0, data.length), ePVT: ePVT.slice(0, data.length) };
     }
     return computePVT(closes, volumes);
   }
@@ -5267,94 +4680,37 @@ class MultiIndicatorSystem {
   }
 
   // ADI (Accumulation/Distribution Impulse) Indicator Computation
+  // `period` is the smoothing (esp) of ADIS = Wang's eADI. Note his argument order: C, L, H.
   computeADIIndicator(data, period = 14) {
-    const highs = data.map(d => d.high);
-    const lows = data.map(d => d.low);
-    const closes = data.map(d => d.close);
-    if (typeof computeADIRef === 'function') {
-      return computeADIRef(highs, lows, closes, period);
-    }
-    // Inline fallback: same logic as computeADIRef
-    const adi = new Array(closes.length).fill(null);
-    const adis = new Array(closes.length).fill(null);
-    if (!closes || closes.length < 2) return { adi, adis };
-    adi[0] = 0;
-    if (period > 0) adis[0] = adi[0];
-    for (let i = 1; i < closes.length; i++) {
-      if (closes[i] > closes[i - 1]) {
-        adi[i] = adi[i - 1] + (closes[i] - Math.min(lows[i], closes[i - 1]));
-      } else if (closes[i] < closes[i - 1]) {
-        adi[i] = adi[i - 1] - (Math.max(highs[i], closes[i - 1]) - closes[i]);
-      } else {
-        adi[i] = adi[i - 1];
-      }
-      if (period > 0) {
-        adis[i] = ((period - 1) / (period + 1)) * adi[i - 1] + (2 / (period + 1)) * adi[i];
-      }
-    }
-    return { adi, adis };
+    const { highs, lows, closes } = this.wangInputs(data);
+    return this.wangLines('AccuDistIndex', [closes, lows, highs, period], { adi: 'ADI', adis: 'eADI' }, data.length);
   }
 
  
 
   // ADO Indicator Computation
   computeADOIndicator(data) {
-    const highs = data.map(d => d.high);
-    const lows = data.map(d => d.low);
-    const opens = data.map(d => d.open);
-    const closes = data.map(d => d.close);
-    
-    if (!window.WangIndicators || !window.WangIndicators.computeADO) {
-      console.error('WangIndicators.computeADO not available');
-      return { ado: [] };
-    }
-    
-    const ado = window.WangIndicators.computeADO(opens, highs, lows, closes);
-    return { ado };
+    const { opens, highs, lows, closes } = this.wangInputs(data);
+    return this.wangLines('AccuDistOSC', [opens, highs, lows, closes, 9], { ado: 'ADO' }, data.length);
   }
 
   // VAO Indicator Computation
   computeVAOIndicator(data) {
-    const highs = data.map(d => d.high);
-    const lows = data.map(d => d.low);
-    const closes = data.map(d => d.close);
-    const volumes = data.map(d => d.volume ?? d.vol ?? 0);
-    
-    if (!window.WangIndicators || !window.WangIndicators.computeVAO) {
-      console.error('WangIndicators.computeVAO not available');
-      return { vao: [] };
-    }
-    
-    const vao = window.WangIndicators.computeVAO(highs, lows, closes, volumes);
-    return { vao };
+    const { highs, lows, closes, volumes } = this.wangInputs(data);
+    return this.wangLines('VolAccuDistOsc', [highs, lows, closes, volumes, 9], { vao: 'VolAccuDistOsc' }, data.length);
   }
 
   // HLO Indicator Computation
+  // `period` is the smoothing (esp) of HLOS = Wang's eHLO.
   computeHLOIndicator(data, period = 14) {
-    const highs = data.map(d => d.high);
-    const lows = data.map(d => d.low);
-    const closes = data.map(d => d.close);
-    
-    if (!window.WangIndicators || !window.WangIndicators.computeHLO) {
-      console.error('WangIndicators.computeHLO not available');
-      return { hlo: [], hlos: [] };
-    }
-    
-    const result = window.WangIndicators.computeHLO(highs, lows, closes, period);
-    return result;
+    const { highs, lows, closes } = this.wangInputs(data);
+    return this.wangLines('HighLowOsc', [highs, lows, closes, period], { hlo: 'HLO', hlos: 'eHLO' }, data.length);
   }
 
   // VHF Indicator Computation
   computeVHFIndicator(data, period = 14) {
-    const closes = data.map(d => d.close);
-    
-    if (!window.WangIndicators || !window.WangIndicators.computeVHF) {
-      console.error('WangIndicators.computeVHF not available');
-      return { vhf: [] };
-    }
-    
-    const vhf = window.WangIndicators.computeVHF(closes, period);
-    return { vhf };
+    const { closes } = this.wangInputs(data);
+    return this.wangLines('VertHoriFilter', [closes, period, 9], { vhf: 'VHF' }, data.length);
   }
 
   // RWI (Random Walk Index) — uses ATR-smoothed True Range and rolling high/low
@@ -5510,15 +4866,8 @@ class MultiIndicatorSystem {
 
   // VolMA Indicator Computation
   computeVolMAIndicator(data, period = 20) {
-    const volumes = data.map(d => d.volume ?? d.vol ?? 0);
-    
-    if (!window.WangIndicators || !window.WangIndicators.computeVolMA) {
-      console.error('WangIndicators.computeVolMA not available');
-      return { volma: [] };
-    }
-    
-    const volma = window.WangIndicators.computeVolMA(volumes, period);
-    return { volma };
+    const { volumes } = this.wangInputs(data);
+    return this.wangLines('VolumeMA', [volumes, period, 9], { volma: 'VolMA' }, data.length);
   }
 
   // Parabolic SAR Indicator Computation

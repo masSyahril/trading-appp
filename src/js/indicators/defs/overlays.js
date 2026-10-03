@@ -1,9 +1,9 @@
 /*
  * Price-chart indicators (placement 'chart') - the former OVERLAY_DEFS /
  * getOverlayData / addOverlayToChart code from stock-app.prod.js, now as
- * declarative registry entries. Alignment rules are unchanged: the Wang
- * functions marked `shift 1` are 1-based (src[i + 1] belongs to bar i), the
- * rest pair src[i] with bar i.
+ * declarative registry entries. The Wang functions loop from index 1 but are
+ * handed 0-based arrays, so src[i] belongs to bar i (shift 0) - see the
+ * fix 2026-10-03 note at the moving averages below.
  */
 (function () {
   'use strict';
@@ -14,43 +14,6 @@
   const RESISTANCE = '#f87171';
   const SUPPORT = '#4ade80';
 
-  function sma(values, period) {
-    const out = new Array(values.length).fill(null);
-    let sum = 0;
-    for (let i = 0; i < values.length; i++) {
-      sum += values[i];
-      if (i >= period) sum -= values[i - period];
-      if (i >= period - 1) out[i] = sum / period;
-    }
-    return out;
-  }
-
-  function ema(values, period) {
-    const k = 2 / (period + 1);
-    let e = null;
-    return values.map((v, i) => {
-      e = e === null ? v : v * k + e * (1 - k);
-      return i >= period - 1 ? e : null;
-    });
-  }
-
-  function bollinger(values, period, mult) {
-    const upper = [], middle = [], lower = [];
-    values.forEach((_, i) => {
-      if (i < period - 1) { upper.push(null); middle.push(null); lower.push(null); return; }
-      let sum = 0;
-      for (let j = i - period + 1; j <= i; j++) sum += values[j];
-      const mean = sum / period;
-      let variance = 0;
-      for (let j = i - period + 1; j <= i; j++) variance += (values[j] - mean) ** 2;
-      const sd = Math.sqrt(variance / period);
-      upper.push(mean + mult * sd);
-      middle.push(mean);
-      lower.push(mean - mult * sd);
-    });
-    return { upper, middle, lower };
-  }
-
   const line = (key, color, extra = {}) => ({ key, color, lineWidth: 2, ...extra });
   const dashed = (key, color, extra = {}) => line(key, color, { lineStyle: 'dashed', ...extra });
 
@@ -59,13 +22,15 @@
     id: 'SMA', name: 'Simple Moving Average', shortName: 'SMA', category: 'Moving averages', placement: 'chart',
     params: [{ key: 'period', label: 'Length', default: 20, min: 1 }],
     outputs: [line('value', '#34d399')],
-    compute: (c, p) => ({ value: sma(column(c, 'close'), p.period) }),
+    // Prof. Wang's KingMA() - a plain array, value i belongs to bar i.
+    compute: (c, p) => ({ value: aligned(c, call('KingMA', column(c, 'close'), p.period), 0) }),
   });
   registry.register({
     id: 'EMA', name: 'Exponential Moving Average', shortName: 'EMA', category: 'Moving averages', placement: 'chart',
     params: [{ key: 'period', label: 'Length', default: 9, min: 1 }],
     outputs: [line('value', '#a78bfa')],
-    compute: (c, p) => ({ value: ema(column(c, 'close'), p.period) }),
+    // Prof. Wang's KingEMA(): completeEMA is seeded with the SMA of the first `period` closes.
+    compute: (c, p) => ({ value: aligned(c, (call('KingEMA', column(c, 'close'), p.period) || {}).completeEMA, 0) }),
   });
   registry.register({
     id: 'VWAP', name: 'VWAP', category: 'Moving averages', placement: 'chart',
@@ -85,13 +50,15 @@
   // Single-line Wang moving averages:
   // [id, name, shortName, fn (or fallbacks), output field, inputs, shift, colour, default length]
   [
-    ['KAMA', 'Adaptive MA (KAMA)', 'KAMA', 'AdaptiveMA', 'AdaptiveMA', 'hlc', 1, '#4ade80', 10],
+    ['KAMA', 'Adaptive MA (KAMA)', 'KAMA', 'AdaptiveMA', 'AdaptiveMA', 'hlc', 0, '#4ade80', 10],
     // DoubleEMA (fix 2026-09-26): was shift 1, which needed DEMA[STK_close.length] -
     // an index the function never fills (its main loop stops one short), so the
     // most recent bar always rendered blank. DEMA() is only ever called here with a
     // plain 0-based close array (no dummy at index 0), so DEMA[i] already belongs to
-    // bar i - shift 0 is correct. KAMA above is still shift 1 and has not been checked
-    // against this same mismatch. (HullMA was, on 2026-09-26 - see its entry below.)
+    // bar i - shift 0 is correct. (HullMA was checked on 2026-09-26 - see its entry below.)
+    // KAMA, WVC, DonchianChannel, ChandelierExit and CKstop had the same mismatch
+    // (fix 2026-10-03): each builds value i from candle i, so shift 1 drew the next
+    // bar's value on every candle and left the last one blank. npm test now checks this.
     ['DoubleEMA', 'Double EMA (DEMA)', 'DEMA', ['DEMA', 'computeDEMA'], 'DEMA', 'close', 0, '#e879f9', 20],
     ['ZLEMA', 'Zero Lag EMA', 'ZLEMA', 'ZeroLagEMA', 'ZeroLag_EMA', 'hlc', 0, '#fb923c', 20],
     ['TEMA', 'Triple EMA', 'TEMA', 'TripleEMA', 'Triple_EMA', 'hlc', 0, '#facc15', 20],
@@ -202,7 +169,18 @@
     id: 'BB', name: 'Bollinger Bands', shortName: 'BB', category: 'Bands & channels', placement: 'chart',
     params: [{ key: 'period', label: 'Length', default: 20, min: 2 }, { key: 'mult', label: 'Std dev', default: 2, min: 0.1, step: 0.1 }],
     outputs: [dashed('upper', '#94a3b8', { title: 'Upper' }), line('middle', '#94a3b8', { title: 'Basis' }), dashed('lower', '#94a3b8', { title: 'Lower' })],
-    compute: (c, p) => bollinger(column(c, 'close'), p.period, p.mult),
+    // Prof. Wang's BollingerBands() always draws 2 SD; his SD is recovered from (upper - MA) / 2
+    // so the Std dev setting still applies.
+    compute: (c, p) => {
+      const out = call('BollingerBands', column(c, 'close'), p.period, p.period) || {};
+      const middle = aligned(c, out.MA, 0);
+      const sd = aligned(c, out.upperBand, 0).map((u, i) => (u != null && middle[i] != null ? (u - middle[i]) / 2 : null));
+      return {
+        upper: middle.map((m, i) => (m != null && sd[i] != null ? m + p.mult * sd[i] : null)),
+        middle,
+        lower: middle.map((m, i) => (m != null && sd[i] != null ? m - p.mult * sd[i] : null)),
+      };
+    },
   });
   registry.register({
     id: 'WVC', name: 'Williams Volatility Channel', shortName: 'WVC', category: 'Bands & channels', placement: 'chart',
@@ -210,7 +188,7 @@
     outputs: [dashed('upper', RESISTANCE, { title: 'Upper' }), line('middle', '#38bdf8', { title: 'Middle' }), dashed('lower', SUPPORT, { title: 'Lower' })],
     compute: (c, p) => {
       const out = call('WilliamsVolatilityChannel', ...HLC(c), p.day, p.esp) || {};
-      return { upper: aligned(c, out.UpperLine, 1), middle: aligned(c, out.MiddleLine, 1), lower: aligned(c, out.LowerLine, 1) };
+      return { upper: aligned(c, out.UpperLine, 0), middle: aligned(c, out.MiddleLine, 0), lower: aligned(c, out.LowerLine, 0) };
     },
   });
   registry.register({
@@ -245,7 +223,7 @@
     outputs: [dashed('upper', '#60a5fa', { title: 'Upper' }), line('middle', '#60a5fa', { title: 'Middle' }), dashed('lower', '#60a5fa', { title: 'Lower' })],
     compute: (c, p) => {
       const out = call('DonchianChannel', column(c, 'high'), column(c, 'low'), p.period) || {};
-      return { upper: aligned(c, out.UpperChannel, 1), middle: aligned(c, out.MiddleChannel, 1), lower: aligned(c, out.LowerChannel, 1) };
+      return { upper: aligned(c, out.UpperChannel, 0), middle: aligned(c, out.MiddleChannel, 0), lower: aligned(c, out.LowerChannel, 0) };
     },
   });
   registry.register({
@@ -254,7 +232,7 @@
     outputs: [line('long', SUPPORT, { title: 'Long' }), line('short', RESISTANCE, { title: 'Short' })],
     compute: (c, p) => {
       const out = call('ChandelierExit', ...HLC(c), p.period) || {};
-      return { long: aligned(c, out.Long_ChandelierExit, 1), short: aligned(c, out.Short_ChandelierExit, 1) };
+      return { long: aligned(c, out.Long_ChandelierExit, 0), short: aligned(c, out.Short_ChandelierExit, 0) };
     },
   });
   registry.register({
@@ -263,7 +241,7 @@
     outputs: [line('long', SUPPORT, { title: 'Long' }), line('short', RESISTANCE, { title: 'Short' })],
     compute: (c, p) => {
       const out = call('CKstop', ...HLC(c), p.period) || {};
-      return { long: aligned(c, out.CKS_Long, 1), short: aligned(c, out.CKS_Short, 1) };
+      return { long: aligned(c, out.CKS_Long, 0), short: aligned(c, out.CKS_Short, 0) };
     },
   });
   registry.register({

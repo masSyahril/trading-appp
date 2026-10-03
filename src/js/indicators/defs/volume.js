@@ -61,7 +61,7 @@
   });
 
   add({
-    id: 'MFI', name: 'Money Flow Index', minBars: 14,
+    id: 'MFI', name: 'Money Flow Index (standard)', minBars: 14,
     params: [['period', 'Period', 14]],
     math: (M, c, p) => M.computeMFI(c, p.period),
     outputs: [line('mfi', C.LINE1, null, { from: 'value' })],

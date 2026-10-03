@@ -40,7 +40,13 @@
     VariantRateMA2DaysAgo:   { name: 'VariantRateMA2DaysAgo', type: 'momentum', fn: 'VariantRateMA2DaysAgo', inputs: ['close'], params: [['day1', 5], ['day2', 10]], lines: ['VarRtMA2DaysAgo1', 'VarRtMA2DaysAgo2'] },
     MAPVT:                   { name: 'MAPVT', type: 'volume', fn: 'MAPriceVolumTrend', inputs: ['close', 'volume'], params: [['ma_day', 10], ['esp', 9]], lines: ['MAPVT', 'eMAPVT'], volumeScale: true },
     CumulativeVolume:        { name: 'Cumulative Volume(CV)', type: 'volume', fn: 'CumulativeVolume', inputs: ['close', 'volume'], params: [['esp', 9]], lines: ['CumuVol', 'eCumuVol'], volumeScale: true },
-    NewCumulativeVolume:     { name: 'New Cumulative Volume', type: 'volume', fn: 'NewCumulativeVolume', inputs: ['close', 'volume'], params: [['ma_day', 10], ['esp', 9]], lines: ['MACumuVol', 'eMACumuVol'], volumeScale: true },
+    NewCumulativeVolume:     { name: 'Cumu Vol (CV_MA)', type: 'volume', fn: 'NewCumulativeVolume', inputs: ['close', 'volume'], params: [['ma_day', 10], ['esp', 9]], lines: ['MACumuVol', 'eMACumuVol'], volumeScale: true },
+    // 2026-10-03 (Prof. Wang's note of 09-27, items 5/6/7/9): these four were never in the menu.
+    // MoneyFlowIndex is his two-line MFI/eMFI; the one-line 'Money Flow Index (standard)' is the usual 14-day MFI.
+    MoneyFlowIndex:          { name: 'Money Flow Index(MFI)', type: 'volume', fn: 'MoneyFlowIndex', inputs: ['high', 'low', 'close', 'volume'], params: [['day', 10], ['esp', 9]], lines: ['MFI', 'eMFI'], minPeriod: 11 },
+    PositiveVolIndex:        { name: 'Positive Volume Index(PVI)', type: 'volume', fn: 'PositiveVolIndex', inputs: ['close', 'volume'], params: [['esp', 9]], lines: ['PVI', 'ePVI'] },
+    NegativeVolIndex:        { name: 'Negative Volume Index(NVI)', type: 'volume', fn: 'NegativeVolIndex', inputs: ['close', 'volume'], params: [['esp', 9]], lines: ['NVI', 'eNVI'] },
+    SimpleMA_vol:            { name: 'SimpleMA_vol', type: 'volume', fn: 'SimpleMA_vol', inputs: ['volume'], params: [['day', 10]], lines: ['MA_vol'], volumeScale: true },
     // MASS's EMA1/EMA2 are marked for the K_Line area, but they're averages of
     // (High-Low) - a few points, not a price - so only Mass/eMass are drawn.
     MASS:                    { name: 'MASS Index', type: 'volatility', fn: 'MASS', inputs: ['high', 'low'], params: [['esp', 9]], lines: ['Mass', 'eMass'] },
@@ -170,10 +176,39 @@
     KST_Stochastic:           { name: 'KST_Stochastic', type: 'momentum', fn: 'KST_Stochastic', inputs: ['close'], params: [['day1', 10], ['day2', 15], ['day3', 20], ['day4', 30], ['esp', 9], ['KD_num', 9]], lines: ['KST_KD_K', 'KST_KD_D'], minPeriod: 38 },
     // 2026-09-26. K/D start at bar MTM_n+ACC_n+KD_num-2 (22 with the defaults).
     Acceleration_Stochastic:  { name: 'Acceleration(ACC)Stochastic', type: 'momentum', fn: 'Acceleration_Stochastic', inputs: ['close'], params: [['MTM_n', 10], ['ACC_n', 5], ['esp', 9], ['KD_num', 9]], lines: ['ACC_KD_K', 'ACC_KD_D'], minPeriod: 23 },
+    // 2026-09-27 to 10-03 batch. Every one of these says "drawing these figures in the
+    // small windows", so they are all panes - none belongs on the K-Line.
+    DPO_Stochastic:           { name: 'DPO Stochastic', type: 'oscillator', fn: 'DPO_Stochastic', inputs: ['close'], params: [['MA_day', 10], ['esp', 9], ['KD_num', 9]], lines: ['DPO_KD_K', 'DPO_KD_D'], minPeriod: 22 },
+    PVT_Stochastic:           { name: 'PVT Stochastic', type: 'volume', fn: 'PriceVolumTrend_Stochastic', inputs: ['close', 'volume'], params: [['esp', 9], ['KD_num', 9]], lines: ['PVT_KD_K', 'PVT_KD_D'], minPeriod: 9 },
+    MAPVT_Stochastic:         { name: 'MAPVT Stochastic', type: 'volume', fn: 'MAPriceVolumTrend_Stochastic', inputs: ['close', 'volume'], params: [['ma_day', 10], ['esp', 9], ['KD_num', 9]], lines: ['MAPVT_KD_K', 'MAPVT_KD_D'], minPeriod: 18 },
+    EMAPVT:                   { name: 'EMAPVT', type: 'volume', fn: 'EMAPriceVolumTrend', inputs: ['high', 'low', 'close', 'volume'], params: [['esp', 9]], lines: ['EMAPVT', 'eEMAPVT'], volumeScale: true, minPeriod: 2 },
+    EMAPVT_Stochastic:        { name: 'EMAPVT Stochastic', type: 'volume', fn: 'EMAPriceVolumTrend_Stochastic', inputs: ['high', 'low', 'close', 'volume'], params: [['esp', 9], ['KD_num', 9]], lines: ['EMAPVT_KD_K', 'EMAPVT_KD_D'], minPeriod: 9 },
+    CumuVol_Stochastic:       { name: 'CumuVol(CV) Stochastic', type: 'volume', fn: 'CumulativeVolume_Stochastic', inputs: ['close', 'volume'], params: [['esp', 9], ['KD_num', 9]], lines: ['CumuVol_KD_K', 'CumuVol_KD_D'], minPeriod: 9 },
+    CumuVol_esp_Stochastic:   { name: 'CumuVol(CV_esp) Stochastic', type: 'volume', fn: 'CumulativeVolume_esp_Stochastic', inputs: ['close', 'volume'], params: [['esp', 9], ['KD_num', 9]], lines: ['eCumuVol_KD_K', 'eCumuVol_KD_D'], minPeriod: 9 },
+    CumuVol_EMA:              { name: 'Cumu Vol (CV_EMA_TP)', type: 'volume', fn: 'CumulativeVolume_EMA', inputs: ['high', 'low', 'close', 'volume'], params: [['esp', 9]], lines: ['EMA_CV', 'eEMA_CV'], minPeriod: 2 },
+    MFI_Stochastic:           { name: 'MFI Stochastic', type: 'volume', fn: 'MoneyFlowIndex_Stochastic', inputs: ['high', 'low', 'close', 'volume'], params: [['day', 10], ['esp', 9], ['KD_num', 9]], lines: ['MFI_KD_K', 'MFI_KD_D'], minPeriod: 18 },
+    PVI_EMA:                  { name: 'Positive Vol Index(PVI_EMA)', type: 'volume', fn: 'PositiveVolIndex_EMA', inputs: ['high', 'low', 'close', 'volume'], params: [['esp', 9]], lines: ['PVI_EMA', 'ePVI_EMA'], minPeriod: 2 },
+    NVI_EMA:                  { name: 'Negative Vol Index(NVI_EMA)', type: 'volume', fn: 'NegativeVolIndex_EMA', inputs: ['high', 'low', 'close', 'volume'], params: [['esp', 9]], lines: ['NVI_EMA', 'eNVI_EMA'], minPeriod: 2 },
+    PriceOSC_Stochastic:      { name: 'Price Osc Stochastic', type: 'oscillator', fn: 'PriceOSC_Stochastic', inputs: ['close'], params: [['short_day', 5], ['long_day', 10], ['esp', 9], ['KD_num', 9]], lines: ['PriceOSC_KD_K', 'PriceOSC_KD_D'], minPeriod: 18 },
+    ChaikinOSC_Stochastic:    { name: 'ChaikinOSC Stochastic', type: 'volume', fn: 'ChaikinOSC_Stochastic', inputs: ['high', 'low', 'close', 'volume'], params: [['short_day', 5], ['long_day', 10], ['esp', 9], ['KD_num', 9]], lines: ['ChaikinOSC_KD_K', 'ChaikinOSC_KD_D'], minPeriod: 9 },
     // KD of the smoothed Williams A/D line (eWAD); WAD/eWAD themselves are not returned.
     WilliamAD_Stochastic:     { name: 'WilliamAD_Stochastic', type: 'momentum', fn: 'WilliamAD_Stochastic', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['eWAD_KD_K', 'eWAD_KD_D'] },
     // K/D start at bar day_length+KD_num-2 (17 with the defaults).
     CostMA_Stochastic:        { name: 'CostMA Stochastic', type: 'volume', fn: 'CostMA_Stochastic', inputs: ['high', 'low', 'close', 'volume'], params: [['day_length', 10], ['esp', 9], ['KD_num', 9]], lines: ['CostMA_KD_K', 'CostMA_KD_D'], minPeriod: 18 },
+    // 2026-10-03. Both comments say "drawing these figures in the small windows", so both are panes.
+    // Each computes ADL[] and eADL[] internally but returns only its K/D pair, so there is no price line to place.
+    ADL_Stochastic:           { name: 'AccuDistLine(ADL) Stochastic', type: 'volume', fn: 'AccuDistLine_Stochastic', inputs: ['high', 'low', 'close', 'volume'], params: [['esp', 9], ['KD_num', 9]], lines: ['ADL_KD_K', 'ADL_KD_D'], minPeriod: 9 },
+    eADL_Stochastic:          { name: 'AccuDistLine(eADL) Stochastic', type: 'volume', fn: 'AccuDistLine_eADL_Stochastic', inputs: ['high', 'low', 'close', 'volume'], params: [['esp', 9], ['KD_num', 9]], lines: ['eADL_KD_K', 'eADL_KD_D'], minPeriod: 9 },
+    // 2026-10-03. Both say "drawing these figures in the small windows", so both are panes.
+    // ASI_MA is the stochastic of ASIma[] (the moving average); ASI_EMA is the stochastic of
+    // eASIma[] (its exponential smoothing). Neither returns ASI/ASIma/eASIma themselves.
+    ASI_MA_Stochastic:        { name: 'ASI_MA Stochastic', type: 'momentum', fn: 'ASI_MA_Stochastic', inputs: ['open', 'high', 'low', 'close'], params: [['ma_day', 10], ['esp', 9], ['KD_num', 9]], lines: ['ASI_MA_KD_K', 'ASI_MA_KD_D'], minPeriod: 19 },
+    ASI_EMA_Stochastic:       { name: 'ASI_EMA Stochastic', type: 'momentum', fn: 'ASI_EMA_Stochastic', inputs: ['open', 'high', 'low', 'close'], params: [['ma_day', 10], ['esp', 9], ['KD_num', 9]], lines: ['ASI_EMA_KD_K', 'ASI_EMA_KD_D'], minPeriod: 19 },
+    // 2026-10-03. "drawing these figures in the small windows", so a pane.
+    // The KD here is of ASI[] itself, not of ASIma/eASIma - and ASI[] does not depend on
+    // ma_day (both loops use the same recurrence; ma_day only sets where they split), so
+    // ma_day cannot move these two lines. Labelled so the user is not misled, as HullMA_KD's esp is.
+    ASI_Stochastic:           { name: 'ASI Stochastic', type: 'momentum', fn: 'ASI_Stochastic', inputs: ['open', 'high', 'low', 'close'], params: [['ma_day', 10, { label: 'ma_day (K/D ignore it)' }], ['esp', 9], ['KD_num', 9]], lines: ['ASI_KD_K', 'ASI_KD_D'], minPeriod: 10 },
   };
 
   const CATEGORY = { trend: 'Trend', momentum: 'Momentum', oscillator: 'Oscillators', volume: 'Volume', volatility: 'Volatility' };

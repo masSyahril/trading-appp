@@ -149,7 +149,7 @@
 
   add({
     id: 'HLO', name: 'HLO (High/Low Oscillator)', minBars: 2,
-    params: [['period', 'Period', 14]],
+    params: [['period', 'Smoothing (esp)', 14]],
     math: (M, c, p) => M.computeHLOIndicator(c, p.period),
     outputs: [
       line('hlo', C.LINE1, 'HLO', { lineWidth: 1 }),
@@ -186,8 +186,8 @@
 
   add({
     id: 'DPO', name: 'DPO (Detrended Price Osc)', minBars: 10,
-    params: [['MA_day', 'MA Period', 10]],
-    math: (M, c, p) => M.computeDPOIndicator(c, p.MA_day),
+    params: [['MA_day', 'MA Period', 10], ['esp', 'Smooth', 9]],
+    math: (M, c, p) => M.computeDPOIndicator(c, p.MA_day, p.esp),
     outputs: [
       line('dpo', C.LINE1, 'DPO', { from: 'DPO' }),
       line('edpo', C.LINE2, 'eDPO', { from: 'eDPO' }),

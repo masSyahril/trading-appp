@@ -1,5 +1,14 @@
 /* TradeLite Crypto Trading App — Binance public REST + WebSocket (real-time klines & tickers) */
 (function () {
+  // fix 2026-09-30 (security): escape untrusted strings (symbols, order fields) before
+  // interpolating them into innerHTML template literals. See isCryptoSymbol() below for
+  // the matching input-side fix - this is the output-side (defense in depth) half of it.
+  function escapeHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, (ch) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    })[ch]);
+  }
+
   const BINANCE_KLINE_BASES = [
     'https://data-api.binance.vision/api/v3/klines',
     'https://api.binance.com/api/v3/klines',
@@ -336,12 +345,12 @@
 
       li.innerHTML = `
         <div class="flex justify-between items-start mb-1 pr-6">
-          <span class="font-bold text-white text-sm">${formatCryptoDisplay(sym)}</span>
-          <span class="font-mono text-white text-sm">${priceDisplay}</span>
+          <span class="font-bold text-white text-sm">${escapeHtml(formatCryptoDisplay(sym))}</span>
+          <span class="font-mono text-white text-sm">${escapeHtml(priceDisplay)}</span>
         </div>
         <div class="flex justify-between text-xs">
-          <span class="text-slate-500">${sym}</span>
-          <span class="${changeColor}">${changeDisplay}</span>
+          <span class="text-slate-500">${escapeHtml(sym)}</span>
+          <span class="${changeColor}">${escapeHtml(changeDisplay)}</span>
         </div>
       `;
       li.appendChild(remove);
@@ -1536,7 +1545,7 @@
       const unrealPnl = (markPrice - pos.avg) * pos.qty;
 
       tr.innerHTML = `
-        <td>${formatCryptoDisplay(sym)}</td>
+        <td>${escapeHtml(formatCryptoDisplay(sym))}</td>
         <td>${pos.qty.toFixed(6)}</td>
         <td>${formatCryptoPrice(pos.avg)}</td>
         <td>${formatCryptoPrice(markPrice)}</td>
@@ -1558,11 +1567,11 @@
       
       tr.innerHTML = `
         <td>${timeStr}</td>
-        <td>${formatCryptoDisplay(order.symbol)}</td>
-        <td style="color:${order.side === "BUY" ? "#15b37d" : "#e5534b"}">${order.side}</td>
+        <td>${escapeHtml(formatCryptoDisplay(order.symbol))}</td>
+        <td style="color:${order.side === "BUY" ? "#15b37d" : "#e5534b"}">${escapeHtml(order.side)}</td>
         <td>${order.qty}</td>
         <td>${formatCryptoPrice(order.price)}</td>
-        <td>${order.status}</td>
+        <td>${escapeHtml(order.status)}</td>
       `;
       tbody.appendChild(tr);
     });
@@ -1570,10 +1579,16 @@
 
   // Utility Functions
   function isCryptoSymbol(sym) {
-    return sym && typeof sym === 'string' && (
-      sym.endsWith('USDT') || 
-      sym.endsWith('BUSD') || 
-      sym.endsWith('BTC') || 
+    // fix 2026-09-30 (security): this used to only check the SUFFIX (endsWith), so a
+    // string like '<img src=x onerror=alert(1)>USDT' passed validation, got stored in
+    // the watchlist/localStorage, and was rendered via innerHTML in renderWatchlist() /
+    // renderPositions() / renderOrders() with no escaping - a real XSS, reachable from
+    // the Add-symbol input or straight from the URL (?symbol=...), no click needed.
+    // Now the WHOLE string must be plain alphanumeric before we even look at the suffix.
+    return typeof sym === 'string' && /^[A-Z0-9]{2,20}$/.test(sym) && (
+      sym.endsWith('USDT') ||
+      sym.endsWith('BUSD') ||
+      sym.endsWith('BTC') ||
       sym.endsWith('ETH')
     );
   }

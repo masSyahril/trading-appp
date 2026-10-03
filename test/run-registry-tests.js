@@ -18,6 +18,7 @@
  *
  * Usage: node test/run-registry-tests.js
  */
+const fs = require('fs');
 const path = require('path');
 
 global.window = global;
@@ -151,6 +152,26 @@ function differences(def, ldef, params) {
   return out;
 }
 
+// Checks for indicators drawn on the K-line (price chart) rather than in a pane.
+const closes = candles.map(c => c.close);
+const median = (a) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
+const closeMedian = median(closes);
+function priceChartProblems(def, ev) {
+  const out = [];
+  // Something must be drawn on the latest candle - the bar a trader looks at.
+  if (!def.outputs.some(o => ev.series[o.key] && ev.series[o.key][n - 1] != null)) out.push('nothing drawn on the last candle');
+  // Lines share the candles' price axis, so they must be at price level: a 0-100
+  // stochastic or a ratio near 1.0 placed here would sit flat at the bottom.
+  def.outputs.forEach(o => {
+    if (o.type === 'histogram') return;
+    const v = (ev.series[o.key] || []).filter(x => x != null && Number.isFinite(x));
+    if (!v.length) return;
+    const m = median(v);
+    if (!(m > closeMedian * 0.5 && m < closeMedian * 2)) out.push(`${o.key}: median ${m.toFixed(3)} is off the price scale (close median ${closeMedian.toFixed(2)})`);
+  });
+  return out;
+}
+
 const results = [];
 const warnings = [];
 let compared = 0;
@@ -181,16 +202,54 @@ NS.registry.all().forEach(def => {
     if (blank.length === def.outputs.length) problems.push('every line is blank');
     else if (blank.length) warnings.push({ id: def.id, why: `no values for ${blank.join(', ')} (compute() returns the field, all blank)` });
     if (!def.outputs.some(o => ev.series[o.key] && ev.series[o.key].slice(-5).some(x => x != null))) problems.push('blank at the latest bars');
+    // registry.fit() lines arrays up from the END, so an array with extra slots past the
+    // last candle (a Wang loop running to i<=length) shifts the whole line a bar left.
+    def.outputs.forEach(o => {
+      const src = ev.raw[o.from || o.key];
+      if (Array.isArray(src) && src.length > n) problems.push(`${o.key}: compute() returned ${src.length} values for ${n} candles (line drawn ${src.length - n} bar(s) early)`);
+    });
+    if (def.placement === 'chart') problems.push(...priceChartProblems(def, ev));
     const old = def.placement === 'pane' && NS.legacySystem && NS.legacySystem.indicatorDefinitions[def.id];
     if (old) {
       compared++;
       problems.push(...differences(def, old, params));
     }
-    results.push({ id: def.id, ok: !problems.length, why: problems.join('; ') });
+    results.push({ id: def.id, chart: def.placement === 'chart', ok: !problems.length, why: problems.join('; ') });
   } catch (e) {
-    results.push({ id: def.id, ok: false, why: 'threw: ' + e.message });
+    results.push({ id: def.id, chart: def.placement === 'chart', ok: false, why: 'threw: ' + e.message });
   }
 });
+
+// Single source: every indicator's numbers must come from Prof. Wang's file
+// (technical-indicators.prods__Wang__2026.js). Each function it defines is wrapped,
+// every indicator is computed once more, and one that calls none of them fails -
+// unless it is listed here with the reason it has no Wang version yet.
+const NOT_WANG = {
+  VOLUME: 'raw volume bars - there is no formula',
+  MA: 'no Wang version yet (SMA/EMA/WMA menu)',
+  BBI: 'no Wang version yet (classic 4-MA BBI; Wang has BBI3/4/5)',
+  BULLBEAR: 'no Wang version yet',
+  VWAP: 'cumulative VWAP; Wang\'s VolWgtAvgPrice is a rolling N-day VWAP - not decided',
+  MFI: 'kept as the standard MFI; Wang\'s is the MoneyFlowIndex entry',
+};
+const wangSource = fs.readFileSync(core('technical-indicators.prods__Wang__2026.js'), 'utf8');
+const wangNames = [...new Set([...wangSource.matchAll(/^function (\w+)\(/gm)].map(m => m[1]))];
+let calledWang = false;
+wangNames.forEach(name => {
+  const fn = window[name];
+  if (typeof fn !== 'function') return;
+  window[name] = function (...args) { calledWang = true; return fn.apply(this, args); };
+});
+const notWang = [];
+NS.registry.all().forEach(def => {
+  calledWang = false;
+  try {
+    if (def.legacy) def.legacy.def.compute(candles, { ...NS.registry.defaultParams(def) });
+    else def.compute(candles, NS.registry.defaultParams(def));
+  } catch (e) { /* reported by the checks above */ }
+  if (!calledWang && !NOT_WANG[def.id]) notWang.push(def.id);
+});
+notWang.forEach(id => results.push({ id, ok: false, why: 'does not use Prof. Wang\'s file (technical-indicators.prods__Wang__2026.js) - wire it there, or list it in NOT_WANG with the reason' }));
 
 console.log = log;
 const failed = results.filter(r => !r.ok);
@@ -199,5 +258,9 @@ failed.forEach(r => console.log(`✗ [FAIL] ${r.id}: ${r.why}`));
 const all = NS.registry.all();
 console.log(`\nRegistry: ${all.length} indicators (${all.filter(d => d.placement === 'chart').length} price-chart, ${all.filter(d => d.placement === 'pane').length} pane; ${all.filter(d => d.legacy).length} still legacy).`);
 console.log(`${compared} converted indicators compared with their old drawing, point by point.`);
+const chartResults = results.filter(r => r.chart);
+const chartFailed = chartResults.filter(r => !r.ok);
+console.log(`K-line (price chart): ${chartResults.length - chartFailed.length} passed, ${chartFailed.length} failed${chartFailed.length ? ' - ' + chartFailed.map(r => r.id).join(', ') : ''} (checked: drawn on the last candle, lines on the price scale).`);
+console.log(`Single source: ${all.length - notWang.length - Object.keys(NOT_WANG).length} use Prof. Wang's file, ${notWang.length} do not${notWang.length ? ' - ' + notWang.join(', ') : ''}; ${Object.keys(NOT_WANG).length} listed exceptions (${Object.keys(NOT_WANG).join(', ')}).`);
 console.log(`${results.length - failed.length} passed, ${failed.length} failed, ${warnings.length} with blank lines.`);
 process.exit(failed.length ? 1 : 0);
