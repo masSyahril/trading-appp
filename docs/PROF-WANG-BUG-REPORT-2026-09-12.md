@@ -1324,6 +1324,277 @@ in place; they cost one pass over the data. This is also what makes `ma_day` ine
 too.
 
 ---
+
+## 16. The 2026-10-04 to 10-10 batch - sixteen functions, two broken (fixed 2026-10-11)
+
+Sixteen functions were added between 2026-10-04 and 2026-10-10. Fourteen were correct as
+written; two threw on every call. Unlike the earlier batches this one mixes placements, so
+each function’s own trailing comment was read and then checked against the values it
+actually produces.
+
+### 16a. Where each one is drawn
+
+Three say **"drawing these figures in the K_Line area"** and their values really do sit on
+the price scale, so they are drawn on the main chart:
+
+| Function | Menu name | Lines | On 400 test candles (close ran 99 - 147) |
+|---|---|---|---|
+| `CDP_OneLine` | CDP OneLine | OneLine, eOneLine | 99.4 - 147.0 |
+| `PIVG_3_Line` | PIVG 3-Line | LineBelow, LineAbove, LineCenter | 97.8 - 148.7 |
+| `MIKE_3_Line` | MIKE 3-Line | Support, Resistance, Integration | 97.2 - 155.2 |
+
+All three are averages of pivot / support / resistance levels, so they are prices and they
+belong next to the candles. The test suite’s own K-Line check (drawn on the last candle,
+values on the price scale) passed 49 of 49 when this was written, these three included. It stands at 51 of 51 today,
+after `NSL` (16b) and `Alligator_OneLine` (section 17) were added to the chart.
+
+Twelve more say **"drawing these figures in the small windows"** and were registered as
+panes. `NSL` is the thirteenth: it says K_Line, and after the exchange in 16b below it is
+now drawn there too.
+
+| Function | Menu name | First bar |
+|---|---|---|
+| `TRIX_King` | TRIX_King(4-esp) | 2 |
+| `TRIX_King_Stochastic` | TRIX_King(4-esp) Stochastic | 9 |
+| `TRIX_Stochastic` | TRIX Stochastic | 9 |
+| `CoppockCurve_Stochastic` | Coppock Curve Stochastic | 47 |
+| `M3_MACD` | M3_MACD | 5 |
+| `M4_MACD` | M4_MACD | 5 |
+| `DiffEMA` | DiffEMA(TP) | 1 |
+| `DiffEMA2` | DiffEMA2(TP) | 1 |
+| `GannHiLo_Stochastic` | Gann HiLo Stochastic | 17 |
+| `MFI_PriVol` | MFI_PriVol | 11 |
+| `MFI_PriVolROC` | MFI_PriVolROC | 11 |
+| `VolWgtAvgPrice_Stochastic` | VolWgtAvgPrice Stochastic | 18 |
+
+`M3_MACD`, `M4_MACD`, `DiffEMA` and `DiffEMA2` each return a `Bar[]` as well as two lines,
+so they are drawn as two lines plus a histogram, the same shape as the existing `King_MACD`.
+
+### 16b. `NSL` - overlaid on the K_Line at your request (decided 2026-10-11)
+
+`NSL` was the one disagreement between a comment and the numbers. Its comment reads
+`//drawing these indicators in the K_Line area.`, but:
+
+```js
+NSL[i]=STK_high[i]+STK_low[i]-2*EMA[i];    //牛熊綟合力度
+```
+
+With `H`, `L` and `EMA` all near the same price, `H + L - 2*EMA` is near **zero**: measured
+-9.3 to 8.9 on candles whose close ran 99 to 147. This is the Bull/Bear Power family - the
+header comment says so: Bull Power = H - EMA, Bear Power = L - EMA, combined = H + L - 2*EMA
+- and that family is normally drawn in its own window.
+
+It was first registered as a pane for that reason. **You asked for the K_Line area instead,
+so that is what it now does**, which is also what the function’s own comment asks for.
+Nothing in the function was changed.
+
+One consequence worth knowing. The price axis has to span both the candles and the
+indicator, so with AAPL near 336 and `NSL` near 0 the axis stretches to roughly 40 - 320 and
+the candles compress into a thin band at the top. The line itself is correct and reaches the
+last bar; it simply sits along the bottom edge of the price scale.
+
+Because of that the suite’s price-scale check would reject it, so `NSL` is listed by name in
+`OFF_SCALE_OK` in `test/run-registry-tests.js` with the reason and the date. It must still be
+drawn on the last candle like every other chart entry - only the price-scale rule is waived,
+and only for this one id.
+
+If you would rather see it among the candles, the formula would have to be re-based (for
+example plotting `EMA + NSL` instead of `NSL`). That changes your formula, so it has not
+been done.
+### 16c. Two functions looped over a parameter name they do not have
+
+Both threw `ReferenceError` on the first call and drew nothing.
+
+```js
+function GannHiLo_Stochastic(STK_High, STK_Low, STK_Close, ma_day, esp, KD_num) {
+  ...
+  for(let i=KD_num+ma_day-1; i<=STK_close.length; i++) {   // STK_close, lower-case c
+```
+
+The parameters are `STK_High`, `STK_Low`, `STK_Close` with a capital C, so the lower-case
+`STK_close` is a different, undeclared name. Changed to `STK_Close.length`.
+
+```js
+function VolWgtAvgPrice_Stochastic(K_high, K_low, K_close, K_vol, period, esp, KD_num) {
+  ...
+  for(let i=KD_num+period; i<=STK_close.length; i++) {     // the parameter is K_close
+```
+
+Changed to `K_close.length`.
+
+This is the same mistake as sections 6b, 6c, 8b and 11a - **twelve functions so far**. It
+always comes from copying a function whose parameters were named differently and not
+changing the `for` line with them. Both now start exactly where their own comments say
+(bar 17 and bar 18) and both stay inside 0 - 100.
+
+### 16d. Correct as written
+
+`TRIX_King`, `TRIX_King_Stochastic`, `TRIX_Stochastic`, `CoppockCurve_Stochastic`,
+`M3_MACD`, `M4_MACD`, `DiffEMA`, `DiffEMA2`, `NSL`, `MFI_PriVol`, `MFI_PriVolROC`,
+`CDP_OneLine`, `PIVG_3_Line`, `MIKE_3_Line`.
+
+Worth noting what these got right, since earlier batches did not: every `min` uses
+`Math.min`, every KD seed sits one index before its loop start, and no KD block carries a
+leftover array name from the function it was copied from.
+
+### 16e. Two notes, nothing changed
+
+**1. `CoppockCurve_Stochastic` starts 9 bars later than its comment says.** The comment
+reads `_K[]=37 to 2000, if KD_num=9, ttl_days=30`, but the code computes
+
+```js
+let ttl_days=short_day+long_day+wgt_day;  //=30,short_day=10, long_day=20, weight_day=10
+```
+
+which with those three values is **40**, not 30, so the first bar is 47 rather than 37.
+Nothing is broken - `Coppock[]` itself only begins at bar 31, so the window is always full
+and there are no gaps - the line simply starts 9 bars later than it needs to. If
+`long_day + wgt_day` was meant, the `short_day +` can come off. Left alone because it
+changes where your line begins.
+
+**2. `Ndaysago` on `MFI_PriVol` / `MFI_PriVolROC`** is documented `1<=Ndaysago<=10`, and the
+app now enforces that range in the parameter box. It is genuinely live: at 1, 5 and 10 the
+first bar moves to 2, 6 and 11 and the values differ on about 190 of 200 bars.
+
+---
+
+## 17. The 2026-10-11 batch - four functions, three bugs (fixed 2026-10-11)
+
+Four functions are dated 2026-October-11. Two of them split the 2026-Jan-20
+`RandomWalkIndex` into separate `RWI_high` and `RWI_low` indicators; the third reduces the
+2026-Jan-29 three-line `Alligator` to a single averaged line; the fourth puts a MACD on
+top of the 2026-March-10 `GatorOscillator`.
+
+| Function | Menu name | Returns | Drawn | First bar |
+|---|---|---|---|---|
+| `RandomWalkIndex_Low` | Random Walk(Low) | `RWI_low` | pane | 10 |
+| `RandomWalkIndex_High` | Random Walk(High) | `RWI_high` | pane | 10 |
+| `Alligator_OneLine` | Alligator OneLine | `Alligator_Line` | **K_Line** | 4 |
+| `GatorOsc_MACD` | Gator MACD | `Dif`, `MACD`, `Bar` | pane | 9 |
+
+All four first bars match your own comments exactly.
+
+### 17a. A sentinel value that breaks above $999 - this one matters
+
+Both new RWI functions, and the 2026-Jan-20 original they came from, search a window for
+its highest high and lowest low by starting from a fixed number:
+
+```js
+max_high=0;  min_low=99999;            // the two new functions
+for(let j=i-RWI_n+1; j<=i; j++) {
+  max_high=Math.max(max_high, STK_high[j]);
+  min_low=Math.min(min_low, STK_low[j]);
+}
+RWI_high[i]=(STK_high[i]-min_low)/(ATR[i]*Math.sqrt(RWI_n));
+```
+
+`min_low` only ever gets replaced by a real low that is **smaller than the starting number**.
+If every low in the window is above it, `min_low` keeps the starting number and the formula
+silently computes `(high - 99999)` instead of `(high - the real lowest low)`.
+
+The 2026-Jan-20 original starts from `min_low=999`, so it breaks above **$999**. The two new
+functions start from `99999`, so they break above **$99,999** - which is Bitcoin.
+
+Measured against a reference implementation with the same arithmetic and correct sentinels,
+on 200 candles at three price levels:
+
+| Series | close ~100 | close ~1,000 | close ~100,000 |
+|---|---|---|---|
+| `RandomWalkIndex_Low` -> `RWI_low` | correct | correct | correct |
+| `RandomWalkIndex_High` -> `RWI_high` | correct | correct | **wrong on 167/190 bars, off by up to 3.96** |
+| `RandomWalkIndex` -> `RWI_low` | correct | correct | correct |
+| `RandomWalkIndex` -> `RWI_high` | correct | **wrong on 171/190 bars** | **wrong on 190/190 bars, off by up to 32.4** |
+
+Two things follow from that table.
+
+**`RWI_low` was never affected.** It is built from `max_high`, which starts at `0`, and every
+price is above zero, so the real maximum always wins. Only `RWI_high` - the one built from
+`min_low` - is damaged. That is why `RandomWalkIndex_Low` was correct all along and
+`RandomWalkIndex_High` was not.
+
+**The original is already live and already wrong.** `RandomWalkIndex` is the function the
+crypto page calls for its RWI indicator (`computeRandomWalkingIndex` in
+`multi-indicator-system.js`), so on Bitcoin that line has been wrong on every bar.
+
+Fixed in all three places by starting from the values `Math.max` and `Math.min` are defined
+against, which cannot lose to a real price at any price level:
+
+```js
+max_high=-Infinity;  min_low=Infinity;
+```
+
+No arithmetic was changed - only the number the search starts from, and only where the old
+number was provably wrong. All twelve combinations in the table above now match the
+reference.
+
+### 17b. Where each one is drawn
+
+Neither RWI function carries a placement comment, so the values were measured instead: 0.10
+to 2.23 on candles whose close ran 99 to 147. Those are ratios around 1, not prices, so both
+are panes. This also agrees with the app’s existing RWI entry, which is already typed as an
+oscillator.
+
+`Alligator_OneLine` keeps the line `//normally drawing these three indicators in K_Line area`
+from the three-line original, and the numbers agree: its median sits at **0.996x** the close
+median, and on live AAPL data it ran 319.4 to 342.0 against a last price of 336.64. It is
+registered on the K_Line and the suite’s price-scale check passes it unmodified.
+
+### 17c. `GatorOsc_MACD` - two declaration bugs, threw on every call
+
+`GatorOsc_MACD` takes the 2026-March-10 `GatorOscillator` and adds a MACD on top of it:
+`Dif = Gator - eGator`, `MACD = ema(Dif)`, `Bar = Dif - MACD`. Two lines plus a histogram,
+the same shape as `M3_MACD` and `King_MACD`. It could not run at all.
+
+**1. `const MP` is assigned on the very next line.**
+
+```js
+const MP=0;   //MP=(High+Low)/2
+//first Jaw_t[1], Teeth_t[1], Jip_t[1]
+MP=(STK_high[1]+STK_low[1])/2;      // TypeError: Assignment to constant variable.
+```
+
+The function threw on the first call and drew nothing. The three sibling functions it was
+copied from - `Alligator`, `GatorOscillator` and `Alligator_OneLine` - all declare the same
+variable as `let MP=0;`. Changed to `let`.
+
+**2. `MACD` and `Bar` were never declared.**
+
+```js
+const Dif=[]; MACD=[]; Bar=[];  //Gator-eGator
+```
+
+`const` only reaches as far as the first semicolon, so only `Dif` is a local array. `MACD`
+and `Bar` are plain assignments to names that do not exist, which in a normal script
+silently create the globals `window.MACD` and `window.Bar`, and in strict mode raise
+`ReferenceError`. Nothing in the app currently reads those two names, so this had not yet
+broken anything else - but it was luck, not design. Changed to one declaration:
+
+```js
+const Dif=[], MACD=[], Bar=[];
+```
+
+Both fixed, and the function now returns `Dif`, `MACD` and `Bar` from bar 9, exactly as its
+own comment says (`Dif[], MACD[], Bar[]=9,...,2000`). All three oscillate about zero
+(-3.9 to 3.8 on live AAPL data), so it is drawn in a small window as its comment asks.
+
+### 17d. Three notes, nothing changed
+
+**1. Each RWI function still computes the series it throws away.** `RandomWalkIndex_Low`
+fills `RWI_high[]` on every bar and then returns only `RWI_low`; `RandomWalkIndex_High` does
+the mirror image. Harmless, and it keeps the two functions identical apart from the `return`,
+which is probably why it was done - but each one does twice the work it needs to.
+
+**2. `Alligator_OneLine`’s trailing comment still describes the old three lines**
+(`//normally drawing these three indicators in K_Line area`, and the `Lip_emp[]`,
+`Teeth_emp[]`, `Jaw_emp[]` ranges). It now returns one line, and the last comment line does
+say `Alligator_Line[]=4 to 2000`. Only the earlier lines are left over.
+
+**3. The new loops run one index past the last bar** (`i<=STK_close.length`, where the
+original used `i<`). That writes one extra `NaN` beyond the newest candle, which the registry
+trims, so nothing is visibly wrong. Mentioned only so it is not mistaken for the
+`i<K_close.length` fault in section 8b, which is the opposite mistake and does lose a bar.
+
+---
 ## Also checked
 
 - `let maxHigh, minLow=0;` (lines 524, 698, 752 and 837, in the KD functions) looks

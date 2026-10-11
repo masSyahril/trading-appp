@@ -156,6 +156,13 @@ function differences(def, ldef, params) {
 const closes = candles.map(c => c.close);
 const median = (a) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
 const closeMedian = median(closes);
+// Chart entries deliberately drawn on the K-line although their values are not at price
+// level, keyed by id with the reason. These must still draw on the last candle; only the
+// price-scale check is skipped. Add to this list on an explicit decision only, never to
+// quieten an accidental misplacement.
+const OFF_SCALE_OK = {
+  NSL: "Prof. Wang's comment says K_Line area; H+L-2*EMA(TP) oscillates about zero, so it sits at the bottom of the price scale (decided 2026-10-11)",
+};
 function priceChartProblems(def, ev) {
   const out = [];
   // Something must be drawn on the latest candle - the bar a trader looks at.
@@ -164,6 +171,7 @@ function priceChartProblems(def, ev) {
   // stochastic or a ratio near 1.0 placed here would sit flat at the bottom.
   def.outputs.forEach(o => {
     if (o.type === 'histogram') return;
+    if (OFF_SCALE_OK[def.id]) return;   // deliberately off the price scale - see above
     const v = (ev.series[o.key] || []).filter(x => x != null && Number.isFinite(x));
     if (!v.length) return;
     const m = median(v);

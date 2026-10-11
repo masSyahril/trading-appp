@@ -209,6 +209,43 @@
     // ma_day (both loops use the same recurrence; ma_day only sets where they split), so
     // ma_day cannot move these two lines. Labelled so the user is not misled, as HullMA_KD's esp is.
     ASI_Stochastic:           { name: 'ASI Stochastic', type: 'momentum', fn: 'ASI_Stochastic', inputs: ['open', 'high', 'low', 'close'], params: [['ma_day', 10, { label: 'ma_day (K/D ignore it)' }], ['esp', 9], ['KD_num', 9]], lines: ['ASI_KD_K', 'ASI_KD_D'], minPeriod: 10 },
+    // ---- 2026-10-04 to 10-10 batch -------------------------------------------------
+    // Placement is each function's own trailing comment, confirmed against the value range:
+    // CDP_OneLine / PIVG_3_Line / MIKE_3_Line say "in the K_Line area" and their values do sit
+    // on the price scale, so they are chart entries. Everything else says "in the small windows".
+    TRIX_King:                { name: 'TRIX_King(4-esp)', type: 'momentum', fn: 'TRIX_King', inputs: ['high', 'low', 'close'], params: [['esp1', 9], ['esp2', 9], ['esp3', 9], ['esp4', 9]], lines: ['TRIX', 'eTRIX'], minPeriod: 3 },
+    TRIX_King_Stochastic:     { name: 'TRIX_King(4-esp) Stochastic', type: 'momentum', fn: 'TRIX_King_Stochastic', inputs: ['high', 'low', 'close'], params: [['esp1', 9], ['esp2', 9], ['esp3', 9], ['esp4', 9], ['KD_num', 9]], lines: ['TRIX_King_KD_K', 'TRIX_King_KD_D'], minPeriod: 10 },
+    TRIX_Stochastic:          { name: 'TRIX Stochastic', type: 'momentum', fn: 'TRIX_Stochastic', inputs: ['close'], params: [['esp', 9], ['KD_num', 9]], lines: ['TRIX_KD_K', 'TRIX_KD_D'], minPeriod: 10 },
+    Coppock_Stochastic:       { name: 'Coppock Curve Stochastic', type: 'momentum', fn: 'CoppockCurve_Stochastic', inputs: ['close'], params: [['short_day', 10], ['long_day', 20], ['wgt_day', 10], ['KD_num', 9]], lines: ['Coppock_KD_K', 'Coppock_KD_D'], minPeriod: 48 },
+    M3_MACD:                  { name: 'M3_MACD', type: 'oscillator', fn: 'M3_MACD', inputs: ['close'], params: [['esp1', 9], ['esp2', 9]], lines: ['Dif', 'MACD'], histogram: 'Bar', minPeriod: 6 },
+    M4_MACD:                  { name: 'M4_MACD', type: 'oscillator', fn: 'M4_MACD', inputs: ['close'], params: [['esp1', 9], ['esp2', 9]], lines: ['Dif', 'MACD'], histogram: 'Bar', minPeriod: 6 },
+    DiffEMA:                  { name: 'DiffEMA(TP)', type: 'oscillator', fn: 'DiffEMA', inputs: ['high', 'low', 'close'], params: [['N1', 12], ['N2', 26], ['N3', 9]], lines: ['DiffEMA', 'eDiffEMA'], histogram: 'Bar', minPeriod: 2 },
+    DiffEMA2:                 { name: 'DiffEMA2(TP)', type: 'oscillator', fn: 'DiffEMA2', inputs: ['high', 'low', 'close'], params: [['N1', 12], ['N2', 26], ['N3', 9]], lines: ['DiffEMA', 'eDiffEMA'], histogram: 'Bar', minPeriod: 2 },
+    GannHiLo_Stochastic:      { name: 'Gann HiLo Stochastic', type: 'momentum', fn: 'GannHiLo_Stochastic', inputs: ['high', 'low', 'close'], params: [['ma_day', 10], ['esp', 9], ['KD_num', 9]], lines: ['Gann_KD_K', 'Gann_KD_D'], minPeriod: 18 },
+    // NSL is overlaid on the K_Line at the user's request (2026-10-11), which is what its own
+    // comment asks for. Note that H+L-2*EMA(TP) oscillates about zero (-9.3..8.9 where the
+    // close ran 99..147), so it draws along the bottom edge of the price scale rather than
+    // among the candles. The suite's price-scale check exempts it by name for that reason.
+    NSL:                      { name: 'NSL(TP)', type: 'momentum', fn: 'NSL', inputs: ['high', 'low', 'close'], params: [['EMA_num', 9], ['NSL_num', 9]], lines: ['NSL', 'eNSL'], placement: 'chart', minPeriod: 2 },
+    MFI_PriVol:               { name: 'MFI_PriVol', type: 'volume', fn: 'MFI_PriVol', inputs: ['high', 'low', 'close', 'volume'], params: [['Ndaysago', 10, { label: 'Ndaysago 1-10', min: 1, max: 10 }], ['esp', 9]], lines: ['MFI_PriVol', 'eMFI_PriVol'], minPeriod: 12 },
+    MFI_PriVolROC:            { name: 'MFI_PriVolROC', type: 'volume', fn: 'MFI_PriVolROC', inputs: ['high', 'low', 'close', 'volume'], params: [['Ndaysago', 10, { label: 'Ndaysago 1-10', min: 1, max: 10 }], ['esp', 9]], lines: ['MFI_PriVolROC', 'eMFI_PriVolROC'], minPeriod: 12 },
+    VolWgtAvgPrice_Stochastic:{ name: 'VolWgtAvgPrice Stochastic', type: 'volume', fn: 'VolWgtAvgPrice_Stochastic', inputs: ['high', 'low', 'close', 'volume'], params: [['period', 10], ['esp', 9], ['KD_num', 9]], lines: ['VolWgtAvgPrice_KD_K', 'VolWgtAvgPrice_KD_D'], minPeriod: 19 },
+    CDP_OneLine:              { name: 'CDP OneLine', type: 'trend', fn: 'CDP_OneLine', inputs: ['high', 'low', 'close'], params: [['esp', 9]], lines: ['OneLine', 'eOneLine'], placement: 'chart', minPeriod: 3 },
+    PIVG_3_Line:              { name: 'PIVG 3-Line', type: 'trend', fn: 'PIVG_3_Line', inputs: ['high', 'low', 'close'], params: [], lines: ['LineBelow', 'LineAbove', 'LineCenter'], placement: 'chart', minPeriod: 2 },
+    MIKE_3_Line:              { name: 'MIKE 3-Line', type: 'trend', fn: 'MIKE_3_Line', inputs: ['high', 'low', 'close'], params: [['day', 10]], lines: ['Support_Line', 'Resistance_Line', 'Integration_Line'], placement: 'chart', minPeriod: 11 },
+    // ---- 2026-10-11 batch ----------------------------------------------------------
+    // Prof. Wang split the Jan-20 RandomWalkIndex into two separate one-line indicators,
+    // and reduced the Jan-29 three-line Alligator to a single averaged line.
+    // Neither RWI function carries a placement comment, so it was measured: 0.08..2.17
+    // against a close of 98..126, and the app's own legacy RWI entry is type 'oscillator',
+    // so both are panes. Alligator_OneLine says "K_Line area" and its median sits at
+    // 0.996x the close median, so it really is a price-scale overlay.
+    RandomWalkIndex_Low:      { name: 'Random Walk(Low)', type: 'oscillator', fn: 'RandomWalkIndex_Low', inputs: ['high', 'low', 'close'], params: [['RWI_n', 10], ['esp', 9]], lines: ['RWI_low'], minPeriod: 11 },
+    RandomWalkIndex_High:     { name: 'Random Walk(High)', type: 'oscillator', fn: 'RandomWalkIndex_High', inputs: ['high', 'low', 'close'], params: [['RWI_n', 10], ['esp', 9]], lines: ['RWI_high'], minPeriod: 11 },
+    Alligator_OneLine:        { name: 'Alligator OneLine', type: 'trend', fn: 'Alligator_OneLine', inputs: ['high', 'low'], params: [], lines: ['Alligator_Line'], placement: 'chart', minPeriod: 5 },
+    // Same shape as M3_MACD / King_MACD: two lines plus a histogram. Its comment says
+    // "small windows" and Dif/MACD/Bar all oscillate about zero (-3.4..3.1), so it is a pane.
+    GatorOsc_MACD:            { name: 'Gator MACD', type: 'oscillator', fn: 'GatorOsc_MACD', inputs: ['high', 'low'], params: [['esp', 9]], lines: ['Dif', 'MACD'], histogram: 'Bar', minPeriod: 10 },
   };
 
   const CATEGORY = { trend: 'Trend', momentum: 'Momentum', oscillator: 'Oscillators', volume: 'Volume', volatility: 'Volatility' };
