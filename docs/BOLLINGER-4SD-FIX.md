@@ -10,7 +10,7 @@ Files involved:
 Both had the same `computeBollingerBands` implementation.
 
 ---
-
+111111
 ### 1. Original problems
 
 1. **Mixed indexing and misaligned arrays**
