@@ -265,6 +265,11 @@ const WANG_PANEL_INDICATORS = {
   // Same shape as M3_MACD / King_MACD: two lines plus a histogram. Its comment says
   // "small windows" and Dif/MACD/Bar all oscillate about zero (-3.4..3.1), so it is a pane.
   GatorOsc_MACD:            { name: 'Gator MACD', type: 'oscillator', fn: 'GatorOsc_MACD', inputs: ['high', 'low'], params: [['esp', 9]], lines: ['Dif', 'MACD'], histogram: 'Bar', minPeriod: 10 },
+  // Prof. Wang's 2026-03-08 ATR-percent. Same formula as the existing "ATR Percentage"
+  // (fn ATRPercentage): at equal smoothing the two are identical on every bar. Kept as a
+  // separate entry because Prof. Wang wrote it as its own menu item with esp=9 rather than
+  // ATR_num=14. Comment says "small windows"; values are percentages (0.9..2.1), so pane.
+  AvgTRPct:                 { name: 'AvgTRPct (ATRP)', type: 'volatility', fn: 'AvgTRPct', inputs: ['high', 'low', 'close'], params: [['esp', 9]], lines: ['AvgTRpct'], minPeriod: 3 },
 };
 
 // A WANG_PANEL_INDICATORS param's third item: `true` (fractional) or { fractional, label, min, max }.

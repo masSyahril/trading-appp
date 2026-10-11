@@ -1595,6 +1595,62 @@ trims, so nothing is visibly wrong. Mentioned only so it is not mistaken for the
 `i<K_close.length` fault in section 8b, which is the opposite mistake and does lose a bar.
 
 ---
+
+## 18. `AvgTRPct` registered - please read, it duplicates an indicator you already have
+
+`AvgTRPct` (2026-March-08, "Average True Range Percentage, ATRP") has now been added to the
+menu as **AvgTRPct (ATRP)**. Nothing in the function was changed - it is correct as written,
+runs from bar 2, has no gaps and reaches the newest candle.
+
+One thing is worth your decision, though.
+
+### 18a. It is the same indicator as the existing "ATR Percentage"
+
+The app already has an **ATR Percentage** entry, driven by your own `ATRPercentage` function.
+Side by side:
+
+| | `AvgTRPct` (2026-03-08) | `ATRPercentage` (already in the menu) |
+|---|---|---|
+| True range | `max(H-L, abs(C_prev-H), abs(C_prev-L))` | `max(H-L, abs(H-C_prev), abs(L-C_prev))` |
+| Smoothing | `(esp-1)/(esp+1)*prev + 2/(esp+1)*TR` | `(ATR_num-1)/(ATR_num+1)*prev + 2/(ATR_num+1)*TR` |
+| Percent | `ATR/Close*100` | `ATR/Close*100` |
+| Seed | `ATR[2]=TR[2]` | `ATR[2]=TR[2]` |
+| Parameter | `esp`, default **9** | `ATR_num`, default **14** |
+
+`abs(C_prev-H)` and `abs(H-C_prev)` are the same number, so the two formulas are identical in
+every line. Run on the same 200 candles:
+
+| Comparison | Result |
+|---|---|
+| `AvgTRPct(14)` vs `ATRPercentage(14)` | **identical on all 198 shared bars** |
+| `AvgTRPct(9)` vs `ATRPercentage(9)` | **identical on all 198 shared bars** |
+| `AvgTRPct(9)` vs `ATRPercentage(14)` | 197/198 bars differ, by up to 0.18 |
+
+The last row is the only reason they look different in the app: the two entries ship with
+different defaults, not different mathematics. On live AAPL data the new entry reads 0.300
+and the old one 0.295.
+
+### 18b. What would you like done
+
+Three options, and this is your call, not ours:
+
+1. **Keep both** - as it stands now. Two menu entries, same formula, different default
+   smoothing (9 and 14). Harmless, but someone may add both and wonder why they nearly
+   overlap.
+2. **Keep one and change its default.** If 9 is the value you want, the existing
+   "ATR Percentage" default can move from 14 to 9 and `AvgTRPct` can stay out of the menu.
+3. **Replace the old one** with this entry and retire `ATRPercentage`.
+
+Nothing has been retired or renamed - option 1 is simply what is in place until you say
+otherwise.
+
+### 18c. One small difference, in the new one's favour
+
+`ATRPercentage` loops `i<=STK_close.length`, so it writes one value past the newest candle;
+`AvgTRPct` loops `i<K_close.length` and stops exactly on it. The registry trims the extra
+either way, so nothing is visibly wrong - but `AvgTRPct` is the tidier of the two.
+
+---
 ## Also checked
 
 - `let maxHigh, minLow=0;` (lines 524, 698, 752 and 837, in the KD functions) looks
