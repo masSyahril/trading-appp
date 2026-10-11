@@ -59,8 +59,8 @@
   }
 
   function lastPrice() {
-    const symbol = window.TradeFlowChart.getCurrentSymbol();
-    const p = window.TradeFlowChart.getLastPrice(symbol);
+    const symbol = window.TradeFlowChart?.getCurrentSymbol?.();
+    const p = window.TradeFlowChart?.getLastPrice?.(symbol);
     return typeof p === 'number' && isFinite(p) ? p : null;
   }
 

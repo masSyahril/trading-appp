@@ -85,7 +85,7 @@
         showAlert('success', t('auth.register.successMessage'));
         setTimeout(() => { window.location.href = '../../index.html'; }, 1500);
       } catch (err) {
-        showAlert('error', err.message || 'Could not create your account.');
+        showAlert('error', err.message || t('auth.register.genericError'));
         submitBtn.disabled = false;
         submitBtn.textContent = t('auth.register.submit');
       }

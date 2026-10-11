@@ -8,7 +8,8 @@
   },
   "scripts": {
     "test": "node test/run-indicator-tests.js && node test/run-registry-tests.js && node test/run-backtest-tests.js",
-    "backtest": "node backtest/run.js"
+    "backtest": "node backtest/run.js",
+    "excel": "node tools/excel-indicators.js"
   },
   "repository": {
     "type": "git",
@@ -23,6 +24,10 @@
   },
   "homepage": "https://github.com/masSyahril/trading-app#readme",
   "dependencies": {
-    "mathjs": "^15.2.0"
+    "mathjs": "^15.2.0",
+    "nodejs": "^0.0.0"
+  },
+  "devDependencies": {
+    "exceljs": "^4.4.0"
   }
 }

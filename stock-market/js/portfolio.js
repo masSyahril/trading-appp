@@ -79,7 +79,7 @@ window.TradeFlowPortfolio = (function () {
   // every symbol, so positions in a symbol you've since navigated away from
   // still mark-to-market correctly instead of freezing at entry price.
   function currentPrice(symbol) {
-    const p = window.TradeFlowChart.getLastPrice(symbol);
+    const p = window.TradeFlowChart?.getLastPrice?.(symbol);
     return typeof p === 'number' && isFinite(p) ? p : null;
   }
 

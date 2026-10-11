@@ -82,7 +82,7 @@
         await TLAuth.login(email, password);
         window.location.href = '../../index.html';
       } catch (err) {
-        showAlert('error', err.message || 'Sign in failed.');
+        showAlert('error', err.message || t('auth.login.genericError'));
         submitBtn.disabled = false;
         submitBtn.textContent = t('auth.login.submit');
       }

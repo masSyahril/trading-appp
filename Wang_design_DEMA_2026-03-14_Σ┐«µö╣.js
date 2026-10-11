@@ -1,4 +1,4 @@
-//===designed by Prof Wang, 2025-Nov-08===modify on 2026-March-14====
+  //===designed by Prof Wang, 2025-Nov-08===modify on 2026-March-14====
 //DEMA指標(Double Exponential Moving Average)
 //DEMA＝2*N日EMA－N日EMA的EMA。即：DEMA=2*EMA-EMA(EMA).
 //function computeDEMA(EMA, DEMA, esp)

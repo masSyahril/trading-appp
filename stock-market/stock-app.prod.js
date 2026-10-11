@@ -119,7 +119,6 @@
       }
 
       setupEventHandlers();
-      updateMarketStatus();
       updateMarketIndicators();
       setupChart();
       setupThemeSync();
@@ -164,6 +163,7 @@
       // kept live for every symbol even while a different one is on-screen.
       getLastPrice: (symbol) => lastPrice[symbol],
       getWatchlist: () => watchlist.slice(),
+      getMarketSession: () => computeMarketSession(),
       onSymbolChange(cb) { if (typeof cb === 'function') symbolChangeListeners.push(cb); },
       onResize(cb) { if (typeof cb === 'function') resizeListeners.push(cb); },
       // Lets other modules (e.g. indicator crosshair-sync) drive the OHLCV
@@ -308,43 +308,52 @@
       });
     }
 
-    // Update market status every minute
-    setInterval(updateMarketStatus, 60000);
   }
 
-  function updateMarketStatus() {
+  // NYSE regular session is always 9:30-16:00 America/New_York time,
+  // pre-market 4:00-9:30 and after-hours 16:00-20:00 (no holiday calendar).
+  // Computed against the real IANA zone (not a fixed offset), so this stays
+  // correct across the EST/EDT daylight-saving switch - unlike the version
+  // of this function this replaces, which hardcoded UTC-5 year-round and so
+  // was off by an hour for roughly half the year (including right now, in
+  // September, while the US is on EDT/UTC-4).
+  //
+  // This is a pure calculation with no DOM dependency, exposed below via
+  // window.TradeFlowChart.getMarketSession() so every page (dashboard.html,
+  // terminal.html, ...) can render it into its own markup instead of each
+  // duplicating this logic - and so it's safe to call immediately, before
+  // window.TradeFlowChart's own 100ms setup delay finishes.
+  const NY_TIME_FORMAT = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York', weekday: 'short',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+  });
+  function computeMarketSession() {
     const now = new Date();
-    const utc = new Date(now.getTime() + now.getTimezoneOffset() * 60000);
-    const est = new Date(utc.getTime() - (5 * 3600000));
-    
-    const hour = est.getHours();
-    const day = est.getDay();
-    
-    const isWeekday = day >= 1 && day <= 5;
-    const isMarketHours = hour >= 9.5 && hour < 16;
-    const isAfterHours = isWeekday && ((hour >= 16 && hour < 20) || (hour >= 4 && hour < 9.5));
-    
-    const statusEl = el.marketStatus;
-    if (!statusEl) return;
-    
-    const statusText = statusEl.querySelector('.status-text');
-    const statusDot = statusEl.querySelector('.status-dot-compact');
-    
-    if (isWeekday && isMarketHours) {
-      if (statusText) statusText.textContent = "Market Open";
-      statusEl.className = "market-status-compact bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded";
-      if (statusDot) statusDot.style.background = "#10b981";
-    } else if (isAfterHours) {
-      if (statusText) statusText.textContent = "After Hours";
-      statusEl.className = "market-status-compact bg-yellow-500/20 text-yellow-400 text-xs px-2 py-0.5 rounded";
-      if (statusDot) statusDot.style.background = "#f59e0b";
-    } else {
-      if (statusText) statusText.textContent = "Market Closed";
-      statusEl.className = "market-status-compact bg-red-500/20 text-red-400 text-xs px-2 py-0.5 rounded";
-      if (statusDot) statusDot.style.background = "#ef4444";
-    }
+    const p = Object.fromEntries(NY_TIME_FORMAT.formatToParts(now).map(x => [x.type, x.value]));
+    const nyTime = `${p.hour}:${p.minute}:${p.second}`;
+    const mins = Number(p.hour) * 60 + Number(p.minute);
+    const isWeekday = p.weekday !== 'Sat' && p.weekday !== 'Sun';
+
+    let state, labelKey;
+    if (!isWeekday) { state = 'closed'; labelKey = 'market.closed'; }
+    else if (mins >= 570 && mins < 960) { state = 'open'; labelKey = 'market.open'; }
+    else if (mins >= 240 && mins < 570) { state = 'pre'; labelKey = 'market.preMarket'; }
+    else if (mins >= 960 && mins < 1200) { state = 'after'; labelKey = 'market.afterHours'; }
+    else { state = 'closed'; labelKey = 'market.closed'; }
+
+    // Local-equivalent clock time, in the viewer's own browser timezone and
+    // (once TradeFlowI18n is ready) their own selected locale - so someone
+    // outside the US sees their own wall-clock time instead of having to
+    // convert it from New York time themselves.
+    let localTime = null;
+    try {
+      const locale = (window.TradeFlowI18n && window.TradeFlowI18n.intlLocale) ? window.TradeFlowI18n.intlLocale() : undefined;
+      localTime = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(now);
+    } catch (e) {}
+
+    return { state, labelKey, nyTime, localTime };
   }
-  
+
   function updateMarketIndicators() {
     const updateIndicator = async (symbol, changeId) => {
       try {
