@@ -1,0 +1,186 @@
+/* Mini History Coffee
+ * River green (Banjar rivers) + kunyit yellow from sasirangan dye,
+ * dark-roast ink on a cool paper. The running-stitch divider is the
+ * jelujur stitch sasirangan cloth is tied with. */
+:root {
+  --sungai: #173A35;
+  --sungai-2: #22504A;
+  --kunyit: #E3A72F;
+  --ink: #2B1E18;
+  --ink-soft: #5E5049;
+  --paper: #E9ECE6;
+  --paper-2: #F7F8F4;
+  --stamp: #A8322B;
+  --line: #C9CEC4;
+
+  --display: "Gloock", Georgia, serif;
+  --body: "Figtree", system-ui, sans-serif;
+
+  --gutter: clamp(16px, 5vw, 64px);
+  --max: 1180px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 1.0625rem/1.6 var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+a { color: inherit; }
+h1, h2 { font-family: var(--display); font-weight: 400; margin: 0; line-height: 1.05; }
+h2 { font-size: clamp(2rem, 4.5vw, 3.25rem); }
+p { margin: 0; }
+
+:focus-visible { outline: 3px solid var(--kunyit); outline-offset: 3px; border-radius: 2px; }
+
+.skip { position: absolute; left: -999px; top: 8px; background: var(--kunyit); color: var(--ink); padding: 8px 14px; z-index: 10; }
+.skip:focus { left: 8px; }
+
+/* Header ------------------------------------------------------------ */
+.top {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 14px var(--gutter);
+  background: var(--sungai); color: var(--paper-2);
+}
+.brand { font-family: var(--display); font-size: 1.35rem; text-decoration: none; line-height: 1; }
+.brand span { display: block; font-family: var(--body); font-size: .72rem; font-weight: 600; letter-spacing: .32em; color: var(--kunyit); margin-top: 3px; }
+.top nav { display: flex; gap: clamp(14px, 3vw, 32px); }
+.top nav a { text-decoration: none; font-weight: 500; font-size: .95rem; opacity: .85; }
+.top nav a:hover { opacity: 1; text-decoration: underline; text-underline-offset: 6px; text-decoration-color: var(--kunyit); }
+
+/* Buttons ----------------------------------------------------------- */
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.btn {
+  display: inline-block; padding: 13px 22px; border-radius: 999px;
+  font-weight: 600; font-size: .98rem; text-decoration: none;
+  border: 2px solid transparent; transition: background-color .15s, color .15s;
+}
+.btn-primary { background: var(--kunyit); color: var(--ink); }
+.btn-primary:hover { background: #F0B947; }
+.btn-ghost { border-color: currentColor; }
+.btn-ghost:hover { background: rgba(255,255,255,.08); }
+
+/* Hero -------------------------------------------------------------- */
+.hero {
+  background: var(--sungai); color: var(--paper-2);
+  display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: clamp(32px, 5vw, 72px); align-items: center;
+  padding: clamp(48px, 8vw, 110px) var(--gutter) clamp(64px, 9vw, 120px);
+}
+.hero-text { max-width: 36rem; justify-self: end; }
+.hero h1 { font-size: clamp(2.6rem, 6.4vw, 5.2rem); letter-spacing: -.01em; }
+.lede { margin-top: 24px; font-size: 1.15rem; max-width: 32rem; color: #CFDAD5; }
+.status { margin-top: 22px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.status::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--kunyit); }
+.status[hidden] { display: none; }
+.status.closed::before { background: var(--stamp); }
+
+/* The photo prints: newest Instagram posts as tilted photographs */
+.prints { position: relative; height: clamp(360px, 42vw, 520px); max-width: 520px; width: 100%; }
+.print {
+  position: absolute; margin: 0; width: 62%;
+  background: var(--paper-2); padding: 10px 10px 0; color: var(--ink);
+  box-shadow: 0 18px 40px rgba(5, 20, 18, .45);
+  text-decoration: none;
+  transition: transform .25s ease;
+}
+.print:nth-child(1) { left: 0;   top: 10%; transform: rotate(-7deg); z-index: 1; }
+.print:nth-child(2) { left: 36%; top: 0;   transform: rotate(5deg);  z-index: 2; }
+.print:nth-child(3) { left: 18%; top: 34%; transform: rotate(-1.5deg); z-index: 3; }
+a.print:hover, a.print:focus-visible { transform: rotate(0) scale(1.03); z-index: 4; }
+.print-img { aspect-ratio: 1; background: var(--sungai-2) center/cover no-repeat; }
+.print figcaption { font-size: .82rem; font-weight: 600; padding: 9px 2px 11px; color: var(--ink-soft); }
+.prints.is-loading .print-img { animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .55; } }
+
+/* Running-stitch divider (jelujur) */
+.stitch {
+  height: 22px; background-color: var(--paper);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='22' viewBox='0 0 48 22'%3E%3Cpath d='M0 11 Q12 2 24 11 T48 11' fill='none' stroke='%23E3A72F' stroke-width='2.5' stroke-dasharray='6 5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: repeat-x; background-position: center;
+}
+
+/* Facts strip ------------------------------------------------------- */
+.facts { padding: 28px var(--gutter) 8px; }
+.facts dl { max-width: var(--max); margin: 0 auto; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+.facts dt { font-size: .85rem; color: var(--ink-soft); }
+.facts dd { margin: 4px 0 0; font-weight: 600; }
+
+/* Section shell ----------------------------------------------------- */
+.arsip, .menu, .visit { padding: clamp(56px, 8vw, 104px) var(--gutter); }
+.section-head { max-width: var(--max); margin: 0 auto 40px; }
+.section-head > p { margin-top: 12px; max-width: 34rem; color: var(--ink-soft); }
+.feed-meta { font-size: .9rem; }
+
+/* Timeline: posts grouped by day, like an archive ledger ------------ */
+.timeline { list-style: none; margin: 0 auto; padding: 0; max-width: var(--max); }
+.day { display: grid; grid-template-columns: 11rem minmax(0, 1fr); gap: 24px; padding: 28px 0; border-top: 1px solid var(--line); }
+.day-date { font-family: var(--display); font-size: 1.6rem; line-height: 1.1; }
+.day-date small { display: block; font-family: var(--body); font-size: .85rem; color: var(--ink-soft); margin-top: 6px; }
+.day-posts { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+.post { text-decoration: none; display: block; }
+.post-img { aspect-ratio: 4 / 5; background: var(--line) center/cover no-repeat; position: relative; }
+.post-type { position: absolute; left: 10px; top: 10px; background: var(--ink); color: var(--paper-2); font-size: .75rem; font-weight: 600; padding: 3px 9px; border-radius: 999px; }
+.post-time { display: block; font-size: .85rem; color: var(--ink-soft); margin-top: 10px; }
+.post-caption { margin-top: 4px; font-size: .95rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.post:hover .post-caption { text-decoration: underline; text-decoration-color: var(--kunyit); text-underline-offset: 4px; }
+.post.is-new .post-time { color: var(--stamp); font-weight: 700; }
+
+.feed-empty { max-width: var(--max); margin: 0 auto; padding: 32px 0; border-top: 1px solid var(--line); }
+.feed-empty p { max-width: 34rem; }
+.feed-empty .actions { margin-top: 18px; }
+
+/* Menu -------------------------------------------------------------- */
+.menu { background: var(--paper-2); }
+.menu-cols { max-width: var(--max); margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 48px; }
+.menu-group h3 { font-family: var(--display); font-weight: 400; font-size: 1.6rem; margin: 0 0 14px; }
+.menu-group ul { list-style: none; margin: 0; padding: 0; }
+.menu-group li { display: flex; align-items: baseline; gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--line); }
+.menu-group .name { font-weight: 600; }
+.menu-group .note { display: block; font-size: .88rem; color: var(--ink-soft); font-weight: 400; }
+.menu-group .price { margin-left: auto; font-weight: 600; white-space: nowrap; }
+
+/* Visit ------------------------------------------------------------- */
+.visit {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: clamp(32px, 5vw, 64px);
+  max-width: calc(var(--max) + 2 * var(--gutter)); margin: 0 auto; align-items: start;
+}
+.visit address { font-style: normal; margin-top: 20px; font-size: 1.1rem; }
+.plus { margin-top: 10px; color: var(--ink-soft); font-size: .95rem; }
+.visit .btn-ghost:hover { background: rgba(0,0,0,.05); }
+.map { width: 100%; aspect-ratio: 4 / 3; border: 0; background: var(--line); filter: saturate(.85); }
+
+/* Footer ------------------------------------------------------------ */
+.foot {
+  background: var(--ink); color: #D9D2CC;
+  padding: 40px var(--gutter);
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;
+}
+.foot a { margin-left: 18px; }
+.foot a:first-child { margin-left: 0; }
+
+/* Responsive -------------------------------------------------------- */
+@media (max-width: 860px) {
+  .hero { grid-template-columns: 1fr; }
+  .hero-text { justify-self: start; }
+  .prints { justify-self: center; height: clamp(300px, 86vw, 440px); }
+  .facts dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .day { grid-template-columns: 1fr; gap: 14px; }
+  .visit { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .top nav a:not(:last-child) { display: none; }
+  .facts dl { grid-template-columns: 1fr; gap: 14px; }
+  .day-posts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .post-caption { -webkit-line-clamp: 2; font-size: .88rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
