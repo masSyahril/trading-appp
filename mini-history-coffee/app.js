@@ -13,6 +13,10 @@ const CONFIG = {
   openHour: null,
   closeHour: 24,
 
+  // Your own photos in foto/ (see foto/README.txt). Shown at the top of the
+  // page and in "Suasana kedai" while the Instagram feed isn't connected.
+  photos: [],
+
   // TODO: replace with the real menu and prices (e.g. 'Rp18.000').
   // Leave price empty to show the item without one.
   menu: [
@@ -86,16 +90,43 @@ function firstLine(caption) {
   return (caption || '').split('\n')[0].trim();
 }
 
-function renderPrints(posts) {
+// items: [{ image, alt, label, href? }], newest last so it lands on top.
+const tilts = ['-7deg', '5deg', '-1.5deg'];
+function renderPrints(items) {
   const prints = $('prints');
-  prints.classList.remove('is-loading');
-  if (!posts.length) return;
-  prints.replaceChildren(...posts.slice(0, 3).reverse().map((p) => {
-    const date = new Date(p.timestamp);
-    return el('a', { class: 'print', href: p.permalink, target: '_blank', rel: 'noopener' },
-      el('div', { class: 'print-img', role: 'img', 'aria-label': firstLine(p.caption) || 'Foto dari Instagram', style: `background-image:url("${encodeURI(p.image)}")` }),
-      el('figcaption', {}, `${dayLabel(date)}, ${timeFmt.format(date)}`));
+  if (!items.length) return;
+  prints.replaceChildren(...items.slice(0, 3).map((item, i) => {
+    const attrs = { class: 'print', style: `--r:${tilts[i]};--i:${i}` };
+    if (item.href) Object.assign(attrs, { href: item.href, target: '_blank', rel: 'noopener' });
+    return el(item.href ? 'a' : 'figure', attrs,
+      el('div', { class: 'print-img', role: 'img', 'aria-label': item.alt, style: `background-image:url("${encodeURI(item.image)}")` }),
+      el('figcaption', {}, item.label));
   }));
+}
+
+function postsToPrints(posts) {
+  return posts.slice(0, 3).reverse().map((p) => {
+    const date = new Date(p.timestamp);
+    return {
+      image: p.image,
+      alt: firstLine(p.caption) || 'Foto dari Instagram',
+      label: `${dayLabel(date)}, ${timeFmt.format(date)}`,
+      href: p.permalink,
+    };
+  });
+}
+
+function photosToPrints(photos) {
+  return photos.slice(0, 3).reverse().map((p) => ({ image: p.src, alt: p.caption || 'Foto kedai', label: p.caption || '' }));
+}
+
+function renderGallery() {
+  if (!CONFIG.photos.length) return;
+  $('suasana').hidden = false;
+  $('gallery-grid').replaceChildren(...CONFIG.photos.map((p) =>
+    el('figure', {},
+      el('img', { src: p.src, alt: p.caption || 'Foto kedai', loading: 'lazy' }),
+      p.caption ? el('figcaption', {}, p.caption) : null)));
 }
 
 function renderTimeline(posts, seen) {
@@ -125,7 +156,8 @@ function renderTimeline(posts, seen) {
 }
 
 function showEmpty() {
-  $('prints').classList.remove('is-loading');
+  // Keep the built-in illustrations unless the cafe added its own photos.
+  if (CONFIG.photos.length) renderPrints(photosToPrints(CONFIG.photos));
   $('timeline').replaceChildren();
   $('feed-empty').hidden = false;
   $('feed-meta').textContent = '';
@@ -138,7 +170,7 @@ async function loadFeed() {
     if (!['ok', 'stale'].includes(data.status) || !data.posts?.length) return showEmpty();
 
     const seen = readSeen();
-    renderPrints(data.posts);
+    renderPrints(postsToPrints(data.posts));
     renderTimeline(data.posts, seen);
     writeSeen(data.posts.map((p) => p.id));
     $('feed-empty').hidden = true;
@@ -174,9 +206,10 @@ function renderOpenStatus() {
     : `Sedang tutup, buka lagi pukul ${String(CONFIG.openHour).padStart(2, '0')}.00`;
 }
 
-for (const id of ['ig-link', 'ig-foot']) $(id).href = igProfile;
-$('prints').classList.add('is-loading');
+for (const id of ['feed-empty', 'ig-foot']) $(id).href = igProfile;
+$('ig-handle').textContent = `@${CONFIG.instagramHandle}`;
 renderMenu();
+renderGallery();
 renderOpenStatus();
 loadFeed();
 setInterval(loadFeed, CONFIG.pollMinutes * 60000);

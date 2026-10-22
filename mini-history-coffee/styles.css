@@ -87,16 +87,21 @@ p { margin: 0; }
   background: var(--paper-2); padding: 10px 10px 0; color: var(--ink);
   box-shadow: 0 18px 40px rgba(5, 20, 18, .45);
   text-decoration: none;
+  transform: rotate(var(--r, 0deg));
   transition: transform .25s ease;
+  /* The page's one entrance: prints laid down on the table, one by one. */
+  animation: lay-down .7s cubic-bezier(.2, .8, .2, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 140ms + 150ms);
 }
-.print:nth-child(1) { left: 0;   top: 10%; transform: rotate(-7deg); z-index: 1; }
-.print:nth-child(2) { left: 36%; top: 0;   transform: rotate(5deg);  z-index: 2; }
-.print:nth-child(3) { left: 18%; top: 34%; transform: rotate(-1.5deg); z-index: 3; }
+.print:nth-child(1) { left: 0;   top: 10%; z-index: 1; }
+.print:nth-child(2) { left: 36%; top: 0;   z-index: 2; }
+.print:nth-child(3) { left: 18%; top: 34%; z-index: 3; }
+@keyframes lay-down {
+  from { opacity: 0; transform: translateY(-48px) rotate(calc(var(--r, 0deg) * 3)) scale(1.06); }
+}
 a.print:hover, a.print:focus-visible { transform: rotate(0) scale(1.03); z-index: 4; }
 .print-img { aspect-ratio: 1; background: var(--sungai-2) center/cover no-repeat; }
 .print figcaption { font-size: .82rem; font-weight: 600; padding: 9px 2px 11px; color: var(--ink-soft); }
-.prints.is-loading .print-img { animation: pulse 1.6s ease-in-out infinite; }
-@keyframes pulse { 50% { opacity: .55; } }
 
 /* Running-stitch divider (jelujur) */
 .stitch {
@@ -131,18 +136,38 @@ a.print:hover, a.print:focus-visible { transform: rotate(0) scale(1.03); z-index
 .post:hover .post-caption { text-decoration: underline; text-decoration-color: var(--kunyit); text-underline-offset: 4px; }
 .post.is-new .post-time { color: var(--stamp); font-weight: 700; }
 
-.feed-empty { max-width: var(--max); margin: 0 auto; padding: 32px 0; border-top: 1px solid var(--line); }
-.feed-empty p { max-width: 34rem; }
-.feed-empty .actions { margin-top: 18px; }
+.feed-empty {
+  max-width: var(--max); margin: 0 auto;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px;
+  padding: clamp(28px, 5vw, 48px) clamp(220px, 24vw, 300px) clamp(28px, 5vw, 48px) clamp(28px, 5vw, 48px);
+  background: var(--kunyit) url("img/kopi-panas.svg") right -30px center / auto 130% no-repeat;
+  color: var(--ink); text-decoration: none;
+}
+.feed-empty[hidden] { display: none; }
+.feed-empty-text { display: grid; gap: 6px; }
+.ig-handle { font-family: var(--display); font-weight: 400; font-size: clamp(1.8rem, 5vw, 3.4rem); line-height: 1; }
+.btn-dark { background: var(--ink); color: var(--paper-2); }
+.feed-empty:hover .btn-dark { background: var(--sungai); }
+
+/* Sasirangan band ---------------------------------------------------- */
+.band { height: 64px; background: var(--sungai) url("img/sasirangan.svg") 0 0 / 64px 64px repeat-x; }
+
+/* Gallery (cafe's own photos) --------------------------------------- */
+.gallery { padding: 0 var(--gutter) clamp(56px, 8vw, 104px); }
+.gallery-grid { max-width: var(--max); margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+.gallery figure { margin: 0; }
+.gallery img { width: 100%; aspect-ratio: 1; object-fit: cover; }
+.gallery figcaption { font-size: .9rem; color: var(--ink-soft); margin-top: 8px; }
 
 /* Menu -------------------------------------------------------------- */
-.menu { background: var(--paper-2); }
+.menu { background: var(--sungai); color: var(--paper-2); }
+.menu .section-head > p { color: #CFDAD5; }
 .menu-cols { max-width: var(--max); margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 48px; }
-.menu-group h3 { font-family: var(--display); font-weight: 400; font-size: 1.6rem; margin: 0 0 14px; }
+.menu-group h3 { font-family: var(--display); font-weight: 400; font-size: 1.6rem; margin: 0 0 14px; color: var(--kunyit); }
 .menu-group ul { list-style: none; margin: 0; padding: 0; }
-.menu-group li { display: flex; align-items: baseline; gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--line); }
+.menu-group li { display: flex; align-items: baseline; gap: 10px; padding: 9px 0; border-bottom: 1px dashed rgba(233, 236, 230, .22); }
 .menu-group .name { font-weight: 600; }
-.menu-group .note { display: block; font-size: .88rem; color: var(--ink-soft); font-weight: 400; }
+.menu-group .note { display: block; font-size: .88rem; color: #A9BBB4; font-weight: 400; }
 .menu-group .price { margin-left: auto; font-weight: 600; white-space: nowrap; }
 
 /* Visit ------------------------------------------------------------- */
@@ -176,6 +201,8 @@ a.print:hover, a.print:focus-visible { transform: rotate(0) scale(1.03); z-index
 @media (max-width: 480px) {
   .top nav a:not(:last-child) { display: none; }
   .facts dl { grid-template-columns: 1fr; gap: 14px; }
+  .feed-empty { padding: 28px 24px 150px; background-position: right -30px bottom -70px; background-size: 200px auto; }
+  .ig-handle { font-size: 1.7rem; }
   .day-posts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .post-caption { -webkit-line-clamp: 2; font-size: .88rem; }
 }

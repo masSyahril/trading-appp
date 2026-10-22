@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80">
+  <rect width="80" height="80" fill="#173A35"/>
+  <path d="M0 14 L10 4 L20 14 L30 4 L40 14 L50 4 L60 14 L70 4 L80 14" fill="none" stroke="#E3A72F" stroke-width="3"/>
+  <path d="M0 22 L10 12 L20 22 L30 12 L40 22 L50 12 L60 22 L70 12 L80 22" fill="none" stroke="#E3A72F" stroke-width="1.5" stroke-dasharray="3 3"/>
+  <g fill="#A8322B">
+    <path d="M20 40 L28 32 L36 40 L28 48 Z"/><path d="M60 40 L68 32 L76 40 L68 48 Z" transform="translate(-80 0)"/>
+    <path d="M60 40 L68 32 L76 40 L68 48 Z"/>
+  </g>
+  <g fill="none" stroke="#F7F8F4" stroke-width="1.5" stroke-dasharray="2 3">
+    <path d="M28 28 L40 40 L28 52 L16 40 Z"/><path d="M68 28 L80 40 L68 52 L56 40 Z"/>
+  </g>
+  <circle cx="48" cy="40" r="3" fill="#E3A72F"/><circle cx="8" cy="40" r="3" fill="#E3A72F"/>
+  <path d="M0 58 L10 68 L20 58 L30 68 L40 58 L50 68 L60 58 L70 68 L80 58" fill="none" stroke="#E3A72F" stroke-width="1.5" stroke-dasharray="3 3"/>
+  <path d="M0 66 L10 76 L20 66 L30 76 L40 66 L50 76 L60 66 L70 76 L80 66" fill="none" stroke="#E3A72F" stroke-width="3"/>
+</svg>

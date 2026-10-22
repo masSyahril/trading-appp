@@ -52,10 +52,10 @@
         <p class="status" id="open-status" hidden></p>
       </div>
 
-      <div class="prints" id="prints" aria-label="Foto terbaru dari Instagram">
-        <figure class="print"><div class="print-img"></div><figcaption>&nbsp;</figcaption></figure>
-        <figure class="print"><div class="print-img"></div><figcaption>&nbsp;</figcaption></figure>
-        <figure class="print"><div class="print-img"></div><figcaption>&nbsp;</figcaption></figure>
+      <div class="prints" id="prints" aria-label="Foto dari kedai">
+        <figure class="print" style="--r:-7deg;--i:0"><div class="print-img" style="background-image:url(img/es-kopi.svg)"></div><figcaption>Es kopi susu</figcaption></figure>
+        <figure class="print" style="--r:5deg;--i:1"><div class="print-img" style="background-image:url(img/sasirangan.svg);background-size:40%;background-repeat:repeat"></div><figcaption>Motif sasirangan</figcaption></figure>
+        <figure class="print" style="--r:-1.5deg;--i:2"><div class="print-img" style="background-image:url(img/kopi-panas.svg)"></div><figcaption>Secangkir untuk sore ini</figcaption></figure>
       </div>
     </section>
 
@@ -77,11 +77,23 @@
         <p class="feed-meta" id="feed-meta" aria-live="polite"></p>
       </div>
       <ol class="timeline" id="timeline"></ol>
-      <div class="feed-empty" id="feed-empty" hidden>
-        <p>Kabar Instagram belum bisa ditampilkan di sini. Lihat unggahan terbaru langsung di akun kami.</p>
-        <a class="btn btn-primary" id="ig-link" href="https://www.instagram.com/">Buka Instagram</a>
-      </div>
+      <a class="feed-empty" id="feed-empty" href="https://www.instagram.com/" target="_blank" rel="noopener" hidden>
+        <span class="feed-empty-text">
+          <span>Kabar terbaru ada di Instagram kami</span>
+          <strong class="ig-handle" id="ig-handle">@minihistorycoffee</strong>
+        </span>
+        <span class="btn btn-dark">Buka Instagram</span>
+      </a>
     </section>
+
+    <section class="gallery" id="suasana" aria-labelledby="gallery-title" hidden>
+      <div class="section-head">
+        <h2 id="gallery-title">Suasana kedai</h2>
+      </div>
+      <div class="gallery-grid" id="gallery-grid"></div>
+    </section>
+
+    <div class="band" aria-hidden="true"></div>
 
     <section class="menu" id="menu" aria-labelledby="menu-title">
       <div class="section-head">
