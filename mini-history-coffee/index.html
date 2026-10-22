@@ -4,11 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Mini History Coffee — Pelaihari</title>
-  <meta name="description" content="Kedai kopi di Jl. Ahmad Yani, Panggung, Pelaihari, Tanah Laut. Tutup pukul 00.00. Lihat kabar terbaru langsung dari Instagram kami.">
-  <meta name="theme-color" content="#173A35">
+  <meta name="description" content="Kedai kopi di Jl. Ahmad Yani, Panggung, Pelaihari, Tanah Laut. Buka hingga pukul 00.00.">
+  <meta name="theme-color" content="#15120F">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="preload" as="image" href="img/hero.jpg">
   <link rel="stylesheet" href="styles.css">
   <script type="application/ld+json">
   {
@@ -23,98 +24,102 @@
       "addressRegion": "Kalimantan Selatan",
       "postalCode": "70815",
       "addressCountry": "ID"
-    },
-    "aggregateRating": { "@type": "AggregateRating", "ratingValue": "5.0", "reviewCount": "3" }
+    }
   }
   </script>
 </head>
 <body>
-  <a class="skip" href="#arsip">Lewati ke kabar terbaru</a>
+  <a class="skip" href="#menu">Lewati ke menu</a>
 
   <header class="top">
-    <a class="brand" href="#">Mini History<span>Coffee</span></a>
+    <a class="wordmark" href="#">Mini History</a>
     <nav aria-label="Navigasi utama">
-      <a href="#arsip">Kabar</a>
+      <a href="#cerita">Cerita</a>
       <a href="#menu">Menu</a>
       <a href="#kunjungi">Kunjungi</a>
     </nav>
   </header>
 
   <main>
-    <section class="hero">
+    <section class="hero" id="hero">
+      <div class="hero-media" id="hero-media" style="background-image:url(img/hero.jpg)"></div>
       <div class="hero-text">
-        <h1>Sejarah kecil, diseduh setiap hari di Pelaihari.</h1>
-        <p class="lede">Kedai kopi mungil di Jl. Ahmad Yani, Panggung. Duduk sebentar, pesan secangkir, dan jadi bagian dari cerita hari ini.</p>
-        <div class="actions">
-          <a class="btn btn-primary" id="wa-link" href="https://wa.me/6281298993819">Chat via WhatsApp</a>
-          <a class="btn btn-ghost" href="#kunjungi">Lihat rute</a>
-        </div>
-        <p class="status" id="open-status" hidden></p>
-      </div>
-
-      <div class="prints" id="prints" aria-label="Foto dari kedai">
-        <figure class="print" style="--r:-7deg;--i:0"><div class="print-img" style="background-image:url(img/es-kopi.svg)"></div><figcaption>Es kopi susu</figcaption></figure>
-        <figure class="print" style="--r:5deg;--i:1"><div class="print-img" style="background-image:url(img/sasirangan.svg);background-size:40%;background-repeat:repeat"></div><figcaption>Motif sasirangan</figcaption></figure>
-        <figure class="print" style="--r:-1.5deg;--i:2"><div class="print-img" style="background-image:url(img/kopi-panas.svg)"></div><figcaption>Secangkir untuk sore ini</figcaption></figure>
+        <p class="hero-place">Pelaihari, Tanah Laut</p>
+        <h1>Mini History<span>Coffee</span></h1>
+        <p class="hero-line">Setiap cangkir punya sejarahnya sendiri.</p>
+        <a class="link-cta" href="#menu">Lihat menu</a>
       </div>
     </section>
 
-    <div class="stitch" aria-hidden="true"></div>
-
-    <section class="facts" aria-label="Info singkat">
-      <dl>
-        <div><dt>Jam</dt><dd>Tutup pukul 00.00</dd></div>
-        <div><dt>Alamat</dt><dd>Jl. Ahmad Yani, RT.018/RW.004, Panggung, Pelaihari</dd></div>
-        <div><dt>Telepon</dt><dd><a href="tel:+6281298993819">0812-9899-3819</a></dd></div>
-        <div><dt>Google</dt><dd>5,0 dari 3 ulasan</dd></div>
-      </dl>
-    </section>
-
-    <section class="arsip" id="arsip" aria-labelledby="arsip-title">
-      <div class="section-head">
-        <h2 id="arsip-title">Arsip harian</h2>
-        <p>Setiap unggahan Instagram kami tercatat di sini, terbaru di atas. Halaman ini memeriksa kabar baru tiap beberapa menit.</p>
-        <p class="feed-meta" id="feed-meta" aria-live="polite"></p>
+    <!-- GANTI: tulis cerita asli kedai di sini (asal nama, siapa pendirinya, sejak kapan). -->
+    <section class="story" id="cerita" aria-labelledby="story-title">
+      <figure class="story-img">
+        <img src="img/cerita.jpg" alt="Dua cangkir kopi susu dan secangkir kopi hitam bersulang di atas meja kayu" loading="lazy" width="1000" height="1250">
+      </figure>
+      <div class="story-text">
+        <h2 id="story-title">Cerita kami</h2>
+        <p class="story-lead">Dari kebun tempat biji tumbuh, tangan yang menyangrai, sampai obrolan yang menemaninya, setiap cangkir membawa sejarah kecil.</p>
+        <p>Mini History lahir dari keinginan sederhana: memberi Pelaihari satu tempat untuk berhenti sejenak. Meja yang tenang, kopi yang diseduh dengan sabar, dan waktu yang tidak terburu-buru.</p>
+        <p>Nama kami adalah janji untuk memperlakukan setiap pesanan sebagai bagian dari cerita, baik itu secangkir pertama di sore hari maupun yang terakhir menjelang tengah malam.</p>
       </div>
-      <ol class="timeline" id="timeline"></ol>
-      <a class="feed-empty" id="feed-empty" href="https://www.instagram.com/" target="_blank" rel="noopener" hidden>
-        <span class="feed-empty-text">
-          <span>Kabar terbaru ada di Instagram kami</span>
-          <strong class="ig-handle" id="ig-handle">@minihistorycoffee</strong>
-        </span>
-        <span class="btn btn-dark">Buka Instagram</span>
-      </a>
     </section>
 
-    <section class="gallery" id="suasana" aria-labelledby="gallery-title" hidden>
-      <div class="section-head">
-        <h2 id="gallery-title">Suasana kedai</h2>
+    <!-- GANTI: sesuaikan tiga langkah ini dengan proses asli (asal biji, siapa yang menyangrai, alat seduh). -->
+    <section class="craft" aria-labelledby="craft-title">
+      <div class="craft-head">
+        <h2 id="craft-title">Dari biji ke cangkir</h2>
       </div>
-      <div class="gallery-grid" id="gallery-grid"></div>
+      <ol class="craft-steps">
+        <li>
+          <span class="step-no">I</span>
+          <h3>Memilih biji</h3>
+          <p>Biji dipilih berdasarkan rasa di cangkir. Kami mencicipi setiap kiriman sebelum menyajikannya.</p>
+        </li>
+        <li>
+          <span class="step-no">II</span>
+          <h3>Menyangrai</h3>
+          <p>Tingkat sangrai disesuaikan dengan karakter biji, agar manis alaminya muncul tanpa rasa gosong.</p>
+        </li>
+        <li>
+          <span class="step-no">III</span>
+          <h3>Menyeduh</h3>
+          <p>Takaran, suhu air, dan waktu ekstraksi diukur untuk setiap cangkir, bukan dikira-kira.</p>
+        </li>
+      </ol>
+      <figure class="craft-img">
+        <img src="img/biji.jpg" alt="Biji kopi sangrai" loading="lazy" width="1000" height="1250">
+      </figure>
     </section>
-
-    <div class="band" aria-hidden="true"></div>
 
     <section class="menu" id="menu" aria-labelledby="menu-title">
-      <div class="section-head">
+      <div class="menu-head">
         <h2 id="menu-title">Menu</h2>
-        <p>Pilihan yang paling sering dipesan. Tanyakan menu harian di kasir.</p>
+        <p>Yang paling sering dipesan, dan alasan kami menyukainya.</p>
       </div>
-      <div class="menu-cols" id="menu-list"></div>
+      <div class="signature" id="signature"></div>
+      <div class="menu-list" id="menu-list"></div>
+      <p class="menu-note">Harga dapat berubah. Tanyakan menu musiman di kasir.</p>
+    </section>
+
+    <section class="ig" id="instagram" aria-labelledby="ig-title" hidden>
+      <div class="ig-head">
+        <h2 id="ig-title">Terbaru di Instagram</h2>
+        <a class="link-cta" id="ig-link" href="https://www.instagram.com/" target="_blank" rel="noopener">Ikuti kami</a>
+      </div>
+      <div class="ig-grid" id="ig-grid"></div>
     </section>
 
     <section class="visit" id="kunjungi" aria-labelledby="visit-title">
       <div class="visit-text">
-        <h2 id="visit-title">Kunjungi kami</h2>
-        <address>
-          Jl. Ahmad Yani, RT.018/RW.004, Panggung,<br>
-          Kec. Pelaihari, Kabupaten Tanah Laut,<br>
-          Kalimantan Selatan 70815
-        </address>
-        <p class="plus">Plus Code 6QX8+66F</p>
-        <div class="actions">
-          <a class="btn btn-primary" href="https://www.google.com/maps/dir/?api=1&destination=Mini+History+Coffee+Pelaihari" target="_blank" rel="noopener">Buka rute di Google Maps</a>
-          <a class="btn btn-ghost" href="tel:+6281298993819">Telepon</a>
+        <h2 id="visit-title">Kunjungi</h2>
+        <dl>
+          <div><dt>Alamat</dt><dd>Jl. Ahmad Yani, RT.018/RW.004, Panggung,<br>Kec. Pelaihari, Kabupaten Tanah Laut,<br>Kalimantan Selatan 70815</dd></div>
+          <div><dt>Jam</dt><dd id="hours">Tutup pukul 00.00</dd></div>
+          <div><dt>Telepon</dt><dd><a href="tel:+6281298993819">0812-9899-3819</a></dd></div>
+        </dl>
+        <div class="visit-actions">
+          <a class="btn" href="https://www.google.com/maps/dir/?api=1&destination=Mini+History+Coffee+Pelaihari" target="_blank" rel="noopener">Petunjuk arah</a>
+          <a class="btn btn-quiet" href="https://wa.me/6281298993819" target="_blank" rel="noopener">WhatsApp</a>
         </div>
       </div>
       <iframe class="map" title="Peta lokasi Mini History Coffee"
@@ -124,9 +129,13 @@
   </main>
 
   <footer class="foot">
-    <p class="brand">Mini History<span>Coffee</span></p>
-    <p>Pelaihari, Tanah Laut</p>
-    <p><a id="ig-foot" href="https://www.instagram.com/">Instagram</a> <a href="https://wa.me/6281298993819">WhatsApp</a></p>
+    <p class="wordmark">Mini History</p>
+    <p class="foot-links">
+      <a id="ig-foot" href="https://www.instagram.com/" target="_blank" rel="noopener">Instagram</a>
+      <a href="https://wa.me/6281298993819" target="_blank" rel="noopener">WhatsApp</a>
+      <a href="tel:+6281298993819">0812-9899-3819</a>
+    </p>
+    <p class="foot-small">Pelaihari, Tanah Laut</p>
   </footer>
 
   <script src="app.js"></script>
