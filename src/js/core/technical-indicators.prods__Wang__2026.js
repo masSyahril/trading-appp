@@ -17098,7 +17098,30 @@ window.StochasticSMI_Stochastic = StochasticSMI_Stochastic;
 
 
 
+//===Designed by Prof Wang,===2026-November-16===============完全自行創新====
+// KingStandardModel_K_Line_Area_2026-11-16_創新
+function KingStandardModel_K_Line_Area(STK_open,STK_high,STK_low,STK_close,STK_vol,N1,N2,N3,N4,N5) {
+  // Menu Name: KingStandardModel_K_Line_Area   
+  const Fig1=[], Fig2=[], Fig3=[], Fig4=[], Fig5=[];  //Fig[]=1 to 2000. 2026-11-17: declared so the empty template runs (blank) until code is added
+  
+  return { Fig1, Fig2, Fig3, Fig4, Fig5 };
+  //draw these figures in the K_Line_Area.
+}
+window.KingStandardModel_K_Line_Area = KingStandardModel_K_Line_Area;
 //----------------------------------------------------------------------
+
+
+
+//===Designed by Prof Wang,===2026-November-16===============完全自行創新====
+// KingStandardModel_Small_Windows_2026-11-16_創新
+function KingStandardModel_Small_Windows(STK_open,STK_high,STK_low,STK_close,STK_vol,N1,N2,N3,N4,N5) {
+  // Menu Name: KingStandardModel_Small_Windows   
+  const Fig1=[], Fig2=[], Fig3=[], Fig4=[], Fig5=[];  //Fig[]=1 to 2000. 2026-11-17: declared so the empty template runs (blank) until code is added
+  
+  return { Fig1, Fig2, Fig3, Fig4, Fig5 };
+  //draw these figures in the Small_Windows.
+}
+window.KingStandardModel_Small_Windows = KingStandardModel_Small_Windows;
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------

@@ -168,10 +168,20 @@ const OFF_SCALE_OK = {
 // not lines. A mark needs later bars to confirm it, so the newest candles never carry
 // one - for these only "draws some marks" is required, not "draws on the last candle".
 const sparseMarks = (def) => def.outputs.length > 0 && def.outputs.every(o => o.type === 'markers');
+// Prof. Wang's empty templates: he fills them with temporary code to inspect Fig1..Fig5, so
+// blank is their normal state. They must still run without throwing and return every Fig
+// at the right length; only the "draws something" checks are skipped. Remove an entry here
+// if the template is later turned into a real indicator.
+const EMPTY_TEMPLATE_OK = {
+  KingStandardModel_K_Line_Area: 'empty test template (2026-11-16) - blank until Prof. Wang adds code',
+  KingStandardModel_Small_Windows: 'empty test template (2026-11-16) - blank until Prof. Wang adds code',
+};
 function priceChartProblems(def, ev) {
   const out = [];
   // Something must be drawn on the latest candle - the bar a trader looks at.
-  if (sparseMarks(def)) {
+  if (EMPTY_TEMPLATE_OK[def.id]) {
+    // blank is expected - see EMPTY_TEMPLATE_OK
+  } else if (sparseMarks(def)) {
     if (!def.outputs.some(o => (ev.series[o.key] || []).some(x => x != null))) out.push('no marks drawn at all');
   } else if (!def.outputs.some(o => ev.series[o.key] && ev.series[o.key][n - 1] != null)) out.push('nothing drawn on the last candle');
   // Lines share the candles' price axis, so they must be at price level: a 0-100
@@ -214,9 +224,10 @@ NS.registry.all().forEach(def => {
       if (!v) problems.push(`${o.key}: not in compute()'s result`);
       else if (!v.some(x => x != null)) blank.push(o.key);
     });
-    if (blank.length === def.outputs.length) problems.push('every line is blank');
+    if (EMPTY_TEMPLATE_OK[def.id]) { /* blank is expected - see EMPTY_TEMPLATE_OK */ }
+    else if (blank.length === def.outputs.length) problems.push('every line is blank');
     else if (blank.length) warnings.push({ id: def.id, why: `no values for ${blank.join(', ')} (compute() returns the field, all blank)` });
-    if (!sparseMarks(def) && !def.outputs.some(o => ev.series[o.key] && ev.series[o.key].slice(-5).some(x => x != null))) problems.push('blank at the latest bars');
+    if (!EMPTY_TEMPLATE_OK[def.id] && !sparseMarks(def) && !def.outputs.some(o => ev.series[o.key] && ev.series[o.key].slice(-5).some(x => x != null))) problems.push('blank at the latest bars');
     // registry.fit() lines arrays up from the END, so an array with extra slots past the
     // last candle (a Wang loop running to i<=length) shifts the whole line a bar left.
     def.outputs.forEach(o => {

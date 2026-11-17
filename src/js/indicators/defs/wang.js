@@ -318,6 +318,11 @@
     SuperTrend:               { name: 'SuperTrend', type: 'trend', fn: 'SuperTrend', inputs: ['high', 'low', 'close'], params: [['esp', 9]], lines: ['SuperTrend', 'FinalUpperBand', 'FinalLowerBand'], placement: 'chart', minPeriod: 4, added: '2026-11-17' },
     RMI:                      { name: 'RMI', type: 'momentum', fn: 'RMI', inputs: ['close'], params: [['N_dayago', 5], ['M_length', 14], ['esp', 9]], lines: ['RMI', 'eRMI'], minPeriod: 7, added: '2026-11-17' },
     StochasticSMI_Stochastic: { name: 'StochasticSMI_Stochastic', type: 'momentum', fn: 'StochasticSMI_Stochastic', inputs: ['high', 'low', 'close'], params: [['day', 13], ['rr', 25], ['ss', 2], ['esp', 9], ['KD_num', 9]], lines: ['SMI_KD_K', 'SMI_KD_D'], histogram: 'Bar', minPeriod: 21, added: '2026-11-17' },
+    // Prof. Wang's empty test templates (2026-11-16): he writes temporary code inside to look
+    // at Fig1..Fig5 for given N1..N5, one template per drawing area. Until then they draw
+    // nothing (blank, not an error). N1..N5 are whole numbers (rounded), default 9.
+    KingStandardModel_K_Line_Area:   { name: 'KingStandardModel_K_Line_Area', type: 'trend', fn: 'KingStandardModel_K_Line_Area', inputs: ['open', 'high', 'low', 'close', 'volume'], params: [['N1', 9], ['N2', 9], ['N3', 9], ['N4', 9], ['N5', 9]], lines: ['Fig1', 'Fig2', 'Fig3', 'Fig4', 'Fig5'], placement: 'chart', minPeriod: 2, added: '2026-11-17' },
+    KingStandardModel_Small_Windows: { name: 'KingStandardModel_Small_Windows', type: 'oscillator', fn: 'KingStandardModel_Small_Windows', inputs: ['open', 'high', 'low', 'close', 'volume'], params: [['N1', 9], ['N2', 9], ['N3', 9], ['N4', 9], ['N5', 9]], lines: ['Fig1', 'Fig2', 'Fig3', 'Fig4', 'Fig5'], minPeriod: 2, added: '2026-11-17' },
   };
 
   const CATEGORY = { trend: 'Trend', momentum: 'Momentum', oscillator: 'Oscillators', volume: 'Volume', volatility: 'Volatility' };
