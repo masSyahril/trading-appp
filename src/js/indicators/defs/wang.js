@@ -92,7 +92,7 @@
     PriceDifCOG:             { name: 'PriceDifCOG', type: 'momentum', fn: 'PriceDifCOG', inputs: ['close'], params: [['day', 10], ['esp', 9]], lines: ['PriceDifCOG', 'ePriceDifCOG'] },
     TDI:                     { name: 'TDI', type: 'momentum', fn: 'TDI', inputs: ['close'], params: [['RSI_day', 13]], lines: ['RSI', 'MBL', 'Upper', 'Lower'], minPeriod: 34 },
     MA_ER:                   { name: 'MA Efficiency Ratio', type: 'trend', fn: 'MAEfficiencyRatio', inputs: ['high', 'low', 'close'], params: [['MA_day', 10], ['ER_day', 10]], lines: ['MA_ER', 'eMA_ER'], minPeriod: 20 },
-    PPO:                     { name: 'Pct Price Osc', type: 'oscillator', fn: 'PctPriceOSC', inputs: ['close'], params: [['short_day', 10], ['long_day', 20]], lines: ['PPO', 'ePPO'] },
+    PPO:                     { name: 'Pct Price Osc', type: 'oscillator', fn: 'PctPriceOSC', inputs: ['close'], params: [['short_day', 10], ['long_day', 20], ['esp', 9]], lines: ['PPO', 'ePPO'] },
     // The 10+2 Guppy EMAs go on the price chart (defs/overlays.js 'GuppyMA'); the Spread is this pane.
     GuppySpread:             { name: 'Guppy MA (Spread)', type: 'trend', fn: 'GuppyMA', inputs: ['high', 'low', 'close'], params: [['num', 5]], lines: ['Spread'], minPeriod: 10 },
     NewElderForce:           { name: 'New Elder Force', type: 'volume', fn: 'NewElderForce', inputs: ['high', 'low', 'close', 'volume'], params: [['esp', 10]], lines: ['NewEFI', 'eNewEFI', 'NewEFI2', 'eNewEFI2'] },

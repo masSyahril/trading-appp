@@ -6330,9 +6330,9 @@ window.MAEfficiencyRatio = MAEfficiencyRatio;
 //OSCP今=(短期MA今－長期MA今)/短期MA今*100%
 //PPO今=(短期EMA今－長期EMA今)/長期EMA今*100%
 //指數平滑移動平均的參數: exponential smoothing parameter(esp)
-function PctPriceOSC(STK_close, short_day, long_day) {
+function PctPriceOSC(STK_close, short_day, long_day, esp) {
   //Menu Name: Pct Price Osc    // esp=9 
-  let esp=9;
+  
   const PPO=[], ePPO=[];
   if(short_day > long_day) {  //例如: 10>5, 將二者對調,確保short_day比較小。
     let temp=short_day;
