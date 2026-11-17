@@ -162,15 +162,22 @@ const closeMedian = median(closes);
 // quieten an accidental misplacement.
 const OFF_SCALE_OK = {
   NSL: "Prof. Wang's comment says K_Line area; H+L-2*EMA(TP) oscillates about zero, so it sits at the bottom of the price scale (decided 2026-10-11)",
+  MIKE_Dif_Resistance_Support: "Prof. Wang's comment says K_Line area; Resistance_Line-Support_Line is a spread (about 0.1x the close), so it sits at the bottom of the price scale (placed per the comment at the user's request, 2026-11-17)",
 };
+// An entry whose outputs are all `markers` draws sparse marks on the candles (fractals),
+// not lines. A mark needs later bars to confirm it, so the newest candles never carry
+// one - for these only "draws some marks" is required, not "draws on the last candle".
+const sparseMarks = (def) => def.outputs.length > 0 && def.outputs.every(o => o.type === 'markers');
 function priceChartProblems(def, ev) {
   const out = [];
   // Something must be drawn on the latest candle - the bar a trader looks at.
-  if (!def.outputs.some(o => ev.series[o.key] && ev.series[o.key][n - 1] != null)) out.push('nothing drawn on the last candle');
+  if (sparseMarks(def)) {
+    if (!def.outputs.some(o => (ev.series[o.key] || []).some(x => x != null))) out.push('no marks drawn at all');
+  } else if (!def.outputs.some(o => ev.series[o.key] && ev.series[o.key][n - 1] != null)) out.push('nothing drawn on the last candle');
   // Lines share the candles' price axis, so they must be at price level: a 0-100
   // stochastic or a ratio near 1.0 placed here would sit flat at the bottom.
   def.outputs.forEach(o => {
-    if (o.type === 'histogram') return;
+    if (o.type === 'histogram' || o.type === 'markers') return;   // markers sit on the candles, not on the scale
     if (OFF_SCALE_OK[def.id]) return;   // deliberately off the price scale - see above
     const v = (ev.series[o.key] || []).filter(x => x != null && Number.isFinite(x));
     if (!v.length) return;
@@ -209,7 +216,7 @@ NS.registry.all().forEach(def => {
     });
     if (blank.length === def.outputs.length) problems.push('every line is blank');
     else if (blank.length) warnings.push({ id: def.id, why: `no values for ${blank.join(', ')} (compute() returns the field, all blank)` });
-    if (!def.outputs.some(o => ev.series[o.key] && ev.series[o.key].slice(-5).some(x => x != null))) problems.push('blank at the latest bars');
+    if (!sparseMarks(def) && !def.outputs.some(o => ev.series[o.key] && ev.series[o.key].slice(-5).some(x => x != null))) problems.push('blank at the latest bars');
     // registry.fit() lines arrays up from the END, so an array with extra slots past the
     // last candle (a Wang loop running to i<=length) shifts the whole line a bar left.
     def.outputs.forEach(o => {

@@ -50,8 +50,13 @@
   };
 
   class IndicatorManager {
-    constructor({ chart, host, mainLegendHost, storageKey, onLayoutChange }) {
+    // getPriceSeries: () => the candle series now on the chart. Needed for `markers`
+    // outputs, which are attached to the candles; it is a function because the page
+    // replaces the candle series when the chart style changes.
+    constructor({ chart, host, mainLegendHost, storageKey, onLayoutChange, getPriceSeries }) {
       this.chart = chart;
+      this.getPriceSeries = typeof getPriceSeries === 'function' ? getPriceSeries : () => null;
+      this._markerHost = null;   // { series, api } - the one markers plugin on the candles
       this.host = host;
       this.storageKey = storageKey;
       this.onLayoutChange = onLayoutChange || (() => {});
@@ -105,6 +110,7 @@
       if (!inst) return;
       this._destroySeries(inst);
       this.instances = this.instances.filter(i => i !== inst);
+      this._syncMarkers();
       this._dropPaneIfEmpty(inst.paneId);
       this._changed();
     }
@@ -158,9 +164,14 @@
       this.instances.forEach(inst => {
         inst.series.forEach(s => { try { s.api.setData([]); } catch (e) {} s.last = null; });
         inst.result = null;
+        inst.markers = null;
       });
+      this._syncMarkers();
       this.legend.render();
     }
+
+    // The page replaced its candle series (chart style switch): put the markers on the new one.
+    refreshMarkers() { this._syncMarkers(); }
 
     openPicker() { NS.picker.open(this); }
     onChange(cb) { if (typeof cb === 'function') this.listeners.add(cb); }
@@ -282,11 +293,23 @@
       if (this.candles.length < (def.minBars || 1)) {
         inst.series.forEach(s => { s.api.setData([]); s.last = null; });
         inst.result = null;
+        inst.markers = null;
         return;
       }
       const { series, colors, raw } = NS.registry.evaluate(def, this.candles, inst.params);
       inst.result = raw;
-      def.outputs.forEach(out => {
+      // `markers` outputs are not series: a mark on each candle that has a value,
+      // placed by the library a fixed few pixels above/below the bar.
+      const markerOuts = def.outputs.filter(out => out.type === 'markers');
+      inst.markers = markerOuts.length ? [] : null;
+      markerOuts.forEach(out => {
+        const v = series[out.key] || [];
+        this.candles.forEach((c, i) => {
+          if (v[i] == null) return;
+          inst.markers.push({ i, time: c.time, position: out.position || 'aboveBar', shape: out.shape || 'circle', color: out.color, size: out.size || 1, ...(out.text ? { text: out.text } : {}) });
+        });
+      });
+      def.outputs.filter(out => out.type !== 'markers').forEach(out => {
         const s = inst.series.find(x => x.key === out.key) || this._createOutputSeries(inst, out);
         const points = NS.registry.toPoints(out, series[out.key], colors[out.key], this.candles);
         s.api.setData(points);
@@ -447,6 +470,8 @@
         // The legend shows values in the line's colour.
         s.color = st.color;
       });
+      // Markers follow redraws, the eye toggle and the light/dark switch from here too.
+      if (inst.markers || this._markerHost) this._syncMarkers();
     }
 
     // A repeat of a single-line price-chart indicator gets the next colour.
@@ -465,6 +490,28 @@
       inst.seriesMap = new Map();
       inst.levelLines = null;
       inst.result = null;
+      inst.markers = null;
+    }
+
+    // Every visible indicator's markers, in candle order, on the current candle series
+    // (one shared plugin - the library keeps one marker list per series).
+    _syncMarkers() {
+      const series = this.getPriceSeries();
+      if (this._markerHost && this._markerHost.series !== series) {
+        try { this._markerHost.api.detach(); } catch (e) {}
+        this._markerHost = null;
+      }
+      if (!series || !LWC || typeof LWC.createSeriesMarkers !== 'function') return;
+      const all = this.instances
+        .filter(inst => inst.visible && inst.markers && inst.markers.length)
+        .flatMap(inst => inst.markers)
+        .sort((a, b) => a.i - b.i)
+        .map(({ i, color, ...m }) => ({ ...m, color: NS.themeColor(color) }));
+      if (!this._markerHost) {
+        if (!all.length) return;
+        try { this._markerHost = { series, api: LWC.createSeriesMarkers(series, []) }; } catch (e) { return; }
+      }
+      try { this._markerHost.api.setMarkers(all); } catch (e) {}
     }
 
     // ─── Panes ─────────────────────────────────────────────────────────────

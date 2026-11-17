@@ -5,11 +5,22 @@
  * item badged "Chart" or "Pane" and showing how many are already on. Adding
  * keeps the picker open so several can be added in a row; Enter adds the
  * first match. A full-screen sheet on phones.
+ *
+ * Entries with an `added` date in the last NEW_DAYS days are badged "New",
+ * listed again in a "New" group at the top, and found by searching "new" -
+ * so a new indicator can be told apart from an older one with a similar name.
+ * Entries without a date are the older ones.
  */
 (function () {
   'use strict';
   const NS = window.TFIndicators;
   const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  const NEW_DAYS = 10;
+  const isNew = (def) => {
+    const t = def.added ? Date.parse(def.added) : NaN;
+    return Number.isFinite(t) && Date.now() - t <= NEW_DAYS * 864e5;
+  };
 
   let manager = null;
   let root = null;
@@ -27,7 +38,7 @@
           <button type="button" class="tfi-icon-btn" data-close title="Close">✕</button>
         </div>
         <div class="tfi-picker-list" role="list"></div>
-        <div class="tfi-dialog-foot tfi-muted">Click to add · the same indicator can be added more than once · <kbd>Esc</kbd> closes</div>
+        <div class="tfi-dialog-foot tfi-muted">Click to add · the same indicator can be added more than once · <span class="tfi-badge tfi-badge-new">New</span> = added in the last ${NEW_DAYS} days (search "new") · <kbd>Esc</kbd> closes</div>
       </div>`;
     document.body.appendChild(root);
     search = root.querySelector('.tfi-search');
@@ -57,9 +68,10 @@
   }
 
   const item = (def, showCategory) => `
-    <button type="button" class="tfi-pick" data-id="${esc(def.id)}" role="listitem">
+    <button type="button" class="tfi-pick" data-id="${esc(def.id)}" role="listitem"${def.added ? ` title="Added ${esc(def.added)}"` : ''}>
       <span class="tfi-pick-name">${esc(def.name)}${showCategory ? ` <span class="tfi-pick-in">${esc(def.category)}</span>` : ''}</span>
       <span class="tfi-pick-count" data-count="${esc(def.id)}"></span>
+      ${isNew(def) ? `<span class="tfi-badge tfi-badge-new">New</span>` : ''}
       <span class="tfi-badge tfi-badge-${def.placement}">${def.placement === 'chart' ? 'Chart' : 'Pane'}</span>
     </button>`;
 
@@ -77,7 +89,10 @@
     const q = search.value.trim().toLowerCase();
     const terms = q.split(/\s+/).filter(Boolean);
     const matches = NS.registry.all().filter(def => {
-      const hay = `${def.name} ${def.shortName || ''} ${def.id} ${def.category}`.toLowerCase();
+      // "new" on its own lists only the recently added ones - not older entries that
+      // merely have "new" in the name (NewMACD, New MarketFI ...).
+      if (q === 'new') return isNew(def);
+      const hay = `${def.name} ${def.shortName || ''} ${def.id} ${def.category}${isNew(def) ? ' new' : ''}`.toLowerCase();
       return terms.every(t => hay.includes(t));
     });
     let html;
@@ -93,7 +108,15 @@
         if (!groups.has(def.category)) groups.set(def.category, []);
         groups.get(def.category).push(def);
       });
-      html = [...groups].filter(([, defs]) => defs.length).map(([category, defs]) => `
+      // Recently added ones first, as their own group (they also stay in their category).
+      const fresh = matches.filter(isNew).sort((a, b) => a.name.localeCompare(b.name));
+      const dates = [...new Set(fresh.map(d => d.added))].sort();
+      const newGroup = fresh.length ? `
+        <div class="tfi-pick-group tfi-pick-group-new">
+          <div class="tfi-pick-cat">New <span>${fresh.length} · added ${esc(dates.length === 1 ? dates[0] : `${dates[0]} – ${dates[dates.length - 1]}`)}</span></div>
+          ${fresh.map(def => item(def, true)).join('')}
+        </div>` : '';
+      html = newGroup + [...groups].filter(([, defs]) => defs.length).map(([category, defs]) => `
         <div class="tfi-pick-group">
           <div class="tfi-pick-cat">${esc(category)} <span>${defs.length}</span></div>
           ${defs.sort((a, b) => a.name.localeCompare(b.name)).map(def => item(def, false)).join('')}

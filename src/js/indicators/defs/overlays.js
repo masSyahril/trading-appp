@@ -252,6 +252,28 @@
       return { high: aligned(c, out.Fractal_High), low: aligned(c, out.Fractal_Low) };
     },
   });
+  // Prof. Wang's FractalIndicator (2026-11): "Normally drawing Fractal[] figures in the
+  // K_Line area". It returns a mark per bar - "U" (upper/bearish fractal: a high above
+  // the two highs either side) or "D" (lower/bullish: a low below the two lows either
+  // side) - so it is drawn as chart markers, not a line: ▲ above the bar for U and
+  // ▼ below it for D, kept a fixed few pixels clear of the candle at every zoom.
+  // A fractal needs two later bars to confirm it, so the newest two candles never carry one.
+  registry.register({
+    id: 'FractalIndicator', name: 'FractalIndicator', shortName: 'Fractal', category: 'Trend', placement: 'chart', added: '2026-11-17',
+    minBars: 5,
+    outputs: [
+      { key: 'up', title: 'U', type: 'markers', position: 'aboveBar', shape: 'arrowUp', color: RESISTANCE },
+      { key: 'down', title: 'D', type: 'markers', position: 'belowBar', shape: 'arrowDown', color: SUPPORT },
+    ],
+    compute: (c) => {
+      const out = call('FractalIndicator', column(c, 'high'), column(c, 'low')) || {};
+      const f = out.Fractal || [];
+      return {
+        up: c.map((d, i) => (f[i] === 'U' ? d.high : null)),
+        down: c.map((d, i) => (f[i] === 'D' ? d.low : null)),
+      };
+    },
+  });
 
   // ─── Pivots ─────────────────────────────────────────────────────────────
   // Lines are keyed by the Wang function's own output names. Level 1 and the

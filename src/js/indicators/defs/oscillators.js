@@ -175,12 +175,13 @@
   });
 
   add({
-    id: 'REX_OSC', name: 'REX Oscillator', minBars: 2,
-    params: [['esp', 'Smooth', 9]],
-    math: (M, c, p) => M.computeREXOscillatorIndicator(c, p.esp),
+    // Prof. Wang's corrected REX (2026-11-04): REX_OSC = MA(TVB, ma_day), eREX_OSC = EMA(REX_OSC, esp).
+    id: 'REX_OSC', name: 'REX Oscillator', minBars: 11,
+    params: [['ma_day', 'MA days', 10], ['esp', 'Smooth', 9]],
+    math: (M, c, p) => M.computeREXOscillatorIndicator(c, p.ma_day, p.esp),
     outputs: [
-      line('REX', C.LINE1, 'REX'),
-      line('TVB', C.LINE2, 'TVB'),
+      line('REX_OSC', C.LINE1, 'REX_OSC'),
+      line('eREX_OSC', C.LINE2, 'eREX_OSC'),
     ],
   });
 

@@ -6,9 +6,13 @@
  *   {
  *     id, name, shortName?, category, placement: 'chart' | 'pane',
  *     params:  [{ key, label, default, min?, max?, step? }]  (or [key, label, default]),
- *     outputs: [{ key, title?, type?: 'line' | 'histogram' | 'area', color,
+ *     outputs: [{ key, title?, type?: 'line' | 'histogram' | 'area' | 'markers', color,
  *                 from?: 'field',                  // compute() field to draw; default: key
  *                 lineWidth?, lineStyle?: 'solid' | 'dashed' | 'dotted', lineType?: 'step',
+ *                 // type 'markers' (price chart only): a mark on each candle whose value
+ *                 // is not null, kept a fixed few pixels from the bar by the library -
+ *                 position?: 'aboveBar' | 'belowBar', shape?: 'arrowUp' | 'arrowDown'
+ *                 // | 'circle' | 'square', size?, text?  (sparse marks such as fractals)
  *                 scale?: 'left',                  // second price scale on the pane's left
  *                 priceFormat?, lastValue?: false, axisTitle?: true,
  *                 colorKey?: 'fieldWithPerBarColors', colorMap?: { name: colour },
@@ -18,6 +22,8 @@
  *                                                 // summary numbers after the legend values
  *     leftScale?: { borderColor?, scaleMargins? },   // options for a `scale: 'left'` output
  *     minBars?: number,                            // draw nothing on fewer candles
+ *     added?: 'YYYY-MM-DD',                        // when it joined the app: the picker
+ *                                                 // marks recent ones "New"
  *     compute: (candles, params) => ({ [field]: number[] }),
  *     label?:  (params) => 'SMA 20',               // legend name; default "shortName p1, p2"
  *   }

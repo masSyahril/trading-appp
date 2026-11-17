@@ -969,6 +969,7 @@
     chartStyle = style;
     saveLS('stock_chart_style', style);
     applyChartStyleData(chartData);
+    if (indicators) indicators.refreshMarkers();   // move markers to the new candle series
   }
 
   function setupChartStyleDropdown() {
@@ -1058,6 +1059,9 @@
         storageKey: INDICATORS_STORAGE_KEY,
         // Pane added/removed/resized: the drawing canvas follows the price pane.
         onLayoutChange: () => resizeListeners.forEach(cb => { try { cb(); } catch (e) {} }),
+        // Markers (e.g. Fractal arrows) sit on the candles; a getter, since the
+        // candle series is replaced when the chart style changes.
+        getPriceSeries: () => candleSeries,
       });
 
       const saved = loadLS(INDICATORS_STORAGE_KEY, null);

@@ -24,6 +24,10 @@
  *   chartOmit   lines to leave out when placement is 'chart': the ones that are
  *               just the close again (the candles already show it). They are still
  *               drawn on the crypto page, which puts every indicator in a panel.
+ *   added       'YYYY-MM-DD' the row was added to the app. The picker badges entries
+ *               added in the last 10 days (NEW_DAYS in picker.js) "New" and lists them in a "New" group,
+ *               so they can be told apart from older ones with similar names. Give
+ *               every row of a new batch the same date.
  * The Wang functions loop from index 1 but are handed 0-based arrays, so
  * out[i] belongs to bar i - no shift.
  *
@@ -251,6 +255,69 @@
     // separate entry because Prof. Wang wrote it as its own menu item with esp=9 rather than
     // ATR_num=14. Comment says "small windows"; values are percentages (0.9..2.1), so pane.
     AvgTRPct:                 { name: 'AvgTRPct (ATRP)', type: 'volatility', fn: 'AvgTRPct', inputs: ['high', 'low', 'close'], params: [['esp', 9]], lines: ['AvgTRpct'], minPeriod: 3 },
+    // ---- 2026-10-12 to 11-16 batch (Guppy Stochastic .. StochasticSMI_Stochastic) -------
+    // Names are each function's "Menu Name" comment; placement is its drawing comment.
+    // Where a comment also says a line is "normally" drawn in the K_Line area (HMA/eHMA,
+    // VariantMA/eVariantMA, Gann_HiLo, the Alligator lines, the original CDP lines, the
+    // Guppy EMAs) that line is computed internally but not returned, so only the returned
+    // oscillator is drawn - in a pane. va and alpha are entered as whole percentages; the
+    // functions divide them by 100. FractalIndicator is in defs/overlays.js (it returns
+    // "U"/"D" marks, drawn as points above/below the candles, not as a line).
+    Guppy_Stochastic:         { name: 'Guppy Stochastic', type: 'momentum', fn: 'Guppy_Stochastic', inputs: ['high', 'low', 'close'], params: [['EMA_num', 5], ['esp', 9], ['KD_num', 9]], lines: ['Spread_KD_K', 'Spread_KD_D'], minPeriod: 9, added: '2026-11-17' },
+    Guppy_Spread_MACD:        { name: 'Guppy Spread MACD', type: 'oscillator', fn: 'Guppy_Spread_MACD', inputs: ['high', 'low', 'close'], params: [['EMA_num', 5], ['MACD_num', 9]], lines: ['Spread', 'MACD'], histogram: 'Bar', minPeriod: 2, added: '2026-11-17' },
+    T3_King:                  { name: 'T3_King', type: 'trend', fn: 'T3_King', inputs: ['close'], params: [['EMA_num', 9], ['va', 70, { label: 'va 0-100', min: 0, max: 100 }]], lines: ['T1', 'T3_King'], minPeriod: 3, added: '2026-11-17' },
+    T3_King_MACD:             { name: 'T3_King_MACD', type: 'oscillator', fn: 'T3_King_MACD', inputs: ['close'], params: [['EMA_num', 9], ['va', 70, { label: 'va 0-100', min: 0, max: 100 }], ['MACD_num', 9]], lines: ['Dif', 'MACD'], histogram: 'Bar', minPeriod: 3, added: '2026-11-17' },
+    WilliamVAD_Stochastic:    { name: 'WilliamVAD Stochastic', type: 'volume', fn: 'WilliamVAD_Stochastic', inputs: ['open', 'high', 'low', 'close', 'volume'], params: [['WR_day', 10], ['esp', 9], ['KD_num', 9]], lines: ['eWVAD_KD_K', 'eWVAD_KD_D'], minPeriod: 18, added: '2026-11-17' },
+    RandomWalkIndex_Dif:      { name: 'Random Difference', type: 'oscillator', fn: 'RandomWalkIndex_Dif', inputs: ['high', 'low', 'close'], params: [['RWI_n', 10], ['esp', 9]], lines: ['RWI_high'], histogram: 'Dif_RWI_high_low', minPeriod: 11, added: '2026-11-17' },
+    PVI_EMA_MACD:             { name: 'Positive Vol Index(PVI_EMA_MACD)', type: 'volume', fn: 'PositiveVolIndex_EMA_MACD', inputs: ['high', 'low', 'close', 'volume'], params: [['esp', 9], ['macd_num', 9]], lines: ['Dif', 'MACD'], histogram: 'Bar', minPeriod: 2, added: '2026-11-17' },
+    CumuVol_EMA_ratio:        { name: 'CumuVol_EMA_ratio', type: 'volume', fn: 'CumulativeVolume_EMA_ratio', inputs: ['high', 'low', 'close', 'volume'], params: [['esp', 9]], lines: ['CV_EMA_ratio', 'eCV_EMA_ratio'], histogram: 'Bar', minPeriod: 2, added: '2026-11-17' },
+    PriceOsc_TP:              { name: 'PriceOsc_TP', type: 'oscillator', fn: 'PriceOSC_TypicalPrice', inputs: ['high', 'low', 'close'], params: [['short_day', 5], ['long_day', 10], ['esp', 9]], lines: ['PriceOSC_TP', 'ePriceOSC_TP'], minPeriod: 2, added: '2026-11-17' },
+    GannHiLo_MACD:            { name: 'Gann HiLo MACD', type: 'oscillator', fn: 'GannHiLo_MACD', inputs: ['high', 'low', 'close'], params: [['ma_day', 10], ['esp', 9]], lines: ['Dif', 'Gann_HiLo_MACD'], histogram: 'Bar', minPeriod: 11, added: '2026-11-17' },
+    RandomWalkIndex_MACD:     { name: 'Random MACD', type: 'oscillator', fn: 'RandomWalkIndex_MACD', inputs: ['high', 'low', 'close'], params: [['RWI_n', 10], ['esp', 9], ['macd_n', 9]], lines: ['Dif', 'MACD'], histogram: 'Bar', minPeriod: 11, added: '2026-11-17' },
+    HullMA_Dif_MACD:          { name: 'HullMA Dif MACD', type: 'oscillator', fn: 'HullMA_Dif_MACD', inputs: ['close'], params: [['day', 10], ['ema_n', 9], ['macd_n', 9]], lines: ['Dif', 'MACD'], histogram: 'Bar', minPeriod: 14, added: '2026-11-17' },
+    Alligator_OneLine_Stochastic: { name: 'Alligator_OneLine_Stochastic', type: 'momentum', fn: 'Alligator_OneLine_Stochastic', inputs: ['high', 'low'], params: [['esp', 9], ['KD_num', 9]], lines: ['Alligator_Line_KD_K', 'Alligator_Line_KD_D'], histogram: 'Bar', minPeriod: 12, added: '2026-11-17' },
+    VariantMA_Stochastic1:    { name: 'VariantMA Stochastic1', type: 'momentum', fn: 'VariantMA_Stochastic1', inputs: ['close'], params: [['ma_day', 10], ['alpha', 50, { label: 'alpha 10-90', min: 10, max: 90 }], ['esp', 9], ['KD_num', 9]], lines: ['VariantMA_KD_K', 'VariantMA_KD_D'], histogram: 'Bar', minPeriod: 18, added: '2026-11-17' },
+    VariantMA_Stochastic2:    { name: 'VariantMA Stochastic2', type: 'momentum', fn: 'VariantMA_Stochastic2', inputs: ['close'], params: [['ma_day', 10], ['alpha', 50, { label: 'alpha 10-90', min: 10, max: 90 }], ['esp', 9], ['KD_num', 9]], lines: ['eVariantMA_KD_K', 'eVariantMA_KD_D'], histogram: 'Bar', minPeriod: 18, added: '2026-11-17' },
+    RandomWalk_2Line_exp:     { name: 'RandomWalk 2-Line-exp', type: 'oscillator', fn: 'RandomWalkIndex_2Line_exp', inputs: ['high', 'low', 'close'], params: [['RWI_n', 10], ['ATR_n', 9], ['RWI_esp', 9]], lines: ['eRWI_high', 'eRWI_low'], minPeriod: 11, added: '2026-11-17' },
+    VariantMA_MACD:           { name: 'VariantMA MACD', type: 'oscillator', fn: 'VariantMA_MACD', inputs: ['close'], params: [['ma_day', 10], ['alpha', 50, { label: 'alpha 10-90', min: 10, max: 90 }], ['VMA_esp', 9], ['macd_n', 9]], lines: ['Dif', 'MACD'], histogram: 'Bar', minPeriod: 11, added: '2026-11-17' },
+    // "drawing these indicators in the small windows. (Wrong: K_Line area.)" - small window.
+    // Stochastic1 is the K/D of NSL[]; NSL_n only smooths eNSL[], which Stochastic2 uses.
+    NSL_Stochastic1:          { name: 'NSL(TP) Stochastic1', type: 'momentum', fn: 'NSL_Stochastic1', inputs: ['high', 'low', 'close'], params: [['EMA_n', 9], ['NSL_n', 9, { label: 'NSL_n (K/D ignore it)' }], ['esp', 9], ['KD_num', 9]], lines: ['NSL_KD_K', 'NSL_KD_D'], histogram: 'Bar', minPeriod: 9, added: '2026-11-17' },
+    NSL_Stochastic2:          { name: 'NSL(TP) Stochastic2', type: 'momentum', fn: 'NSL_Stochastic2', inputs: ['high', 'low', 'close'], params: [['EMA_n', 9], ['NSL_n', 9], ['esp', 9], ['KD_num', 9]], lines: ['eNSL_KD_K', 'eNSL_KD_D'], histogram: 'Bar', minPeriod: 9, added: '2026-11-17' },
+    // One function, two places: "draw these short_EMA[], long_EMA[] figures in the K_Line
+    // area" and "draw Spread[] in the small windows" - so a chart entry and a pane entry.
+    Guppy_Short_Long:         { name: 'Guppy Short_Long_Line', type: 'trend', fn: 'Guppy_Short_Long', inputs: ['high', 'low', 'close'], params: [['num', 5]], lines: ['short_EMA', 'long_EMA'], placement: 'chart', minPeriod: 2, added: '2026-11-17' },
+    Guppy_Short_Long_Spread:  { name: 'Guppy Short_Long_Line (Spread)', type: 'oscillator', fn: 'Guppy_Short_Long', inputs: ['high', 'low', 'close'], params: [['num', 5]], lines: ['Spread'], minPeriod: 2, added: '2026-11-17' },
+    Guppy_Short_Long_MACD:    { name: 'Guppy Short_Long_MACD', type: 'oscillator', fn: 'Guppy_Short_Long_MACD', inputs: ['high', 'low', 'close'], params: [['EMA_num', 5], ['MACD_num', 9]], lines: ['Dif', 'MACD'], histogram: 'Bar', minPeriod: 2, added: '2026-11-17' },
+    // esp only smooths eHMA[], which is not returned - HullMA_ROC is the ROC of HMA[] itself.
+    HullMA_ROC:               { name: 'HullMA ROC', type: 'momentum', fn: 'HullMA_ROC', inputs: ['close'], params: [['day', 10], ['esp', 9, { label: 'esp (ROC ignores it)' }]], lines: ['HullMA_ROC'], minPeriod: 14, added: '2026-11-17' },
+    VariantMA_ROC:            { name: 'VariantMA ROC', type: 'momentum', fn: 'VariantMA_ROC', inputs: ['close'], params: [['ma_day', 10], ['alpha', 50, { label: 'alpha 10-90', min: 10, max: 90 }], ['esp', 9]], lines: ['eVariantMA_ROC'], minPeriod: 11, added: '2026-11-17' },
+    VariantEMA:               { name: 'VariantEMA', type: 'trend', fn: 'VariantEMA', inputs: ['high', 'low', 'close'], params: [['EMA_n', 9], ['alpha', 50, { label: 'alpha 10-90', min: 10, max: 90 }], ['esp', 9]], lines: ['VariantEMA', 'eVariantEMA'], placement: 'chart', minPeriod: 2, added: '2026-11-17' },
+    VariantEMA_ROC:           { name: 'VariantEMA ROC', type: 'momentum', fn: 'VariantEMA_ROC', inputs: ['high', 'low', 'close'], params: [['EMA_n', 9], ['alpha', 50, { label: 'alpha 10-90', min: 10, max: 90 }], ['esp', 9]], lines: ['eVariantEMA_ROC'], minPeriod: 2, added: '2026-11-17' },
+    // ROC1 is the ROC of NSL[]; NSL_num only smooths eNSL[], which ROC2 uses.
+    NSL_ROC1:                 { name: 'NSL_ROC1(TP,NSL)', type: 'momentum', fn: 'NSL_ROC1', inputs: ['high', 'low', 'close'], params: [['EMA_num', 9], ['NSL_num', 9, { label: 'NSL_num (ROC1 ignores it)' }]], lines: ['NSL_ROC'], minPeriod: 2, added: '2026-11-17' },
+    NSL_ROC2:                 { name: 'NSL_ROC2(TP,eNSL)', type: 'momentum', fn: 'NSL_ROC2', inputs: ['high', 'low', 'close'], params: [['EMA_num', 9], ['NSL_num', 9]], lines: ['eNSL_ROC'], minPeriod: 2, added: '2026-11-17' },
+    NSL_MACD:                 { name: 'NSL_MACD', type: 'oscillator', fn: 'NSL_MACD', inputs: ['high', 'low', 'close'], params: [['EMA_num', 9], ['NSL_num', 9], ['MACD_num', 9]], lines: ['Dif', 'MACD'], histogram: 'Bar', minPeriod: 3, added: '2026-11-17' },
+    CDP_OneLine_MACD:         { name: 'CDP OneLine_MACD', type: 'oscillator', fn: 'CDP_OneLine_MACD', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['MACD_num', 9]], lines: ['Dif', 'MACD'], histogram: 'Bar', minPeriod: 3, added: '2026-11-17' },
+    CDP_OneLine_ROC:          { name: 'CDP OneLine_ROC', type: 'momentum', fn: 'CDP_OneLine_ROC', inputs: ['high', 'low', 'close'], params: [['esp', 9]], lines: ['eOneLine_ROC'], minPeriod: 4, added: '2026-11-17' },
+    CDP_eOneLine_Stochastic:  { name: 'CDP eOneLine_Stochastic', type: 'momentum', fn: 'CDP_eOneLine_Stochastic', inputs: ['high', 'low', 'close'], params: [['esp', 9], ['KD_num', 9]], lines: ['eOneLine_KD_K', 'eOneLine_KD_D'], histogram: 'Bar', minPeriod: 10, added: '2026-11-17' },
+    MIKE_Dif_Resistance_Support: { name: 'MIKE_Dif_Resistance_Support', type: 'trend', fn: 'MIKE_Dif_Resistance_Support', inputs: ['high', 'low', 'close'], params: [['day', 10]], lines: ['MIKE_Dif_Resistance_Support'], placement: 'chart', minPeriod: 11, added: '2026-11-17' },
+    MFI_PriVol_dbl_e:         { name: 'MFI_PriVol_dbl_e', type: 'volume', fn: 'MFI_PriVol_Double_e', inputs: ['high', 'low', 'close', 'volume'], params: [['Ndaysago', 10, { label: 'Ndaysago 1-10', min: 1, max: 10 }], ['esp', 9]], lines: ['eMFI_PriVol', 'eeMFI_PriVol'], minPeriod: 12, added: '2026-11-17' },
+    Vol_RSI_Dbl_EMA:          { name: 'Vol_RSI_Dbl_EMA', type: 'volume', fn: 'VolumeRSI_DoubleEMA', inputs: ['close', 'volume'], params: [['RSI_day', 10], ['esp1', 5], ['esp2', 9]], lines: ['eVolRSI', 'eeVolRSI'], minPeriod: 12, added: '2026-11-17' },
+    // ChandeMomOsc / AvgRFR / PriceDifCOG / PGO clamp esp1 to 3..5 ("esp1=3,4,5(小)").
+    ChandeMomOsc_Dbl_EMA:     { name: 'ChandeMomOsc_Dbl_EMA', type: 'momentum', fn: 'ChandeMomOsc_DoubleEMA', inputs: ['close'], params: [['day', 10], ['esp1', 5, { label: 'esp1 3-5', min: 3, max: 5 }], ['esp2', 9]], lines: ['eCMO', 'eeCMO'], minPeriod: 12, added: '2026-11-17' },
+    QMAD:                     { name: 'QMAD', type: 'oscillator', fn: 'QMADif', inputs: ['high', 'low', 'close'], params: [['day1', 5], ['day2', 10], ['avg_n', 5], ['esp', 9]], lines: ['QMAD', 'eQMAD'], minPeriod: 15, added: '2026-11-17' },
+    QEMAD:                    { name: 'QEMAD', type: 'oscillator', fn: 'QEMADif', inputs: ['high', 'low', 'close'], params: [['N1', 5], ['N2', 10], ['avg_n', 5], ['esp', 9]], lines: ['QEMAD', 'eQEMAD'], minPeriod: 6, added: '2026-11-17' },
+    AvgRFR_FI_Dbl_EMA:        { name: 'AvgRFR_FI_Dbl_EMA', type: 'volume', fn: 'AvgRiseFallRatioFI_DoubleEMA', inputs: ['close', 'volume'], params: [['day', 10], ['esp1', 5, { label: 'esp1 3-5', min: 3, max: 5 }], ['esp2', 9]], lines: ['eAvgRiseFallRatioFI', 'eeAvgRiseFallRatioFI'], minPeriod: 12, added: '2026-11-17' },
+    // PriceDifCOG[] / PGO[] "不一定要繪圖" (need not be drawn) - only the smoothed pair is.
+    PriceDifCOG_Dbl_EMA:      { name: 'PriceDifCOG_Dbl_EMA', type: 'momentum', fn: 'PriceDifCOG_DoubleEMA', inputs: ['close'], params: [['day', 10], ['esp1', 5, { label: 'esp1 3-5', min: 3, max: 5 }], ['esp2', 9]], lines: ['ePriceDifCOG', 'eePriceDifCOG'], minPeriod: 12, added: '2026-11-17' },
+    PGO_Dbl_EMA:              { name: 'PGO_Dbl_EMA', type: 'oscillator', fn: 'PGO_DoubleEMA', inputs: ['high', 'low', 'close'], params: [['ma_day', 5], ['n_period', 14], ['esp1', 5, { label: 'esp1 3-5', min: 3, max: 5 }], ['esp2', 9]], lines: ['ePGO', 'eePGO'], minPeriod: 16, added: '2026-11-17' },
+    PCRate:                   { name: 'PCRate', type: 'momentum', fn: 'PriceChangeRate', inputs: ['high', 'low', 'close'], params: [['EMA_n', 9], ['PCR_n', 5]], lines: ['PriceChangeRate', 'ePriceChangeRate'], minPeriod: 2, added: '2026-11-17' },
+    Vortex_MACD:              { name: 'Vortex_MACD', type: 'oscillator', fn: 'Vortex_MACD', inputs: ['high', 'low', 'close'], params: [['day', 14], ['MACD_num', 9]], lines: ['Dif', 'MACD'], histogram: 'Bar', minPeriod: 17, added: '2026-11-17' },
+    ADX_DMI_MACD:             { name: 'ADX_DMI_MACD', type: 'oscillator', fn: 'ADX_DMI_MACD', inputs: ['high', 'low', 'close'], params: [['esp', 14], ['MACD_num', 9]], lines: ['Dif', 'MACD'], histogram: 'Bar', minPeriod: 3, added: '2026-11-17' },
+    SuperTrend:               { name: 'SuperTrend', type: 'trend', fn: 'SuperTrend', inputs: ['high', 'low', 'close'], params: [['esp', 9]], lines: ['SuperTrend', 'FinalUpperBand', 'FinalLowerBand'], placement: 'chart', minPeriod: 4, added: '2026-11-17' },
+    RMI:                      { name: 'RMI', type: 'momentum', fn: 'RMI', inputs: ['close'], params: [['N_dayago', 5], ['M_length', 14], ['esp', 9]], lines: ['RMI', 'eRMI'], minPeriod: 7, added: '2026-11-17' },
+    StochasticSMI_Stochastic: { name: 'StochasticSMI_Stochastic', type: 'momentum', fn: 'StochasticSMI_Stochastic', inputs: ['high', 'low', 'close'], params: [['day', 13], ['rr', 25], ['ss', 2], ['esp', 9], ['KD_num', 9]], lines: ['SMI_KD_K', 'SMI_KD_D'], histogram: 'Bar', minPeriod: 21, added: '2026-11-17' },
   };
 
   const CATEGORY = { trend: 'Trend', momentum: 'Momentum', oscillator: 'Oscillators', volume: 'Volume', volatility: 'Volatility' };
@@ -292,6 +359,7 @@
     registry.register({
       id,
       name: spec.name,
+      ...(spec.added ? { added: spec.added } : {}),
       category: CATEGORY[spec.type] || 'Other',
       placement: spec.placement || 'pane',
       params: params.map((p) => {
